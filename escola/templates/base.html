@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Plataforma de Gestão{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <header class="navbar">
+        <h1>CARA</h1>
+        <nav>
+            {% if user.is_authenticated %}
+                <span>Olá, {{ user.get_full_name|default:user.username }}</span>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                {% if user.professor %}
+                    <a href="{% url 'lista_turmas_professor' %}">Minhas Turmas</a>
+                    <a href="{% url 'banco_questoes' %}">Banco de Questões</a>
+                {% elif user.aluno %}
+                    <a href="{% url 'meu_feedback' %}">Meu Feedback</a>
+                {% endif %}
+                <a href="{% url 'admin:logout' %}">Sair</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+</body>
+</html>

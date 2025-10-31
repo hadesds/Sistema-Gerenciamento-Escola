@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Carômetro - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'lista_turmas_professor' %}">&larr; Voltar para minhas turmas</a>
+    <h1>Carômetro - {{ turma.nome }}</h1>
+    <p>Identifique os alunos e registre o desempenho do dia.</p>
+
+    <div class="carometro-grid">
+        {% for aluno in alunos %}
+            <div class="aluno-card">
+                {% if aluno.foto %}
+                    <img src="{{ aluno.foto.url }}" alt="Foto de {{ aluno.user.get_full_name }}">
+                {% else %}
+                    <img src="{% static 'images/default-avatar.png' %}" alt="Foto padrão">
+                {% endif %}
+                
+                <h3>{{ aluno.user.get_full_name }}</h3>
+                <p><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
+                
+                <hr>
+                
+                <form action="{% url 'registrar_avaliacao' aluno.pk %}" method="POST" class="form-avaliacao">
+                    {% csrf_token %}
+                    <small>Avaliar (1-5):</small>
+                    <div class="form-group">
+                        <label for="assiduidade-{{aluno.pk}}">Assiduidade</label>
+                        <input type="number" id="assiduidade-{{aluno.pk}}" name="assiduidade" min="1" max="5" value="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="participacao-{{aluno.pk}}">Participação</label>
+                        <input type="number" id="participacao-{{aluno.pk}}" name="participacao" min="1" max="5" value="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="responsabilidade-{{aluno.pk}}">Responsabilidade</label>
+                        <input type="number" id="responsabilidade-{{aluno.pk}}" name="responsabilidade" min="1" max="5" value="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sociabilidade-{{aluno.pk}}">Sociabilidade</label>
+                        <input type="number" id="sociabilidade-{{aluno.pk}}" name="sociabilidade" min="1" max="5" value="3" required>
+                    </div>
+                    <button type="submit" class="btn btn-submit">Lançar Avaliação</button>
+                </form>
+            </div>
+        {% empty %}
+            <div class="card">
+                <p>Nenhum aluno cadastrado nesta turma.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

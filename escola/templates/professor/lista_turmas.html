@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Minhas Turmas{% endblock %}
+
+{% block content %}
+    <h1>Painel do Professor</h1>
+    <h2>Minhas Turmas</h2>
+
+    {% if turmas %}
+        <div class="turmas-grid">
+            {% for turma in turmas %}
+                <div class="card turma-card">
+                    <h3>{{ turma.nome }}</h3>
+                    <p><strong>Quantidade de alunos:</strong> {{ turma.alunos.count }}</p>
+                    <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-primary">
+                        Ver Carômetro
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card">
+            <p>Você ainda não está associado a nenhuma turma.</p>
+            <p>Entre em contato com a coordenação para ser vinculado a uma turma.</p>
+        </div>
+    {% endif %}
+
+    <hr style="margin: 2rem 0;">
+    
+    <div class="card">
+        <h3>Banco de Questões</h3>
+        <p>Acesse seu banco pessoal de questões para criar simulados e atividades.</p>
+        <a href="{% url 'banco_questoes' %}" class="btn btn-secondary">Ir para o Banco de Questões</a>
+    </div>
+{% endblock %}

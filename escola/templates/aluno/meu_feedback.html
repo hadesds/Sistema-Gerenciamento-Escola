@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Meu Feedback{% endblock %}
+
+{% block content %}
+    <h1>Painel do Aluno</h1>
+    <h2>Meus Feedbacks</h2>
+    
+    <div class="card">
+        <p>Olá, <strong>{{ aluno.user.get_full_name }}</strong>. Aqui está seu histórico de avaliações de desempenho:</p>
+        <p><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
+    </div>
+
+    {% if avaliacoes %}
+        <div class="card">
+            <table class="feedback-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Professor</th>
+                        <th>Assiduidade</th>
+                        <th>Participação</th>
+                        <th>Responsabilidade</th>
+                        <th>Sociabilidade</th>
+                        <th>Média do Dia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for avaliacao in avaliacoes %}
+                        <tr>
+                            <td>{{ avaliacao.data|date:"d/m/Y" }}</td>
+                            <td>{{ avaliacao.professor.user.get_full_name }}</td>
+                            <td>{{ avaliacao.assiduidade }}</td>
+                            <td>{{ avaliacao.participacao }}</td>
+                            <td>{{ avaliacao.responsabilidade }}</td>
+                            <td>{{ avaliacao.sociabilidade }}</td>
+                            <td><strong>{{ avaliacao.calcular_media|floatformat:1 }}</strong></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="card">
+            <p>Você ainda não recebeu nenhuma avaliação de desempenho.</p>
+            <p>As avaliações serão exibidas aqui assim que seus professores registrarem seu desempenho.</p>
+        </div>
+    {% endif %}
+{% endblock %}

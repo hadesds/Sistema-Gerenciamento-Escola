@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Perfil Não Encontrado{% endblock %}
+
+{% block content %}
+<style>
+    .erro-container {
+        max-width: 600px;
+        margin: 4rem auto;
+        padding: 2rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .erro-container h1 {
+        color: red;
+    }
+</style>
+
+<div class="erro-container">
+    <h1>Erro de Permissão</h1>
+    <p>Olá, <strong>{{ user.username }}</strong>.</p>
+    <p>Você conseguiu fazer o login com sucesso, mas sua conta de usuário não está associada a nenhum perfil (nem Aluno, nem Professor).</p>
+    <p>Por favor, peça a um administrador do sistema para criar um perfil para você.</p>
+    <br>
+    <a href="{% url 'admin:logout' %}" class="btn">Fazer Logout</a>
+</div>
+{% endblock %}

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard CARA</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+</head>
+<body>
+
+    <div class="dashboard-container">
+
+        <section class="top-container card">
+            <header>
+                <img src="/static/img/Vector.png" alt="CARA Logo" class="logo">
+                
+                <div class="search-bar">
+                    <input type="text" placeholder="Pesquisar por alunos, notas, eventos...">
+                </div>
+                <div class="user-icons">
+                    <div class="icon"></div>
+                    <div class="icon"></div>
+                    <div class="icon"></div>
+                </div>
+            </header>
+
+            <section class="stats-cards">
+                <div class="card stat-card">
+                    <div>
+                        <p>Estudantes</p>
+                        <h2>732</h2>
+                    </div>
+                    <div class="stat-icon" style="background-color: var(--color-stat-circle);"></div>
+                </div>
+                <div class="card stat-card">
+                    <div>
+                        <p>Professores</p>
+                        <h2>31</h2>
+                    </div>
+                    <div class="stat-icon" style="background-color: var(--color-stat-circle);"></div>
+                </div>
+                <div class="card stat-card">
+                    <div>
+                        <p>Coordenadores</p>
+                        <h2>16</h2>
+                    </div>
+                    <div class="stat-icon" style="background-color: var(--color-stat-circle);"></div>
+                </div>
+                <div class="card stat-card add-card">
+                    <div>
+                        <p>Coordenadores</p>
+                        <div class="avatar-list">
+                            <div class="avatar-item"></div>
+                            <div class="avatar-item"></div>
+                            <div class="avatar-item"></div>
+                            <div class="avatar-item"></div>
+                        </div>
+                        <button class="add-button">+ Adicionar</button>
+                    </div>
+                </div>
+                <div class="card stat-card simulados-card">
+                    <div>
+                        <p>Simulados</p>
+                        <button class="montar-button">Montar</button>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <main class="main-content">
+
+            <section class="column-left">
+                <div class="card carometro-card">
+                    <h3>Carômetro de Alunos</h3>
+                    <input type="text" class="carometro-search" placeholder="Pesquisar por turma ou ano">
+                    <div class="turma-buttons">
+                        <button class="turma-button">7º E.F</button>
+                        <button class="turma-button">8º E.F</button>
+                        <button class="turma-button">9º E.F</button>
+                        <button class="turma-button">1º E.M</button>
+                        <button class="turma-button">2º E.M</button>
+                        <button class="turma-button">3º E.M</button>
+                    </div>
+                    <div class="alunos-online">
+                        <div class="avatar-list">
+                            <div class="avatar-item"></div>
+                            <div class="avatar-item"></div>
+                            <div class="avatar-item"></div>
+                            <div class="avatar-item"></div>
+                            <div class="avatar-item-plus">+</div>
+                        </div>
+                        <span>Alunos online</span>
+                        <button class="add-aluno-button">Adicionar Aluno</button>
+                    </div>
+                </div>
+                <div class="card notification-card">
+                    <h3>16 Dias faltando</h3>
+                    <p>Estamos muitos felizes em informar que estaremos celebrando nosso aniversário de 7 anos da instituição!</p>
+                </div>
+            </section>
+
+            <section class="column-middle">
+                <div class="card chart-card">
+                    <h3>Desempenho de Ensino</h3>
+                    <div class="bar-chart">
+                        <div class="bar-item"><div class="bar" style="height: 60%; background: var(--color-bar-light);"></div><span>7º</span></div>
+                        <div class="bar-item"><div class="bar" style="height: 40%; background: var(--color-bar-light);"></div><span>8º</span></div>
+                        <div class="bar-item"><div class="bar" style="height: 50%; background: var(--color-bar-light);"></div><span>9º</span></div>
+                        <div class="bar-item"><div class="bar" style="height: 90%; background: var(--color-bar-accent);"></div><span>1º</span></div>
+                        <div class="bar-item"><div class="bar" style="height: 30%; background: var(--color-bar-light);"></div><span>2º</span></div>
+                        <div class="bar-item"><div class="bar" style="height: 45%; background: var(--color-bar-light);"></div><span>3º</span></div>
+                    </div>
+                </div>
+                <div class="card list-card">
+                    <div class="list-header">
+                        <h3>Top Alunos</h3>
+                        <div class="tabs">
+                            <button class="tab-button">Últimos 3 anos</button>
+                            <button class="tab-button active">Esse ano</button>
+                        </div>
+                    </div>
+                    <ul class="student-list">
+                        <li>
+                            <div class="student-info">
+                                <div class="avatar"></div>
+                                <div>
+                                    <strong>Elias Rodrigues • 7°</strong>
+                                    <span>702 • 001-1234</span>
+                                </div>
+                            </div>
+                            <span class="material-icons-outlined arrow">arrow_forward_ios</span>
+                        </li>
+                        <li>
+                            <div class="student-info">
+                                <div class="avatar"></div>
+                                <div>
+                                    <strong>Mayara Silva • 9°</strong>
+                                    <span>901 • 001-1234</span>
+                                </div>
+                            </div>
+                            <span class="material-icons-outlined arrow">arrow_forward_ios</span>
+                        </li>
+                        <li>
+                            <div class="student-info">
+                                <div class="avatar"></div>
+                                <div>
+                                    <strong>Eliana Mota • 1°</strong>
+                                    <span>1002 • 001-1234</span>
+                                </div>
+                            </div>
+                            <span class="material-icons-outlined arrow">arrow_forward_ios</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="column-right">
+                <div class="card list-card">
+                    <div class="list-header">
+                        <h3>Eventos | Exames Próximos</h3>
+                    </div>
+                    <ul class="event-list">
+                        <li>Simulado de Humanas <span class="material-icons-outlined dots">more_horiz</span></li>
+                        <li>Simulado de Exatas <span class="material-icons-outlined dots">more_horiz</span></li>
+                        <li>Dia do Professor <span class="material-icons-outlined dots">more_horiz</span></li>
+                        <li>Ação Social - Asilo <span class="material-icons-outlined dots">more_horiz</span></li>
+                        <li>Apresentações de Projetos <span class="material-icons-outlined dots">more_horiz</span></li>
+                        <li>Prática - Laboratório de Química <span class="material-icons-outlined dots">more_horiz</span></li>
+                        <li>Aula de Maker <span class="material-icons-outlined dots">more_horiz</span></li>
+                        <li>Aula de Línguas - Espanhol <span class="material-icons-outlined dots">more_horiz</span></li>
+                    </ul>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+</body>
+</html>

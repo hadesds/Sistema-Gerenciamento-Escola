@@ -1,29 +1,45 @@
 from django.contrib import admin
-from .models import Administrador, Turma, Professor, Aluno, Avaliacao, Questao, Simulado
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+from .models import Professor, Aluno, Turma, Avaliacao, Questao
 
-@admin.register(Aluno)
-class AlunoAdmin(admin.ModelAdmin):
-    list_display = ('user', 'turma', 'foto') 
-    search_fields = ('user__username', 'user__first_name', 'turma__nome') # Habilita a busca
+class ProfessorInline(admin.StackedInline):
+    model = Professor
+    can_delete = False
+    verbose_name_plural = 'Professor'
 
-# Para customizar a exibição da Avaliação
-@admin.register(Avaliacao)
-class AvaliacaoAdmin(admin.ModelAdmin):
-    list_display = ('aluno', 'professor', 'data', 'calcular_media')
-    list_filter = ('professor', 'aluno__turma', 'data') # Habilita filtros laterais
+class AlunoInline(admin.StackedInline):
+    model = Aluno
+    can_delete = False
+    verbose_name_plural = 'Aluno'
 
-@admin.register(Professor)
-class ProfessorAdmin(admin.ModelAdmin):
-    list_display = ('user',)
-    filter_horizontal = ('turmas',) 
+class CustomUserAdmin(UserAdmin):
+    def get_inlines(self, request, obj=None):
+        if obj:
+            if hasattr(obj, 'professor'):
+                return [ProfessorInline]
+            elif hasattr(obj, 'aluno'):
+                return [AlunoInline]
+        return []
 
-# Para customizar a Turma
 @admin.register(Turma)
 class TurmaAdmin(admin.ModelAdmin):
-    list_display = ('nome',)
-    search_fields = ('nome',)
+    list_display = ['nome', 'serie', 'turno', 'sala']
+    list_filter = ['turno', 'serie']
+    search_fields = ['nome', 'serie']
 
-# Registra os outros modelos de forma simples
-admin.site.register(Administrador)
-admin.site.register(Questao)
-admin.site.register(Simulado)
+@admin.register(Avaliacao)
+class AvaliacaoAdmin(admin.ModelAdmin):
+    list_display = ['aluno', 'professor', 'data', 'assiduidade', 'participacao', 'responsabilidade', 'sociabilidade']
+    list_filter = ['data', 'professor']
+    search_fields = ['aluno__user__first_name', 'aluno__user__last_name']
+
+@admin.register(Questao)
+class QuestaoAdmin(admin.ModelAdmin):
+    list_display = ['materia', 'autor', 'data_criacao']
+    list_filter = ['materia', 'data_criacao']
+    search_fields = ['materia', 'enunciado']
+
+# Re-register UserAdmin
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)

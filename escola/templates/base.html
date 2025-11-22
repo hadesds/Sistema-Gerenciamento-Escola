@@ -4,24 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Plataforma de Gestão{% endblock %}</title>
+    <title>{% block title %}Sistema Escola{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
 </head>
 <body>
-
     <header class="navbar">
         <h1>CARA</h1>
         <nav>
             {% if user.is_authenticated %}
                 <span>Olá, {{ user.get_full_name|default:user.username }}</span>
-                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'dashboard' %}">Início</a>
                 {% if user.professor %}
-                    <a href="{% url 'lista_turmas_professor' %}">Minhas Turmas</a>
+                    <a href="{% url 'lista_turmas' %}">Minhas Turmas</a>
                     <a href="{% url 'banco_questoes' %}">Banco de Questões</a>
                 {% elif user.aluno %}
                     <a href="{% url 'meu_feedback' %}">Meu Feedback</a>
+                {% elif user.is_superuser %}
+                    <a href="{% url 'admin_dashboard' %}">Painel Admin</a>
                 {% endif %}
-                <a href="{% url 'admin:logout' %}">Sair</a>
+                <a href="{% url 'logout' %}">Sair</a>
             {% endif %}
         </nav>
     </header>
@@ -30,6 +33,5 @@
         {% block content %}
         {% endblock %}
     </main>
-
 </body>
 </html>

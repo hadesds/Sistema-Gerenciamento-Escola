@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Painel Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Painel Administrativo</h1>
+    <p>Gerencie usuários e turmas</p>
+</div>
+
+<div class="admin-grid">
+    <div class="card">
+        <h3>Cadastrar Aluno</h3>
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+            <input type="text" name="nome" placeholder="Nome completo" required>
+            <input type="email" name="email" placeholder="E-mail" required>
+            <select name="turma" required>
+                <option value="">Selecionar turma</option>
+                {% for turma in turmas %}
+                <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Estatísticas</h3>
+        <div class="stats">
+            <div class="stat">
+                <span class="number">{{ total_alunos }}</span>
+                <span class="label">Alunos</span>
+            </div>
+            <div class="stat">
+                <span class="number">{{ total_professores }}</span>
+                <span class="label">Professores</span>
+            </div>
+            <div class="stat">
+                <span class="number">{{ total_turmas }}</span>
+                <span class="label">Turmas</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

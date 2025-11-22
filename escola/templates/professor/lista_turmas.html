@@ -1,35 +1,91 @@
 {% extends 'base.html' %}
-{% load static %}
 {% block title %}Minhas Turmas{% endblock %}
 
 {% block content %}
-    <h1>Painel do Professor</h1>
-    <h2>Minhas Turmas</h2>
+<div class="page-header">
+    <h1>Minhas Turmas</h1>
+    <p>Selecione uma turma para gerenciar os alunos</p>
+</div>
 
-    {% if turmas %}
-        <div class="turmas-grid">
-            {% for turma in turmas %}
-                <div class="card turma-card">
-                    <h3>{{ turma.nome }}</h3>
-                    <p><strong>Quantidade de alunos:</strong> {{ turma.alunos.count }}</p>
-                    <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-primary">
-                        Ver Carômetro
-                    </a>
+<div class="turmas-grid">
+    {% for turma in turmas %}
+    <div class="turma-card">
+        <div class="turma-header">
+            <h3>{{ turma.nome }}</h3>
+            <span class="badge">{{ turma.alunos.count }} alunos</span>
+        </div>
+        
+        <div class="turma-info">
+            <p><strong>Série:</strong> {{ turma.serie }}</p>
+            <p><strong>Turno:</strong> {{ turma.turno }}</p>
+        </div>
+
+        <div class="alunos-preview">
+            {% for aluno in turma.alunos.all|slice:":4" %}
+            <div class="aluno-mini">
+                {% if aluno.foto %}
+                    <img src="{{ aluno.foto.url }}" alt="{{ aluno.user.get_full_name }}">
+                {% else %}
+                    <div class="avatar">{{ aluno.user.first_name|first }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% if turma.alunos.count > 4 %}
+            <div class="aluno-mini more">+{{ turma.alunos.count|add:"-4" }}</div>
+            {% endif %}
+        </div>
+
+        <div class="turma-actions">
+            <button class="btn btn-primary ver-alunos" data-turma="{{ turma.id }}">
+                Ver Alunos
+            </button>
+        </div>
+
+        <!-- Lista de Alunos (expandível) -->
+        <div class="alunos-list" id="alunos-{{ turma.id }}">
+            {% for aluno in turma.alunos.all %}
+            <div class="aluno-item">
+                <div class="aluno-foto">
+                    {% if aluno.foto %}
+                        <img src="{{ aluno.foto.url }}" alt="{{ aluno.user.get_full_name }}">
+                    {% else %}
+                        <div class="avatar">{{ aluno.user.first_name|first }}</div>
+                    {% endif %}
                 </div>
+                <div class="aluno-info">
+                    <strong>{{ aluno.user.get_full_name }}</strong>
+                    <span>Matrícula: {{ aluno.matricula }}</span>
+                </div>
+                <div class="avaliacao-form">
+                    <form method="post" action="{% url 'avaliar_aluno' aluno.id %}">
+                        {% csrf_token %}
+                        <input type="number" name="assiduidade" min="1" max="5" placeholder="A" title="Assiduidade">
+                        <input type="number" name="participacao" min="1" max="5" placeholder="P" title="Participação">
+                        <input type="number" name="responsabilidade" min="1" max="5" placeholder="R" title="Responsabilidade">
+                        <input type="number" name="sociabilidade" min="1" max="5" placeholder="S" title="Sociabilidade">
+                        <button type="submit" class="btn btn-small">✓</button>
+                    </form>
+                </div>
+            </div>
             {% endfor %}
         </div>
-    {% else %}
-        <div class="card">
-            <p>Você ainda não está associado a nenhuma turma.</p>
-            <p>Entre em contato com a coordenação para ser vinculado a uma turma.</p>
-        </div>
-    {% endif %}
-
-    <hr style="margin: 2rem 0;">
-    
-    <div class="card">
-        <h3>Banco de Questões</h3>
-        <p>Acesse seu banco pessoal de questões para criar simulados e atividades.</p>
-        <a href="{% url 'banco_questoes' %}" class="btn btn-secondary">Ir para o Banco de Questões</a>
     </div>
+    {% empty %}
+    <div class="empty-state">
+        <p>Nenhuma turma encontrada.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.ver-alunos').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const turmaId = this.getAttribute('data-turma');
+        const alunosList = document.getElementById(`alunos-${turmaId}`);
+        alunosList.style.display = alunosList.style.display === 'none' ? 'block' : 'none';
+    });
+});
+</script>
 {% endblock %}

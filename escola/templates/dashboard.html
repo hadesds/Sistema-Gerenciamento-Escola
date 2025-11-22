@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Bem-vindo, {{ user.get_full_name|default:user.username }}</h1>
+    
+    {% if user.professor %}
+        <div class="dashboard-cards">
+            <a href="{% url 'lista_turmas' %}" class="dashboard-card">
+                <span class="material-icons-outlined">groups</span>
+                <h3>Minhas Turmas</h3>
+                <p>Gerencie turmas e alunos</p>
+            </a>
+            <a href="{% url 'banco_questoes' %}" class="dashboard-card">
+                <span class="material-icons-outlined">quiz</span>
+                <h3>Banco de Questões</h3>
+                <p>Crie questões e simulados</p>
+            </a>
+        </div>
+    
+    {% elif user.aluno %}
+        <div class="dashboard-info">
+            <p>Veja seu desempenho e feedbacks</p>
+            <a href="{% url 'meu_feedback' %}" class="btn btn-primary">Ver Meu Feedback</a>
+        </div>
+    
+    {% elif user.is_superuser %}
+        <div class="dashboard-cards">
+            <a href="{% url 'admin_dashboard' %}" class="dashboard-card">
+                <span class="material-icons-outlined">admin_panel_settings</span>
+                <h3>Painel Administrativo</h3>
+                <p>Gerencie usuários e turmas</p>
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

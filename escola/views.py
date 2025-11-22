@@ -1,173 +1,136 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado
-from django.http import HttpResponseForbidden
 from django.contrib import messages
-from django.contrib.auth import logout
-
+from django.http import HttpResponseForbidden, JsonResponse
+from .models import Professor, Aluno, Turma, Avaliacao, Questao
+from django.contrib.auth.models import User
+from django.db.models import Avg
 
 def professor_required(view_func):
-    """Verifica se o usuário logado é um professor"""
     def wrapper(request, *args, **kwargs):
         if not hasattr(request.user, 'professor'):
-            return HttpResponseForbidden("Acesso negado")
+            return HttpResponseForbidden("Acesso negado para professores")
         return view_func(request, *args, **kwargs)
     return wrapper
 
 def aluno_required(view_func):
-    """Verifica se o usuário logado é um aluno"""
     def wrapper(request, *args, **kwargs):
         if not hasattr(request.user, 'aluno'):
-            return HttpResponseForbidden("Acesso negado.")
+            return HttpResponseForbidden("Acesso negado para alunos")
         return view_func(request, *args, **kwargs)
     return wrapper
 
-
-# --- Visão Geral (Dashboard) ---
-
 @login_required
 def dashboard(request):
-    """
-    Redireciona o usuário para o painel correto
-    baseado no seu tipo (perfil).
-    """
     if hasattr(request.user, 'professor'):
-        return redirect('lista_turmas_professor')
+        return redirect('lista_turmas')
     elif hasattr(request.user, 'aluno'):
         return redirect('meu_feedback')
     elif request.user.is_superuser:
-        # Superusuários (Admins) são redirecionados para o painel /admin/
-        return redirect('/admin/')
+        return redirect('admin_dashboard')
     else:
-        # Caso de usuário sem perfil
-        return render(request, 'erro_perfil.html')
-
-# ==========================================
-# ÁREA DO PROFESSOR
-# ==========================================
+        messages.error(request, 'Perfil não configurado')
+        return redirect('login')
 
 @login_required
 @professor_required
-def lista_turmas_professor(request):
-    """
-    Requisito: "Visualizar suas turmas"
-    Mostra a lista de turmas associadas ao professor logado.
-    """
+def lista_turmas(request):
     professor = request.user.professor
-    turmas = professor.turmas.all()
+    turmas = professor.turmas.all().prefetch_related('alunos')
     return render(request, 'professor/lista_turmas.html', {'turmas': turmas})
 
 @login_required
 @professor_required
-def detalhe_turma_carometro(request, turma_id):
-    """
-    Requisito: "Usar o 'Carômetro' para identificar facilmente cada aluno por meio de fotos."
-    Mostra a lista de alunos (com fotos) de uma turma específica.
-    """
-    turma = get_object_or_404(Turma, id=turma_id)
-    # Garante que o professor só veja turmas dele
-    if turma not in request.user.professor.turmas.all():
-        return HttpResponseForbidden("Você não tem permissão para ver esta turma.")
-        
-    alunos = turma.alunos.all()
-    return render(request, 'professor/carometro.html', {'turma': turma, 'alunos': alunos})
-
-@login_required
-@professor_required
-def registrar_avaliacao(request, aluno_id):
-    """
-    Requisito: "Registrar avaliações de desempenho dos alunos (usando emojis e notas de 1 a 5)"
-    Esta view processa o POST do formulário de avaliação.
-    """
-    aluno = get_object_or_404(Aluno, pk=aluno_id)
-    professor = request.user.professor
-
+def avaliar_aluno(request, aluno_id):
     if request.method == 'POST':
-        # Pega os dados do formulário (o SOW dizia 1-5)
-        assiduidade_val = request.POST.get('assiduidade')
-        participacao_val = request.POST.get('participacao')
-        responsabilidade_val = request.POST.get('responsabilidade')
-        sociabilidade_val = request.POST.get('sociabilidade')
+        aluno = get_object_or_404(Aluno, id=aluno_id)
+        professor = request.user.professor
         
-        # Cria a avaliação no banco de dados
+        # Verifica se o professor tem acesso à turma do aluno
+        if aluno.turma not in professor.turmas.all():
+            return HttpResponseForbidden("Acesso negado")
+        
         Avaliacao.objects.create(
             aluno=aluno,
             professor=professor,
-            assiduidade=assiduidade_val,
-            participacao=participacao_val,
-            responsabilidade=responsabilidade_val,
-            sociabilidade=sociabilidade_val
+            assiduidade=request.POST.get('assiduidade'),
+            participacao=request.POST.get('participacao'),
+            responsabilidade=request.POST.get('responsabilidade'),
+            sociabilidade=request.POST.get('sociabilidade')
         )
         
-        
-        return redirect('detalhe_turma_carometro', turma_id=aluno.turma.id)
+        messages.success(request, f'Avaliação registrada para {aluno.user.get_full_name()}')
     
-    
-    return redirect('lista_turmas_professor')
+    return redirect('lista_turmas')
 
 @login_required
 @professor_required
 def banco_questoes(request):
-    """
-    Requisito: "Cadastrar novas questões em um 'Banco de Questões'."
-    Mostra as questões do professor e permite cadastrar novas.
-    """
     professor = request.user.professor
     
     if request.method == 'POST':
-        # Lógica para criar uma nova questão
         Questao.objects.create(
             autor=professor,
+            materia=request.POST.get('materia'),
             enunciado=request.POST.get('enunciado'),
-            resposta=request.POST.get('resposta'),
-            materia=request.POST.get('materia')
+            resposta=request.POST.get('resposta')
         )
+        messages.success(request, 'Questão cadastrada com sucesso!')
         return redirect('banco_questoes')
-        
-    # Se for GET, apenas lista as questões dele
+    
     questoes = Questao.objects.filter(autor=professor)
     return render(request, 'professor/banco_questoes.html', {'questoes': questoes})
-
-
-# ==========================================
-# ÁREA DO ALUNO
-# ==========================================
 
 @login_required
 @aluno_required
 def meu_feedback(request):
-    """
-    Requisito: "Visualizar o seu feedback após a avaliação"
-    Mostra o histórico de avaliações (feedbacks) para o aluno logado.
-    """
     aluno = request.user.aluno
     avaliacoes = Avaliacao.objects.filter(aluno=aluno).order_by('-data')
     
-    return render(request, 'aluno/meu_feedback.html', {
+    # Calcula média geral
+    media_geral = avaliacoes.aggregate(
+        media=Avg('assiduidade') + Avg('participacao') + 
+              Avg('responsabilidade') + Avg('sociabilidade') / 4
+    )['media'] or 0
+    
+    context = {
         'aluno': aluno,
-        'avaliacoes': avaliacoes
-    })
-
+        'avaliacoes': avaliacoes,
+        'media_geral': round(media_geral, 1),
+        'total_avaliacoes': avaliacoes.count()
+    }
+    return render(request, 'aluno/meu_feedback.html', context)
 
 @login_required
-def dashboard(request):
-    """
-    Redireciona o usuário para o painel correto
-    baseado no seu tipo (perfil).
-    """
-    if hasattr(request.user, 'professor'):
-        return redirect('lista_turmas_professor')
-    elif hasattr(request.user, 'aluno'):
-        return redirect('meu_feedback')
-    elif request.user.is_superuser:
-        # Superusuários (Admins) são redirecionados para o painel /admin/
-        return redirect('/admin/')
-
-    # Se o usuário logou mas não tem perfil, faça isso:
-    else:
-        # 1. Crie uma mensagem de erro
-        messages.error(request, 'Login bem-sucedido, mas seu usuário não está vinculado a um perfil (Aluno ou Professor). Contate o administrador.')
-        # 2. Deslogue o usuário (para não ficar em um estado "preso")
-        logout(request)
-        # 3. Redirecione de volta para a página de login
-        return redirect('login')
+def admin_dashboard(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("Acesso negado")
+    
+    if request.method == 'POST':
+        # Cadastrar novo aluno
+        username = request.POST.get('email').split('@')[0]
+        user = User.objects.create_user(
+            username=username,
+            email=request.POST.get('email'),
+            password='senha123',  # Senha padrão
+            first_name=request.POST.get('nome').split()[0],
+            last_name=' '.join(request.POST.get('nome').split()[1:])
+        )
+        
+        turma = get_object_or_404(Turma, id=request.POST.get('turma'))
+        Aluno.objects.create(
+            user=user,
+            turma=turma,
+            matricula=f"2024{User.objects.count():04d}"
+        )
+        
+        messages.success(request, 'Aluno cadastrado com sucesso!')
+        return redirect('admin_dashboard')
+    
+    context = {
+        'turmas': Turma.objects.all(),
+        'total_alunos': Aluno.objects.count(),
+        'total_professores': Professor.objects.count(),
+        'total_turmas': Turma.objects.count(),
+    }
+    return render(request, 'admin/admin_dashboard.html', context)

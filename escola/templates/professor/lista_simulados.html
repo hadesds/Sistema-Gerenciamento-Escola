@@ -3,56 +3,55 @@
 
 {% block content %}
     <a href="{% url 'dashboard' %}">&larr; Voltar ao Dashboard</a>
-    <h1>Simulados Disponíveis</h1>
-    <p class="subtitle">Simulados criados para a turma <strong>{{ aluno.turma.nome }}</strong></p>
+    <h1>Meus Simulados</h1>
+
+    <div class="actions-bar">
+        <a href="{% url 'criar_simulado' %}" class="btn btn-primary">+ Criar Novo Simulado</a>
+    </div>
 
     {% if simulados %}
         <div class="simulados-grid">
             {% for simulado in simulados %}
-                <div class="card simulado-card-aluno">
-                    <div class="simulado-icon-large">📝</div>
-                    
-                    <div class="simulado-content">
+                <div class="card simulado-card">
+                    <div class="simulado-header">
                         <h3>Simulado - {{ simulado.turma_alvo.nome }}</h3>
-                        <p class="professor-info">
-                            <strong>Professor:</strong> {{ simulado.autor.user.get_full_name }}
-                        </p>
-                        
-                        <div class="simulado-stats">
-                            <div class="stat-item">
-                                <span class="stat-icon">❓</span>
-                                <span><strong>{{ simulado.questoes.count }}</strong> questões</span>
-                            </div>
-                        </div>
+                        <span class="badge">{{ simulado.questoes.count }} questões</span>
+                    </div>
+                    
+                    <div class="simulado-info">
+                        <p><strong>Turma:</strong> {{ simulado.turma_alvo.nome }}</p>
+                        <p><strong>Total de Alunos:</strong> {{ simulado.turma_alvo.alunos.count }}</p>
+                    </div>
 
-                        <div class="materias-tags">
-                            {% for questao in simulado.questoes.all %}
-                                <span class="materia-tag">{{ questao.materia }}</span>
+                    <div class="questoes-preview">
+                        <strong>Questões incluídas:</strong>
+                        <ul>
+                            {% for questao in simulado.questoes.all|slice:":3" %}
+                                <li>{{ questao.materia }} - {{ questao.enunciado|truncatewords:8 }}</li>
                             {% endfor %}
-                        </div>
+                            {% if simulado.questoes.count > 3 %}
+                                <li class="more-items">+ {{ simulado.questoes.count|add:"-3" }} mais...</li>
+                            {% endif %}
+                        </ul>
                     </div>
 
                     <div class="simulado-actions">
-                        <a href="{% url 'visualizar_simulado' simulado.id %}" class="btn btn-primary btn-block">
-                            Fazer Simulado
-                        </a>
+                        <a href="{% url 'visualizar_simulado' simulado.id %}" class="btn btn-secondary btn-small">Ver Detalhes</a>
                     </div>
                 </div>
             {% endfor %}
         </div>
     {% else %}
         <div class="card empty-state">
-            <div class="empty-icon">📚</div>
-            <h2>Nenhum simulado disponível</h2>
-            <p>No momento não há simulados disponíveis para sua turma.</p>
-            <p>Aguarde os professores criarem novos simulados!</p>
+            <h2>Nenhum simulado criado</h2>
+            <p>Você ainda não criou nenhum simulado. Crie seu primeiro simulado agora!</p>
+            <a href="{% url 'criar_simulado' %}" class="btn btn-primary">Criar Primeiro Simulado</a>
         </div>
     {% endif %}
 {% endblock %}
 
 <style>
-.subtitle {
-    color: var(--cor-texto-claro);
+.actions-bar {
     margin-bottom: 2rem;
 }
 
@@ -62,72 +61,28 @@
     gap: 1.5rem;
 }
 
-.simulado-card-aluno {
+.simulado-card {
     display: flex;
     flex-direction: column;
+    gap: 1rem;
+    border-left: 4px solid var(--cor-secundaria);
+}
+
+.simulado-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    text-align: center;
-    padding: 2rem;
-    transition: all 0.3s ease;
-    border: 2px solid var(--cor-borda);
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--cor-borda);
 }
 
-.simulado-card-aluno:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 30px var(--cor-sombra);
-    border-color: var(--cor-secundaria);
-}
-
-.simulado-icon-large {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.simulado-content {
-    width: 100%;
-    margin-bottom: 1.5rem;
-}
-
-.simulado-content h3 {
+.simulado-header h3 {
+    margin: 0;
     color: var(--cor-primaria);
-    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
 }
 
-.professor-info {
-    color: var(--cor-texto-claro);
-    margin-bottom: 1rem;
-}
-
-.simulado-stats {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin: 1.5rem 0;
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: var(--borda-radius-pequeno);
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.stat-icon {
-    font-size: 1.5rem;
-}
-
-.materias-tags {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.materia-tag {
-    display: inline-block;
+.badge {
     background: var(--cor-secundaria);
     color: white;
     padding: 0.35rem 0.85rem;
@@ -136,23 +91,60 @@
     font-weight: 600;
 }
 
-.simulado-actions {
-    width: 100%;
+.simulado-info p {
+    margin: 0.5rem 0;
+    color: var(--cor-texto-claro);
 }
 
-.btn-block {
-    width: 100%;
-    text-align: center;
+.questoes-preview {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: var(--borda-radius-pequeno);
+}
+
+.questoes-preview strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--cor-primaria);
+}
+
+.questoes-preview ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.questoes-preview li {
+    padding: 0.5rem 0;
+    color: var(--cor-texto);
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.questoes-preview li:last-child {
+    border-bottom: none;
+}
+
+.questoes-preview li.more-items {
+    color: var(--cor-secundaria);
+    font-weight: 600;
+}
+
+.simulado-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--cor-borda);
+}
+
+.btn-small {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
 }
 
 .empty-state {
     text-align: center;
-    padding: 4rem 2rem;
-}
-
-.empty-icon {
-    font-size: 5rem;
-    margin-bottom: 1rem;
+    padding: 3rem;
 }
 
 .empty-state h2 {
@@ -162,7 +154,7 @@
 
 .empty-state p {
     color: var(--cor-texto-claro);
-    margin: 0.5rem 0;
+    margin-bottom: 2rem;
 }
 
 @media (max-width: 768px) {
@@ -171,4 +163,3 @@
     }
 }
 </style>
-{% endblock %}

@@ -17,12 +17,12 @@
                 <span>Olá, {{ user.get_full_name|default:user.username }}</span>
                 <a href="{% url 'dashboard' %}">Início</a>
                 {% if user.professor %}
-                    <a href="{% url 'lista_turmas' %}">Minhas Turmas</a>
+                    <a href="{% url 'lista_turmas_professor' %}">Minhas Turmas</a>
                     <a href="{% url 'banco_questoes' %}">Banco de Questões</a>
                 {% elif user.aluno %}
                     <a href="{% url 'meu_feedback' %}">Meu Feedback</a>
                 {% elif user.is_superuser %}
-                    <a href="{% url 'admin_dashboard' %}">Painel Admin</a>
+                    <a href="/admin/">Painel Admin</a>
                 {% endif %}
                 <a href="{% url 'logout' %}">Sair</a>
             {% endif %}
@@ -30,6 +30,14 @@
     </header>
 
     <main class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
         {% block content %}
         {% endblock %}
     </main>

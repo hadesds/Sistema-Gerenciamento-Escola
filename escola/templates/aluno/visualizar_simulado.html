@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}Simulado - {{ simulado.turma_alvo.nome }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'meus_simulados' %}">&larr; Voltar aos Simulados</a>
+    
+    <div class="simulado-header-info card">
+        <div class="header-content">
+            <h1>Simulado - {{ simulado.turma_alvo.nome }}</h1>
+            <p><strong>Professor:</strong> {{ simulado.autor.user.get_full_name }}</p>
+            <div class="simulado-meta">
+                <span class="meta-item">📝 {{ questoes.count }} questões</span>
+                <span class="meta-item">⏱️ Tempo estimado: {% widthratio questoes.count 1 3 %} minutos</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="questoes-container">
+        {% for questao in questoes %}
+            <div class="card questao-item">
+                <div class="questao-header">
+                    <span class="questao-numero">Questão {{ forloop.counter }}</span>
+                    <span class="materia-badge">{{ questao.materia }}</span>
+                </div>
+                
+                <div class="questao-enunciado">
+                    <h3>Enunciado:</h3>
+                    <p>{{ questao.enunciado|linebreaks }}</p>
+                </div>
+
+                <div class="questao-resposta" id="resposta-{{ questao.id }}">
+                    <button onclick="toggleResposta({ questao })" class="btn btn-secondary btn-toggle">
+                        Ver Resposta 👁️ 
+                    </button>
+                    <div class="resposta-content" style="display: none;">
+                        <h4>Resposta:</h4>
+                        <p>{{ questao.resposta|linebreaks }}</p>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="card empty-state">
+                <p>Nenhuma questão foi adicionada a este simulado.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="simulado-footer card">
+        <div class="footer-info">
+            <p>✅ Você completou a visualização de todas as {{ questoes.count }} questões!</p>
+            <p>Continue praticando e bons estudos! 📚</p>
+        </div>
+        <a href="{% url 'meus_simulados' %}" class="btn btn-primary">Voltar aos Simulados</a>
+    </div>
+
+    <script>
+    function toggleResposta(questaoId) {
+        const respostaDiv = document.getElementById('resposta-' + questaoId);
+        const content = respostaDiv.querySelector('.resposta-content');
+        const button = respostaDiv.querySelector('.btn-toggle');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            button.textContent = 'Ocultar Resposta 🙈';
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-primary');
+        } else {
+            content.style.display = 'none';
+            button.textContent = 'Ver Resposta 👁️';
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-secondary');
+        }
+    }
+    </script>
+
+<style>
+.simulado-header-info {
+    background: linear-gradient(135deg, var(--cor-secundaria), var(--cor-terciaria));
+    color: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.header-content h1 {
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0.5rem 0;
+}
+
+.simulado-meta {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.meta-item {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.questoes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.questao-item {
+    border-left: 4px solid var(--cor-secundaria);
+}
+
+.questao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--cor-borda);
+}
+
+.questao-numero {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--cor-primaria);
+}
+
+.materia-badge {
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.questao-enunciado {
+    margin-bottom: 1.5rem;
+}
+
+.questao-enunciado h3 {
+    color: var(--cor-primaria);
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.questao-enunciado p {
+    color: var(--cor-texto);
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.questao-resposta {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: var(--borda-radius-pequeno);
+}
+
+.resposta-content {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--cor-borda);
+}
+
+.resposta-content h4 {
+    color: var(--cor-sucesso);
+    margin-bottom: 0.75rem;
+}
+
+.resposta-content p {
+    color: var(--cor-texto);
+    line-height: 1.6;
+}
+
+.btn-toggle {
+    transition: all 0.3s ease;
+}
+
+.simulado-footer {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    border-left: 4px solid var(--cor-sucesso);
+    text-align: center;
+}
+
+.footer-info p {
+    color: var(--cor-texto);
+    margin: 0.5rem 0;
+    font-size: 1.05rem;
+}
+
+.footer-info p:first-child {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.simulado-footer .btn {
+    margin-top: 1rem;
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--cor-texto-claro);
+    padding: 2rem;
+}
+
+@media (max-width: 768px) {
+    .simulado-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .questao-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

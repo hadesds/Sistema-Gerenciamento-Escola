@@ -1,21 +1,45 @@
 from django.urls import path
-from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
-    # Autenticação
+    # Rota principal (Dashboard)
     path('', views.dashboard, name='dashboard'),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+
+    # =====================
+    # URLs DO PROFESSOR
+    # =====================
+   
+    # Lista de turmas
+    path('turmas/', views.lista_turmas_professor, name='lista_turmas_professor'),
     
-    # Professor
-    path('professor/turmas/', views.lista_turmas, name='lista_turmas'),
-    path('professor/avaliar/<int:aluno_id>/', views.avaliar_aluno, name='avaliar_aluno'),
-    path('professor/banco-questoes/', views.banco_questoes, name='banco_questoes'),
+    # Carômetro (detalhes da turma)
+    path('turma/<int:turma_id>/', views.detalhe_turma_carometro, name='detalhe_turma_carometro'),
+
+    # Registrar avaliação
+    path('avaliar/<int:aluno_id>/', views.registrar_avaliacao, name='registrar_avaliacao'),
     
-    # Aluno
-    path('aluno/feedback/', views.meu_feedback, name='meu_feedback'),
+    # Banco de Questões
+    path('banco-questoes/', views.banco_questoes, name='banco_questoes'),
     
-    # Admin
-    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    # Criar Simulado
+    path('criar-simulado/', views.criar_simulado, name='criar_simulado'),
+    
+    # Lista de Simulados
+    path('simulados/', views.lista_simulados, name='lista_simulados'),
+    
+    # Relatório de Aluno
+    path('relatorio/<int:aluno_id>/', views.relatorio_aluno, name='relatorio_aluno'),
+
+    # =====================
+    # URLs DO ALUNO
+    # =====================
+   
+    # Feedback do aluno
+    path('meu-feedback/', views.meu_feedback, name='meu_feedback'),
+    
+    # Simulados do aluno
+    path('meus-simulados/', views.meus_simulados, name='meus_simulados'),
+    
+    # Visualizar simulado
+    path('simulado/<int:simulado_id>/', views.visualizar_simulado, name='visualizar_simulado'),
 ]

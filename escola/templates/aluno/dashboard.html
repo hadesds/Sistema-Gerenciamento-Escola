@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard do Aluno{% endblock %}
+
+{% block content %}
+<div class="dashboard-aluno">
+    <h1>Meu Painel</h1>
+    <p class="subtitle">Bem-vindo(a), <strong>{{ aluno.user.get_full_name }}</strong>!</p>
+
+    <!-- Perfil e Informações -->
+    <div class="perfil-card card">
+        <div class="perfil-header">
+            {% if aluno.foto %}
+                <img src="{{ aluno.foto.url }}" alt="{{ aluno.user.get_full_name }}" class="perfil-foto">
+            {% else %}
+                <div class="perfil-foto-placeholder">{{ aluno.user.first_name|first }}</div>
+            {% endif %}
+            <div class="perfil-info">
+                <h2>{{ aluno.user.get_full_name }}</h2>
+                <p><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
+                <p><strong>Total de Avaliações:</strong> {{ total_avaliacoes }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Desempenho -->
+    <div class="stats-grid">
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                <span>📊</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ media_geral|floatformat:2 }}</h3>
+                <p>Média Geral</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                <span>📈</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ medias.media_assiduidade|floatformat:2 }}</h3>
+                <p>Assiduidade</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                <span>🙋</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ medias.media_participacao|floatformat:2 }}</h3>
+                <p>Participação</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                <span>✅</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ medias.media_responsabilidade|floatformat:2 }}</h3>
+                <p>Responsabilidade</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <!-- Coluna Esquerda -->
+        <div class="dashboard-left">
+            <!-- Evolução do Desempenho -->
+            <div class="card">
+                <h2>Meu Desempenho</h2>
+                <div class="criterios-chart">
+                    <div class="criterio-item">
+                        <label>Assiduidade</label>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                        </div>
+                        <span class="criterio-value">{{ medias.media_assiduidade|floatformat:2 }}/5.0</span>
+                    </div>
+                    <div class="criterio-item">
+                        <label>Participação</label>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 60%; background: #db344d;"></div>
+                        </div>
+                        <span class="criterio-value">{{ medias.media_participacao|floatformat:2 }}/5.0</span>
+                    </div>
+                    <div class="criterio-item">
+                        <label>Responsabilidade</label>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 60%; background: #34db5b;"></div>
+                        </div>
+                        <span class="criterio-value">{{ medias.media_responsabilidade|floatformat:2 }}/5.0</span>
+                    </div>
+                    <div class="criterio-item">
+                        <label>Sociabilidade</label>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 60%; background: #cadb34;"></div>
+                        </div>
+                        <span class="criterio-value">{{ medias.media_sociabilidade|floatformat:2 }}/5.0</span>
+                    </div>
+                </div>
+
+                {% if evolucao != 0 %}
+                    <div class="evolucao-badge {% if evolucao > 0 %}positiva{% else %}negativa{% endif %}">
+                        {% if evolucao > 0 %}⬆{% else %}⬇{% endif %}
+                        {{ evolucao|floatformat:2 }} em relação à média
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Avaliações Recentes -->
+            <div class="card">
+                <h2>Minhas Últimas Avaliações</h2>
+                {% if avaliacoes_recentes %}
+                    <div class="avaliacoes-timeline">
+                        {% for avaliacao in avaliacoes_recentes %}
+                            <div class="timeline-item">
+                                <div class="timeline-date">
+                                    <span class="dia">{{ avaliacao.data|date:"d" }}</span>
+                                    <span class="mes">{{ avaliacao.data|date:"M" }}</span>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="avaliacao-header">
+                                        <strong>{{ avaliacao.professor.user.get_full_name }}</strong>
+                                        <span class="nota-badge {% if avaliacao.calcular_media >= 4 %}nota-alta{% elif avaliacao.calcular_media >= 3 %}nota-media{% else %}nota-baixa{% endif %}">
+                                            {{ avaliacao.calcular_media|floatformat:1 }}
+                                        </span>
+                                    </div>
+                                    <div class="criterios-mini">
+                                        <span>📌 {{ avaliacao.assiduidade }}</span>
+                                        <span>🙋 {{ avaliacao.participacao }}</span>
+                                        <span>✅ {{ avaliacao.responsabilidade }}</span>
+                                        <span>👥 {{ avaliacao.sociabilidade }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <a href="{% url 'meu_feedback' %}" class="btn btn-secondary" style="margin-top: 1rem;">Ver Todas as Avaliações</a>
+                {% else %}
+                    <p class="empty-state">Você ainda não recebeu avaliações.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="dashboard-right">
+            <!-- Simulados Disponíveis -->
+            <div class="card">
+                <h2>Simulados Disponíveis</h2>
+                {% if simulados %}
+                    <div class="simulados-list">
+                        {% for simulado in simulados %}
+                            <a href="{% url 'visualizar_simulado' simulado.id %}" class="simulado-card">
+                                <div class="simulado-icon">📝</div>
+                                <div class="simulado-info">
+                                    <strong>Simulado - {{ simulado.turma_alvo.nome }}</strong>
+                                    <small>Por: {{ simulado.autor.user.get_full_name }}</small>
+                                    <span class="questoes-count">{{ simulado.questoes.count }} questões</span>
+                                </div>
+                                <span class="arrow">→</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <a href="{% url 'meus_simulados' %}" class="btn btn-secondary" style="margin-top: 1rem;">Ver Todos os Simulados</a>
+                {% else %}
+                    <p class="empty-state">Nenhum simulado disponível no momento.</p>
+                {% endif %}
+            </div>
+
+            <!-- Dicas e Motivação -->
+            <div class="card motivacao-card">
+                <h2>💡 Dica do Dia</h2>
+                {% if media_geral >= 4 %}
+                    <p>Parabéns! Você está se saindo muito bem! Continue assim e inspire seus colegas! 🌟</p>
+                {% elif media_geral >= 3 %}
+                    <p>Você está no caminho certo! Mantenha o foco e a dedicação nos estudos! 📚</p>
+                {% else %}
+                    <p>Não desanime! Todo progresso começa com pequenos passos. Continue se esforçando! 💪</p>
+                {% endif %}
+            </div>
+
+            <!-- Estatísticas Rápidas -->
+            <div class="card">
+                <h2>Minha Jornada</h2>
+                <div class="jornada-stats">
+                    <div class="jornada-item">
+                        <span class="jornada-icon">📊</span>
+                        <div>
+                            <strong>{{ total_avaliacoes }}</strong>
+                            <small>Avaliações Recebidas</small>
+                        </div>
+                    </div>
+                    <div class="jornada-item">
+                        <span class="jornada-icon">🎯</span>
+                        <div>
+                            <strong>{{ media_geral|floatformat:1 }}/5.0</strong>
+                            <small>Média Geral</small>
+                        </div>
+                    </div>
+                    <div class="jornada-item">
+                        <span class="jornada-icon">📚</span>
+                        <div>
+                            <strong>{{ simulados.count }}</strong>
+                            <small>Simulados Disponíveis</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-aluno {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.subtitle {
+    color: var(--cor-texto-claro);
+    margin-bottom: 2rem;
+}
+
+.perfil-card {
+    margin-bottom: 2rem;
+}
+
+.perfil-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.perfil-foto, .perfil-foto-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--cor-secundaria);
+}
+
+.perfil-foto-placeholder {
+    background: var(--cor-secundaria);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+.perfil-info h2 {
+    margin: 0 0 0.5rem 0;
+    color: var(--cor-primaria);
+}
+
+.perfil-info p {
+    margin: 0.25rem 0;
+    color: var(--cor-texto-claro);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.stat-info h3 {
+    font-size: 2.5rem;
+    margin: 0;
+    color: var(--cor-primaria);
+}
+
+.stat-info p {
+    margin: 0;
+    color: var(--cor-texto-claro);
+    font-size: 0.9rem;
+}
+
+.dashboard-content {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2rem;
+}
+
+.criterios-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.criterio-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.criterio-item label {
+    font-weight: 600;
+    color: var(--cor-primaria);
+    font-size: 0.95rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: var(--cor-borda);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+    border-radius: 6px;
+}
+
+.criterio-value {
+    font-size: 0.9rem;
+    color: var(--cor-texto-claro);
+    font-weight: 600;
+}
+
+.evolucao-badge {
+    padding: 1rem;
+    border-radius: var(--borda-radius-pequeno);
+    text-align: center;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.evolucao-badge.positiva {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    color: #155724;
+}
+
+.evolucao-badge.negativa {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    color: #721c24;
+}
+
+.avaliacoes-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 1rem;
+}
+
+.timeline-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    min-width: 50px;
+}
+
+.timeline-date .dia {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.timeline-date .mes {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.timeline-content {
+    flex: 1;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: var(--borda-radius-pequeno);
+}
+
+.avaliacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.criterios-mini {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--cor-texto-claro);
+}
+
+.nota-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+}
+
+.nota-alta { background: #27ae60; }
+.nota-media { background: #f39c12; }
+.nota-baixa { background: #e74c3c; }
+
+.simulados-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.simulado-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--borda-radius-pequeno);
+    text-decoration: none;
+    color: var(--cor-texto);
+    transition: all 0.3s ease;
+}
+
+.simulado-card:hover {
+    background: var(--cor-fundo);
+    transform: translateX(4px);
+}
+
+.simulado-icon {
+    font-size: 2rem;
+}
+
+.simulado-info {
+    flex: 1;
+}
+
+.simulado-info strong {
+    display: block;
+    color: var(--cor-primaria);
+    margin-bottom: 0.25rem;
+}
+
+.simulado-info small {
+    display: block;
+    color: var(--cor-texto-claro);
+    font-size: 0.8rem;
+}
+
+.questoes-count {
+    display: inline-block;
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.simulado-card .arrow {
+    color: var(--cor-secundaria);
+    font-size: 1.2rem;
+}
+
+.motivacao-card {
+    background: linear-gradient(135deg, #fff5e6, #ffffff);
+    border-left: 4px solid #f39c12;
+}
+
+.motivacao-card p {
+    color: var(--cor-texto);
+    line-height: 1.6;
+}
+
+.jornada-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.jornada-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--borda-radius-pequeno);
+}
+
+.jornada-icon {
+    font-size: 2rem;
+}
+
+.jornada-item strong {
+    display: block;
+    font-size: 1.5rem;
+    color: var(--cor-primaria);
+}
+
+.jornada-item small {
+    display: block;
+    color: var(--cor-texto-claro);
+    font-size: 0.85rem;
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--cor-texto-claro);
+    padding: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .perfil-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

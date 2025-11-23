@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Criar Simulado{% endblock %}
+
+{% block content %}
+    <a href="{% url 'dashboard' %}">&larr; Voltar ao Dashboard</a>
+    <h1>Criar Novo Simulado</h1>
+
+    <div class="card">
+        <h2>Monte seu Simulado</h2>
+        <p>Selecione uma turma e as questões que farão parte do simulado.</p>
+
+        <form action="{% url 'criar_simulado' %}" method="POST" class="form-simulado">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="turma">Turma Destino *</label>
+                <select name="turma" id="turma" required>
+                    <option value="">Selecione uma turma...</option>
+                    {% for turma in turmas %}
+                        <option value="{{ turma.id }}">{{ turma.nome }} ({{ turma.alunos.count }} alunos)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Selecione as Questões *</label>
+                <p class="hint">Marque as questões que farão parte deste simulado</p>
+                
+                {% if questoes %}
+                    <div class="questoes-selection">
+                        {% for questao in questoes %}
+                            <div class="questao-checkbox-item">
+                                <input type="checkbox" name="questoes" value="{{ questao.id }}" id="questao-{{ questao.id }}">
+                                <label for="questao-{{ questao.id }}">
+                                    <div class="questao-preview">
+                                        <span class="materia-tag">{{ questao.materia }}</span>
+                                        <p class="questao-enunciado">{{ questao.enunciado|truncatewords:15 }}</p>
+                                    </div>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-submit">Criar Simulado</button>
+                        <a href="{% url 'banco_questoes' %}" class="btn btn-secondary">Cadastrar Mais Questões</a>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>Você ainda não cadastrou nenhuma questão.</p>
+                        <a href="{% url 'banco_questoes' %}" class="btn btn-primary">Cadastrar Questões</a>
+                    </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+<style>
+.form-simulado {
+    max-width: 900px;
+}
+
+.hint {
+    color: var(--cor-texto-claro);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.questoes-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.questao-checkbox-item {
+    position: relative;
+}
+
+.questao-checkbox-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.questao-checkbox-item label {
+    display: block;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 2px solid var(--cor-borda);
+    border-radius: var(--borda-radius-pequeno);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.questao-checkbox-item input[type="checkbox"]:checked + label {
+    background: linear-gradient(135deg, #e3f2fd, #ffffff);
+    border-color: var(--cor-secundaria);
+}
+
+.questao-checkbox-item label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--cor-sombra);
+}
+
+.materia-tag {
+    display: inline-block;
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.questao-enunciado {
+    margin: 0;
+    color: var(--cor-texto);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: #f8f9fa;
+    border-radius: var(--borda-radius);
+}
+
+@media (max-width: 768px) {
+    .questoes-selection {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>

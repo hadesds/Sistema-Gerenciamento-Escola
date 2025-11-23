@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard do Professor{% endblock %}
+
+{% block content %}
+<div class="dashboard-professor">
+    <h1>Dashboard do Professor</h1>
+    <p class="subtitle">Bem-vindo(a), <strong>{{ user.get_full_name }}</strong>!</p>
+
+    <!-- Cards de Estatísticas -->
+    <div class="stats-grid">
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                <span>👨‍🎓</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_alunos }}</h3>
+                <p>Total de Alunos</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                <span>📚</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_turmas }}</h3>
+                <p>Minhas Turmas</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                <span>❓</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_questoes }}</h3>
+                <p>Questões Cadastradas</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                <span>📝</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_simulados }}</h3>
+                <p>Simulados Criados</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="quick-actions card">
+        <h2>Ações Rápidas</h2>
+        <div class="actions-grid">
+            <a href="{% url 'lista_turmas_professor' %}" class="action-btn">
+                <span class="icon">👥</span>
+                <span>Ver Turmas</span>
+            </a>
+            <a href="{% url 'banco_questoes' %}" class="action-btn">
+                <span class="icon">📖</span>
+                <span>Banco de Questões</span>
+            </a>
+            <a href="{% url 'criar_simulado' %}" class="action-btn">
+                <span class="icon">✏️</span>
+                <span>Criar Simulado</span>
+            </a>
+            <a href="{% url 'lista_simulados' %}" class="action-btn">
+                <span class="icon">📋</span>
+                <span>Meus Simulados</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <!-- Coluna Esquerda -->
+        <div class="dashboard-left">
+            <!-- Desempenho por Turma -->
+            <div class="card">
+                <h2>Desempenho por Turma</h2>
+                {% if desempenho_turmas %}
+                    <div class="turmas-performance">
+                        {% for item in desempenho_turmas %}
+                            <div class="turma-item">
+                                <div class="turma-header">
+                                    <h3>{{ item.turma }}</h3>
+                                    <span class="badge">{{ item.total_alunos }} alunos</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 60%; background: #cddb34;"></div>
+                                <div class="turma-stats">
+                                    <span>Média: <strong>{{ item.media|floatformat:2 }}</strong></span>
+                                    <span>{{ item.total_avaliacoes }} avaliações</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">Nenhuma avaliação registrada ainda.</p>
+                {% endif %}
+            </div>
+
+            <!-- Avaliações Recentes -->
+            <div class="card">
+                <h2>Avaliações Recentes</h2>
+                {% if avaliacoes_recentes %}
+                    <div class="avaliacoes-list">
+                        {% for avaliacao in avaliacoes_recentes %}
+                            <div class="avaliacao-item">
+                                <div class="aluno-info-mini">
+                                    {% if avaliacao.aluno.foto %}
+                                        <img src="{{ avaliacao.aluno.foto.url }}" alt="{{ avaliacao.aluno.user.get_full_name }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder">{{ avaliacao.aluno.user.first_name|first }}</div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ avaliacao.aluno.user.get_full_name }}</strong>
+                                        <small>{{ avaliacao.aluno.turma.nome }}</small>
+                                    </div>
+                                </div>
+                                <div class="avaliacao-nota">
+                                    <span class="nota-badge {% if avaliacao.calcular_media >= 4 %}nota-alta{% elif avaliacao.calcular_media >= 3 %}nota-media{% else %}nota-baixa{% endif %}">
+                                        {{ avaliacao.calcular_media|floatformat:1 }}
+                                    </span>
+                                    <small>{{ avaliacao.data|date:"d/m/Y" }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">Nenhuma avaliação recente.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="dashboard-right">
+            <!-- Top 5 Alunos -->
+            <div class="card">
+                <h2>Top 5 Alunos</h2>
+                {% if top_alunos %}
+                    <div class="top-alunos-list">
+                        {% for item in top_alunos %}
+                            <div class="top-aluno-item">
+                                <div class="ranking-position">{{ forloop.counter }}</div>
+                                <div class="aluno-info-mini">
+                                    {% if item.aluno.foto %}
+                                        <img src="{{ item.aluno.foto.url }}" alt="{{ item.aluno.user.get_full_name }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder">{{ item.aluno.user.first_name|first }}</div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ item.aluno.user.get_full_name }}</strong>
+                                        <small>{{ item.turma }}</small>
+                                    </div>
+                                </div>
+                                <div class="aluno-media">
+                                    <span class="media-badge">{{ item.media_geral|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">Nenhuma avaliação registrada ainda.</p>
+                {% endif %}
+            </div>
+
+            <!-- Minhas Turmas -->
+            <div class="card">
+                <h2>Minhas Turmas</h2>
+                <div class="turmas-list-compact">
+                    {% for turma in turmas %}
+                        <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="turma-link">
+                            <div class="turma-badge">{{ turma.nome }}</div>
+                            <span>{{ turma.alunos.count }} alunos</span>
+                            <span class="arrow">→</span>
+                        </a>
+                    {% empty %}
+                        <p class="empty-state">Nenhuma turma associada.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-professor {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.subtitle {
+    color: var(--cor-texto-claro);
+    margin-bottom: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.stat-info h3 {
+    font-size: 2.5rem;
+    margin: 0;
+    color: var(--cor-primaria);
+}
+
+.stat-info p {
+    margin: 0;
+    color: var(--cor-texto-claro);
+    font-size: 0.9rem;
+}
+
+.quick-actions {
+    margin-bottom: 2rem;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #ecf0f1, #ffffff);
+    border-radius: var(--borda-radius);
+    text-decoration: none;
+    color: var(--cor-primaria);
+    transition: all 0.3s ease;
+    border: 2px solid var(--cor-borda);
+}
+
+.action-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px var(--cor-sombra);
+    border-color: var(--cor-secundaria);
+}
+
+.action-btn .icon {
+    font-size: 2rem;
+}
+
+.dashboard-content {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2rem;
+}
+
+.turmas-performance {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.turma-item {
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border-radius: var(--borda-radius-pequeno);
+    border-left: 4px solid var(--cor-secundaria);
+}
+
+.turma-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.turma-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.badge {
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--cor-borda);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.turma-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--cor-texto-claro);
+}
+
+.avaliacoes-list, .top-alunos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.avaliacao-item, .top-aluno-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--borda-radius-pequeno);
+}
+
+.aluno-info-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.aluno-info-mini img, .avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    background: var(--cor-secundaria);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.aluno-info-mini strong {
+    display: block;
+    color: var(--cor-primaria);
+    font-size: 0.95rem;
+}
+
+.aluno-info-mini small {
+    display: block;
+    color: var(--cor-texto-claro);
+    font-size: 0.8rem;
+}
+
+.nota-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+}
+
+.nota-alta { background: #27ae60; }
+.nota-media { background: #f39c12; }
+.nota-baixa { background: #e74c3c; }
+
+.ranking-position {
+    width: 30px;
+    height: 30px;
+    background: var(--cor-secundaria);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.media-badge {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.turmas-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.turma-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--borda-radius-pequeno);
+    text-decoration: none;
+    color: var(--cor-texto);
+    transition: all 0.3s ease;
+}
+
+.turma-link:hover {
+    background: var(--cor-fundo);
+    transform: translateX(4px);
+}
+
+.turma-badge {
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.turma-link .arrow {
+    margin-left: auto;
+    color: var(--cor-secundaria);
+    font-size: 1.2rem;
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--cor-texto-claro);
+    padding: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% block title %}Relatório - {{ aluno.user.get_full_name }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'detalhe_turma_carometro' aluno.turma.id %}">&larr; Voltar ao Carômetro</a>
+    
+    <div class="relatorio-header card">
+        <div class="aluno-perfil">
+            {% if aluno.foto %}
+                <img src="{{ aluno.foto.url }}" alt="{{ aluno.user.get_full_name }}" class="foto-grande">
+            {% else %}
+                <div class="foto-placeholder-grande">{{ aluno.user.first_name|first }}</div>
+            {% endif %}
+            <div class="aluno-info">
+                <h1>{{ aluno.user.get_full_name }}</h1>
+                <p><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
+                <p><strong>Email:</strong> {{ aluno.user.email|default:"Não informado" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="stats-grid">
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                <span>📊</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ media_geral|floatformat:2 }}</h3>
+                <p>Média Geral</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                <span>📈</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ medias.media_assiduidade|floatformat:2 }}</h3>
+                <p>Assiduidade</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                <span>🙋</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ medias.media_participacao|floatformat:2 }}</h3>
+                <p>Participação</p>
+            </div>
+        </div>
+
+        <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                <span>✅</span>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_avaliacoes }}</h3>
+                <p>Total de Avaliações</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Desempenho -->
+    <div class="card">
+        <h2>Desempenho por Critério</h2>
+        <div class="criterios-chart">
+            <div class="criterio-row">
+                <label>Assiduidade</label>
+                <div class="progress-bar-horizontal">
+                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                </div>
+                <span class="criterio-value">{{ medias.media_assiduidade|floatformat:2 }}/5.0</span>
+            </div>
+
+            <div class="criterio-row">
+                <label>Participação</label>
+                <div class="progress-bar-horizontal">
+                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                </div>
+                <span class="criterio-value">{{ medias.media_participacao|floatformat:2 }}/5.0</span>
+            </div>
+
+            <div class="criterio-row">
+                <label>Responsabilidade</label>
+                <div class="progress-bar-horizontal">
+                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                </div>
+                <span class="criterio-value">{{ medias.media_responsabilidade|floatformat:2 }}/5.0</span>
+            </div>
+
+            <div class="criterio-row">
+                <label>Sociabilidade</label>
+                <div class="progress-bar-horizontal">
+                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                </div>
+                <span class="criterio-value">{{ medias.media_sociabilidade|floatformat:2 }}/5.0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Avaliações -->
+    <div class="card">
+        <h2>Histórico de Avaliações</h2>
+        {% if avaliacoes %}
+            <div class="tabela-responsiva">
+                <table class="feedback-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Professor</th>
+                            <th>Assiduidade</th>
+                            <th>Participação</th>
+                            <th>Responsabilidade</th>
+                            <th>Sociabilidade</th>
+                            <th>Média</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for avaliacao in avaliacoes %}
+                            <tr>
+                                <td>{{ avaliacao.data|date:"d/m/Y" }}</td>
+                                <td>{{ avaliacao.professor.user.get_full_name }}</td>
+                                <td><span class="nota-pill">{{ avaliacao.assiduidade }}</span></td>
+                                <td><span class="nota-pill">{{ avaliacao.participacao }}</span></td>
+                                <td><span class="nota-pill">{{ avaliacao.responsabilidade }}</span></td>
+                                <td><span class="nota-pill">{{ avaliacao.sociabilidade }}</span></td>
+                                <td>
+                                    <span class="media-badge {% if avaliacao.calcular_media >= 4 %}alta{% elif avaliacao.calcular_media >= 3 %}media{% else %}baixa{% endif %}">
+                                        {{ avaliacao.calcular_media|floatformat:1 }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-state">Nenhuma avaliação registrada para este aluno.</p>
+        {% endif %}
+    </div>
+
+    <!-- Ações -->
+    <div class="relatorio-actions card">
+        <h3>Ações</h3>
+        <div class="actions-grid">
+            <a href="{% url 'registrar_avaliacao' aluno.pk %}" class="btn btn-primary">+ Nova Avaliação</a>
+            <a href="{% url 'detalhe_turma_carometro' aluno.turma.id %}" class="btn btn-secondary">Voltar ao Carômetro</a>
+            <button onclick="window.print()" class="btn btn-secondary">🖨️ Imprimir Relatório</button>
+        </div>
+    </div>
+{% endblock %}
+
+<style>
+.relatorio-header {
+    background: linear-gradient(135deg, var(--cor-primaria), var(--cor-terciaria));
+    color: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.aluno-perfil {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.foto-grande, .foto-placeholder-grande {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid white;
+}
+
+.foto-placeholder-grande {
+    background: white;
+    color: var(--cor-primaria);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 700;
+}
+
+.aluno-info h1 {
+    color: white;
+    margin: 0 0 0.5rem 0;
+}
+
+.aluno-info p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0.25rem 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.stat-info h3 {
+    font-size: 2.5rem;
+    margin: 0;
+    color: var(--cor-primaria);
+}
+
+.stat-info p {
+    margin: 0;
+    color: var(--cor-texto-claro);
+    font-size: 0.9rem;
+}
+
+.criterios-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 1rem 0;
+}
+
+.criterio-row {
+    display: grid;
+    grid-template-columns: 150px 1fr 100px;
+    align-items: center;
+    gap: 1rem;
+}
+
+.criterio-row label {
+    font-weight: 600;
+    color: var(--cor-primaria);
+}
+
+.progress-bar-horizontal {
+    height: 24px;
+    background: var(--cor-borda);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+    border-radius: 12px;
+}
+
+.criterio-value {
+    text-align: right;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+.tabela-responsiva {
+    overflow-x: auto;
+}
+
+.nota-pill {
+    display: inline-block;
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.media-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+}
+
+.media-badge.alta { background: #27ae60; }
+.media-badge.media { background: #f39c12; }
+.media-badge.baixa { background: #e74c3c; }
+
+.relatorio-actions h3 {
+    margin-bottom: 1rem;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--cor-texto-claro);
+    padding: 2rem;
+}
+
+@media print {
+    .navbar, a[href*="Voltar"], .relatorio-actions {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .aluno-perfil {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .criterio-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .criterio-value {
+        text-align: left;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

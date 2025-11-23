@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Meus Simulados{% endblock %}
+
+{% block content %}
+    <a href="{% url 'dashboard' %}">&larr; Voltar ao Dashboard</a>
+    <h1>Simulados Disponíveis</h1>
+    <p class="subtitle">Simulados criados para a turma <strong>{{ aluno.turma.nome }}</strong></p>
+
+    {% if simulados %}
+        <div class="simulados-grid">
+            {% for simulado in simulados %}
+                <div class="card simulado-card-aluno">
+                    <div class="simulado-icon-large">📝</div>
+                    
+                    <div class="simulado-content">
+                        <h3>Simulado - {{ simulado.turma_alvo.nome }}</h3>
+                        <p class="professor-info">
+                            <strong>Professor:</strong> {{ simulado.autor.user.get_full_name }}
+                        </p>
+                        
+                        <div class="simulado-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">❓</span>
+                                <span><strong>{{ simulado.questoes.count }}</strong> questões</span>
+                            </div>
+                        </div>
+
+                        <div class="materias-tags">
+                            {% for questao in simulado.questoes.all %}
+                                <span class="materia-tag">{{ questao.materia }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="simulado-actions">
+                        <a href="{% url 'visualizar_simulado' simulado.id %}" class="btn btn-primary btn-block">
+                            Fazer Simulado
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card empty-state">
+            <div class="empty-icon">📚</div>
+            <h2>Nenhum simulado disponível</h2>
+            <p>No momento não há simulados disponíveis para sua turma.</p>
+            <p>Aguarde os professores criarem novos simulados!</p>
+        </div>
+    {% endif %}
+{% endblock %}
+
+<style>
+.subtitle {
+    color: var(--cor-texto-claro);
+    margin-bottom: 2rem;
+}
+
+.simulados-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.simulado-card-aluno {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    border: 2px solid var(--cor-borda);
+}
+
+.simulado-card-aluno:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px var(--cor-sombra);
+    border-color: var(--cor-secundaria);
+}
+
+.simulado-icon-large {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.simulado-content {
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.simulado-content h3 {
+    color: var(--cor-primaria);
+    margin-bottom: 0.75rem;
+}
+
+.professor-info {
+    color: var(--cor-texto-claro);
+    margin-bottom: 1rem;
+}
+
+.simulado-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--borda-radius-pequeno);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+}
+
+.materias-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.materia-tag {
+    display: inline-block;
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.35rem 0.85rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.simulado-actions {
+    width: 100%;
+}
+
+.btn-block {
+    width: 100%;
+    text-align: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+    color: var(--cor-primaria);
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: var(--cor-texto-claro);
+    margin: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .simulados-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

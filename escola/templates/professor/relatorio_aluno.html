@@ -12,17 +12,16 @@
                 <div class="foto-placeholder-grande">{{ aluno.user.first_name|first }}</div>
             {% endif %}
             <div class="aluno-info">
-                <h1>{{ aluno.user.get_full_name }}</h1>
+                <h1>Relatório de {{ aluno.user.get_full_name }}</h1>
                 <p><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
-                <p><strong>Email:</strong> {{ aluno.user.email|default:"Não informado" }}</p>
+                <p><strong>Matrícula:</strong> {{ aluno.matricula|default:"N/A" }}</p>
             </div>
         </div>
     </div>
 
-    <!-- Cards de Estatísticas -->
     <div class="stats-grid">
         <div class="stat-card card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--color-secondary), var(--color-terciaria));">
                 <span>📊</span>
             </div>
             <div class="stat-info">
@@ -31,28 +30,28 @@
             </div>
         </div>
 
-        <div class="stat-card card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #27ae60, #229954);">
+    <div class="stat-card card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--color-success), #229954);">
                 <span>📈</span>
             </div>
             <div class="stat-info">
                 <h3>{{ medias.media_assiduidade|floatformat:2 }}</h3>
-                <p>Assiduidade</p>
+                <p>Média Assiduidade</p>
             </div>
         </div>
 
         <div class="stat-card card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--color-primary), #e67e22);">
                 <span>🙋</span>
             </div>
             <div class="stat-info">
                 <h3>{{ medias.media_participacao|floatformat:2 }}</h3>
-                <p>Participação</p>
+                <p>Média Participação</p>
             </div>
         </div>
 
         <div class="stat-card card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--color-danger), #c0392b);">
                 <span>✅</span>
             </div>
             <div class="stat-info">
@@ -62,14 +61,20 @@
         </div>
     </div>
 
-    <!-- Gráfico de Desempenho -->
     <div class="card">
         <h2>Desempenho por Critério</h2>
-        <div class="criterios-chart">
+        <p class="subtitle">Média dos critérios de avaliação (Max: 5.0)</p>
+        
+        <div class="criterios-chart" 
+             data-assiduidade="{{ medias.media_assiduidade|floatformat:2|default:'0' }}"
+             data-participacao="{{ medias.media_participacao|floatformat:2|default:'0' }}"
+             data-responsabilidade="{{ medias.media_responsabilidade|floatformat:2|default:'0' }}"
+             data-sociabilidade="{{ medias.media_sociabilidade|floatformat:2|default:'0' }}">
+
             <div class="criterio-row">
                 <label>Assiduidade</label>
                 <div class="progress-bar-horizontal">
-                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                    <div class="progress-fill" id="progress-assiduidade" style="width: 0%; background: var(--color-secondary);"></div>
                 </div>
                 <span class="criterio-value">{{ medias.media_assiduidade|floatformat:2 }}/5.0</span>
             </div>
@@ -77,7 +82,7 @@
             <div class="criterio-row">
                 <label>Participação</label>
                 <div class="progress-bar-horizontal">
-                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                    <div class="progress-fill" id="progress-participacao" style="width: 0%; background: var(--color-success);"></div>
                 </div>
                 <span class="criterio-value">{{ medias.media_participacao|floatformat:2 }}/5.0</span>
             </div>
@@ -85,7 +90,7 @@
             <div class="criterio-row">
                 <label>Responsabilidade</label>
                 <div class="progress-bar-horizontal">
-                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                    <div class="progress-fill" id="progress-responsabilidade" style="width: 0%; background: var(--color-primary);"></div>
                 </div>
                 <span class="criterio-value">{{ medias.media_responsabilidade|floatformat:2 }}/5.0</span>
             </div>
@@ -93,14 +98,13 @@
             <div class="criterio-row">
                 <label>Sociabilidade</label>
                 <div class="progress-bar-horizontal">
-                    <div class="progress-fill" style="width: 60%; background: #3498db;"></div>
+                    <div class="progress-fill" id="progress-sociabilidade" style="width: 0%; background: var(--color-danger);"></div>
                 </div>
                 <span class="criterio-value">{{ medias.media_sociabilidade|floatformat:2 }}/5.0</span>
             </div>
         </div>
     </div>
 
-    <!-- Histórico de Avaliações -->
     <div class="card">
         <h2>Histórico de Avaliações</h2>
         {% if avaliacoes %}
@@ -110,10 +114,10 @@
                         <tr>
                             <th>Data</th>
                             <th>Professor</th>
-                            <th>Assiduidade</th>
-                            <th>Participação</th>
-                            <th>Responsabilidade</th>
-                            <th>Sociabilidade</th>
+                            <th>Assiduidade (A)</th>
+                            <th>Participação (P)</th>
+                            <th>Responsabilidade (R)</th>
+                            <th>Sociabilidade (S)</th>
                             <th>Média</th>
                         </tr>
                     </thead>
@@ -141,20 +145,19 @@
         {% endif %}
     </div>
 
-    <!-- Ações -->
     <div class="relatorio-actions card">
-        <h3>Ações</h3>
+        <h3>Ações de Gestão</h3>
         <div class="actions-grid">
-            <a href="{% url 'registrar_avaliacao' aluno.pk %}" class="btn btn-primary">+ Nova Avaliação</a>
+            <a href="{% url 'detalhe_turma_carometro' aluno.turma.id %}" class="btn btn-primary">+ Nova Avaliação</a>
             <a href="{% url 'detalhe_turma_carometro' aluno.turma.id %}" class="btn btn-secondary">Voltar ao Carômetro</a>
             <button onclick="window.print()" class="btn btn-secondary">🖨️ Imprimir Relatório</button>
         </div>
     </div>
-{% endblock %}
 
 <style>
+
 .relatorio-header {
-    background: linear-gradient(135deg, var(--cor-primaria), var(--cor-terciaria));
+    background: linear-gradient(135deg, var(--color-primary), var(--color-terciaria)); /* Corrigido: --cor-primaria -> --color-primary */
     color: white;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -176,7 +179,7 @@
 
 .foto-placeholder-grande {
     background: white;
-    color: var(--cor-primaria);
+    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -221,12 +224,12 @@
 .stat-info h3 {
     font-size: 2.5rem;
     margin: 0;
-    color: var(--cor-primaria);
+    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
 }
 
 .stat-info p {
     margin: 0;
-    color: var(--cor-texto-claro);
+    color: var(--color-texto-claro); /* Corrigido: --cor-texto-claro -> --text-secondary */
     font-size: 0.9rem;
 }
 
@@ -246,12 +249,12 @@
 
 .criterio-row label {
     font-weight: 600;
-    color: var(--cor-primaria);
+    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
 }
 
 .progress-bar-horizontal {
     height: 24px;
-    background: var(--cor-borda);
+    background: var(--border-light); /* Corrigido: --cor-borda -> --border-light */
     border-radius: 12px;
     overflow: hidden;
 }
@@ -265,7 +268,7 @@
 .criterio-value {
     text-align: right;
     font-weight: 600;
-    color: var(--cor-texto);
+    color: var(--text-primary); /* Corrigido: --cor-texto -> --text-primary */
 }
 
 .tabela-responsiva {
@@ -273,8 +276,7 @@
 }
 
 .nota-pill {
-    display: inline-block;
-    background: var(--cor-secundaria);
+    background: var(--color-secondary); /* Corrigido: --cor-secundaria -> --color-secondary */
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
@@ -305,7 +307,7 @@
 
 .empty-state {
     text-align: center;
-    color: var(--cor-texto-claro);
+    color: var(--text-secondary); /* Corrigido: --cor-texto-claro -> --text-secondary */
     padding: 2rem;
 }
 
@@ -335,4 +337,49 @@
     }
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const chart = document.querySelector('.criterios-chart');
+    if (!chart) return;
+
+    // 1. Ler os valores de média dos data-atributos
+    const mediaData = {
+        assiduidade: parseFloat(chart.dataset.assiduidade) || 0,
+        participacao: parseFloat(chart.dataset.participacao) || 0,
+        responsabilidade: parseFloat(chart.dataset.responsabilidade) || 0,
+        sociabilidade: parseFloat(chart.dataset.sociabilidade) || 0
+    };
+    
+    const maxScore = 5.0;
+
+    /**
+     * Calcula a porcentagem e aplica a largura do CSS.
+     * @param {string} id - O ID do elemento progress-fill (ex: 'progress-assiduidade').
+     * @param {number} media - O valor da média (0 a 5).
+     */
+    function setProgressBar(id, media) {
+        const element = document.getElementById(id);
+        if (element) {
+            // Cálculo da porcentagem: (media / 5.0) * 100
+            let percentage = (media / maxScore) * 100;
+            
+            // Garante que o valor esteja entre 0 e 100
+            if (percentage < 0) percentage = 0;
+            if (percentage > 100) percentage = 100;
+
+            // Define a largura do estilo CSS como string pura
+            element.style.width = percentage.toFixed(0) + '%';
+        }
+    }
+
+    // 2. Aplicar a largura para cada critério
+    setProgressBar('progress-assiduidade', mediaData.assiduidade);
+    setProgressBar('progress-participacao', mediaData.participacao);
+    setProgressBar('progress-responsabilidade', mediaData.responsabilidade);
+    setProgressBar('progress-sociabilidade', mediaData.sociabilidade);
+});
+</script>
 {% endblock %}

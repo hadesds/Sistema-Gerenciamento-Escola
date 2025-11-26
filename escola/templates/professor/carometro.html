@@ -3,21 +3,20 @@
 {% block title %}Carômetro - {{ turma.nome }}{% endblock %}
 
 {% block content %}
-    <a href="{% url 'lista_turmas_professor' %}">&larr; Voltar para minhas turmas</a>
+    <a href="{% url 'lista_turmas' %}">&larr; Voltar para Minhas Turmas</a>
     
     <div class="carometro-header card">
         <div class="header-content">
             <h1>Carômetro - {{ turma.nome }}</h1>
-            <p>Identifique os alunos e registre o desempenho do dia</p>
+            <p>Identifique os alunos e registre o desempenho diário de cada um.</p>
             <div class="turma-stats">
                 <span class="stat-badge">👨‍🎓 {{ alunos_info|length }} alunos</span>
             </div>
         </div>
     </div>
 
-    <!-- Barra de Busca -->
     <div class="card busca-container">
-        <form method="GET" action="" class="busca-form">
+        <form method="GET" action="{% url 'detalhe_turma_carometro' turma.id %}" class="busca-form">
             <input type="text" 
                    name="busca" 
                    value="{{ busca }}" 
@@ -25,15 +24,14 @@
                    class="busca-input">
             <button type="submit" class="btn btn-primary">Buscar</button>
             {% if busca %}
-                <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-secondary">Limpar</a>
+                <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-secondary">Limpar Busca</a>
             {% endif %}
         </form>
     </div>
 
-    <!-- Grid de Alunos -->
     <div class="carometro-grid">
         {% for item in alunos_info %}
-            <div class="aluno-card">
+            <div class="aluno-card card">
                 <div class="aluno-foto-container">
                     {% if item.aluno.foto %}
                         <img src="{{ item.aluno.foto.url }}" alt="Foto de {{ item.aluno.user.get_full_name }}">
@@ -61,7 +59,6 @@
                 
                 <hr>
                 
-                <!-- Formulário de Avaliação -->
                 <form action="{% url 'registrar_avaliacao' item.aluno.pk %}" method="POST" class="form-avaliacao">
                     {% csrf_token %}
                     <p class="form-titulo">Avaliar desempenho (1-5):</p>
@@ -121,7 +118,7 @@
                     </div>
                     
                     <div class="card-actions">
-                        <button type="submit" class="btn btn-submit">Lançar Avaliação</button>
+                        <button type="submit" class="btn btn-primary btn-submit">Lançar Avaliação</button>
                         <a href="{% url 'relatorio_aluno' item.aluno.pk %}" class="btn btn-secondary btn-small">Ver Relatório</a>
                     </div>
                 </form>
@@ -129,15 +126,14 @@
         {% empty %}
             <div class="card empty-state">
                 {% if busca %}
-                    <p>Nenhum aluno encontrado com o termo "{{ busca }}".</p>
-                    <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-primary">Ver Todos</a>
+                    <p>Nenhum aluno encontrado com o termo **"{{ busca }}"**.</p>
+                    <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-primary">Ver Todos os Alunos</a>
                 {% else %}
                     <p>Nenhum aluno cadastrado nesta turma.</p>
                 {% endif %}
             </div>
         {% endfor %}
     </div>
-{% endblock %}
 
 <style>
 .carometro-header {

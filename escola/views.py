@@ -33,12 +33,20 @@ def dashboard(request):
     Dashboard unificado que mostra informações relevantes
     baseado no tipo de usuário (Professor, Aluno ou Admin)
     """
-    if hasattr(request.user, 'professor'):
+    # 1. VERIFICAÇÃO PRINCIPAL: Superuser (Admin) deve ter prioridade máxima
+    if request.user.is_superuser:
+        # Redireciona para o painel de administração principal do Django
+        return redirect('/admin/') 
+    
+    # 2. VERIFICAÇÃO SECUNDÁRIA: Professor
+    elif hasattr(request.user, 'professor'):
         return dashboard_professor(request)
+        
+    # 3. VERIFICAÇÃO TERCIÁRIA: Aluno
     elif hasattr(request.user, 'aluno'):
         return dashboard_aluno(request)
-    elif request.user.is_superuser:
-        return redirect('/admin/')
+        
+    # 4. CASO DE ERRO
     else:
         messages.error(request, 'Login bem-sucedido, mas seu usuário não está vinculado a um perfil (Aluno ou Professor). Contate o administrador.')
         logout(request)
@@ -393,6 +401,9 @@ def relatorio_aluno(request, aluno_id):
     aluno = get_object_or_404(Aluno, pk=aluno_id)
     avaliacoes = Avaliacao.objects.filter(aluno=aluno).order_by('-data')
     
+# Definindo a pontuação máxima
+    MAX_SCORE = 5.0
+    
     if avaliacoes.exists():
         medias = avaliacoes.aggregate(
             media_assiduidade=Avg('assiduidade'),
@@ -402,8 +413,25 @@ def relatorio_aluno(request, aluno_id):
         )
         media_geral = sum(medias.values()) / 4
     else:
-        medias = {}
+        medias = {
+            'media_assiduidade': 0,
+            'media_participacao': 0,
+            'media_responsabilidade': 0,
+            'media_sociabilidade': 0
+        }
         media_geral = 0
+
+    def calculate_percent(value, max_val):
+        if value and max_val > 0:
+            # Arredonda a porcentagem para o número inteiro mais próximo
+            return f"{round((value / max_val) * 100)}%"
+        return "0%"
+
+    # Cálculo das porcentagens para o progress bar
+    medias['assiduidade_percentual'] = calculate_percent(medias['media_assiduidade'], MAX_SCORE)
+    medias['participacao_percentual'] = calculate_percent(medias['media_participacao'], MAX_SCORE)
+    medias['responsabilidade_percentual'] = calculate_percent(medias['media_responsabilidade'], MAX_SCORE)
+    medias['sociabilidade_percentual'] = calculate_percent(medias['media_sociabilidade'], MAX_SCORE)
     
     context = {
         'aluno': aluno,

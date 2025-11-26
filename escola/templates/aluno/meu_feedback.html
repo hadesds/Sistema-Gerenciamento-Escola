@@ -4,43 +4,182 @@
 {% block content %}
 <div class="page-header">
     <h1>Meu Feedback</h1>
-    <p>Histórico de avaliações</p>
+    <p class="subtitle">Histórico de avaliações de desempenho.</p>
 </div>
 
 <div class="feedback-container">
-    <div class="card">
+    <div class="card card-media-geral">
         <h3>Desempenho Geral</h3>
         <div class="estatisticas">
             <div class="estatistica">
-                <span class="valor">{{ media_geral|default:"0" }}</span>
-                <span class="label">Média Geral</span>
+                <span class="valor media-geral-valor">{{ media_geral|floatformat:2|default:"0.00" }}</span>
+                <span class="label">Média Geral (Max: 5.0)</span>
             </div>
             <div class="estatistica">
-                <span class="valor">{{ total_avaliacoes }}</span>
-                <span class="label">Avaliações</span>
+                <span class="valor">{{ avaliacoes.count }}</span>
+                <span class="label">Avaliações Recebidas</span>
             </div>
         </div>
     </div>
 
-    <div class="card">
-        <h3>Histórico de Avaliações</h3>
+    <div class="card card-historico">
+        <h2>Histórico de Avaliações</h2>
+        {% if avaliacoes %}
         <div class="avaliacoes-list">
             {% for avaliacao in avaliacoes %}
-            <div class="avaliacao-item">
-                <div class="data">{{ avaliacao.data|date:"d/m/Y" }}</div>
-                <div class="professor">Prof. {{ avaliacao.professor.user.get_full_name }}</div>
-                <div class="notas">
-                    <span>A: {{ avaliacao.assiduidade }}</span>
-                    <span>P: {{ avaliacao.participacao }}</span>
-                    <span>R: {{ avaliacao.responsabilidade }}</span>
-                    <span>S: {{ avaliacao.sociabilidade }}</span>
+            <div class="avaliacao-item card">
+                <div class="data-professor">
+                    <div class="data">{{ avaliacao.data|date:"d/m/Y" }}</div>
+                    <div class="professor">Prof. **{{ avaliacao.professor.user.get_full_name }}**</div>
                 </div>
-                <div class="media">{{ avaliacao.calcular_media }}</div>
+                <div class="notas">
+                    <span>📌 A: **{{ avaliacao.assiduidade }}**</span>
+                    <span>🙋 P: **{{ avaliacao.participacao }}**</span>
+                    <span>✅ R: **{{ avaliacao.responsabilidade }}**</span>
+                    <span>👥 S: **{{ avaliacao.sociabilidade }}**</span>
+                </div>
+                <div class="media">
+                    <span class="media-badge {% if avaliacao.calcular_media >= 4 %}alta{% elif avaliacao.calcular_media >= 3 %}media{% else %}baixa{% endif %}">
+                        {{ avaliacao.calcular_media|floatformat:1 }}
+                    </span>
+                </div>
             </div>
-            {% empty %}
-            <p>Nenhuma avaliação registrada.</p>
             {% endfor %}
         </div>
+        {% else %}
+        <p class="empty-state">Nenhuma avaliação registrada.</p>
+        {% endif %}
     </div>
 </div>
+
+<style>
+.feedback-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.card-media-geral {
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-terciaria)); /* Corrigido: --cor-secundaria -> --color-secondary */
+    color: white;
+    padding: 2.5rem;
+    text-align: center;
+}
+
+.card-media-geral h3 {
+    color: white;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.estatisticas {
+    display: flex;
+    justify-content: space-around;
+    gap: 1.5rem;
+}
+
+.estatistica {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.media-geral-valor {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.estatistica .valor {
+    font-size: 3rem;
+    font-weight: 700;
+}
+
+.estatistica .label {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.card-historico h2 {
+    margin-bottom: 1.5rem;
+    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
+}
+
+.avaliacoes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.avaliacao-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border: 1px solid var(--border-light); /* Corrigido: --cor-borda -> --border-light */
+    border-left: 4px solid var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
+}
+
+.data-professor {
+    min-width: 150px;
+}
+
+.data {
+    font-weight: 600;
+    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
+    font-size: 1.1rem;
+}
+
+.professor {
+    font-size: 0.9rem;
+    color: var(--text-secondary); /* Corrigido: --cor-texto-claro -> --text-secondary */
+    margin-top: 0.25rem;
+}
+
+.notas {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.95rem;
+    flex: 1;
+    justify-content: flex-start;
+    color: var(--text-primary); /* Corrigido: --cor-texto -> --text-primary */
+}
+
+.notas span strong {
+    font-weight: 700;
+    color: var(--color-secondary); /* Corrigido: --cor-secundaria -> --color-secondary */
+}
+
+.media-badge {
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+    font-size: 1.1rem;
+}
+
+.media-badge.alta { background: #27ae60; }
+.media-badge.media { background: #f39c12; }
+.media-badge.baixa { background: #e74c3c; }
+
+@media (max-width: 992px) {
+    .avaliacao-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .data-professor {
+        min-width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .notas {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 100%;
+    }
+}
+</style>
 {% endblock %}

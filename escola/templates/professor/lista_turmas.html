@@ -4,20 +4,26 @@
 {% block content %}
 <div class="page-header">
     <h1>Minhas Turmas</h1>
-    <p>Selecione uma turma para gerenciar os alunos</p>
+    <p class="subtitle">Selecione uma turma para gerenciar os alunos no carômetro.</p>
 </div>
 
 <div class="turmas-grid">
-    {% for turma in turmas %}
-    <div class="turma-card">
+    {% for item in turmas_info %}
+    {% with turma=item.turma %}
+    <div class="turma-card card">
         <div class="turma-header">
             <h3>{{ turma.nome }}</h3>
-            <span class="badge">{{ turma.alunos.count }} alunos</span>
+            <span class="badge">{{ item.total_alunos }} alunos</span>
         </div>
         
         <div class="turma-info">
-            <p><strong>Série:</strong> {{ turma.serie }}</p>
-            <p><strong>Turno:</strong> {{ turma.turno }}</p>
+            <p><strong>Série:</strong> {{ turma.serie|default:"N/A" }}</p>
+            <p><strong>Turno:</strong> {{ turma.get_turno_display }}</p>
+            <p><strong>Média Turma (A):</strong> 
+                <strong class="media-score {% if item.media_turma >= 4 %}alta{% elif item.media_turma >= 3 %}media{% else %}baixa{% endif %}">
+                    {{ item.media_turma|floatformat:1 }}
+                </strong>
+            </p>
         </div>
 
         <div class="alunos-preview">
@@ -36,56 +42,139 @@
         </div>
 
         <div class="turma-actions">
-            <button class="btn btn-primary ver-alunos" data-turma="{{ turma.id }}">
-                Ver Alunos
-            </button>
-        </div>
-
-        <!-- Lista de Alunos (expandível) -->
-        <div class="alunos-list" id="alunos-{{ turma.id }}">
-            {% for aluno in turma.alunos.all %}
-            <div class="aluno-item">
-                <div class="aluno-foto">
-                    {% if aluno.foto %}
-                        <img src="{{ aluno.foto.url }}" alt="{{ aluno.user.get_full_name }}">
-                    {% else %}
-                        <div class="avatar">{{ aluno.user.first_name|first }}</div>
-                    {% endif %}
-                </div>
-                <div class="aluno-info">
-                    <strong>{{ aluno.user.get_full_name }}</strong>
-                    <span>Matrícula: {{ aluno.matricula }}</span>
-                </div>
-                <div class="avaliacao-form">
-                    <form method="post" action="{% url 'avaliar_aluno' aluno.id %}">
-                        {% csrf_token %}
-                        <input type="number" name="assiduidade" min="1" max="5" placeholder="A" title="Assiduidade">
-                        <input type="number" name="participacao" min="1" max="5" placeholder="P" title="Participação">
-                        <input type="number" name="responsabilidade" min="1" max="5" placeholder="R" title="Responsabilidade">
-                        <input type="number" name="sociabilidade" min="1" max="5" placeholder="S" title="Sociabilidade">
-                        <button type="submit" class="btn btn-small">✓</button>
-                    </form>
-                </div>
-            </div>
-            {% endfor %}
+            <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-primary btn-block">
+                Ver Carômetro e Avaliar
+            </a>
         </div>
     </div>
+    {% endwith %}
     {% empty %}
-    <div class="empty-state">
-        <p>Nenhuma turma encontrada.</p>
+    <div class="empty-state card">
+        <div class="empty-icon">📚</div>
+        <p>Você ainda não está associado a nenhuma turma.</p>
+        <small>Contate o administrador para ser associado a uma turma.</small>
     </div>
     {% endfor %}
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-document.querySelectorAll('.ver-alunos').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const turmaId = this.getAttribute('data-turma');
-        const alunosList = document.getElementById(`alunos-${turmaId}`);
-        alunosList.style.display = alunosList.style.display === 'none' ? 'block' : 'none';
-    });
-});
-</script>
+<style>
+.turmas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.turma-card {
+    display: flex;
+    flex-direction: column;
+    border-left: 4px solid var(--cor-secundaria);
+    transition: all 0.3s ease;
+}
+
+.turma-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px var(--cor-sombra);
+    border-color: var(--cor-primaria);
+}
+
+.turma-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.turma-header h3 {
+    margin: 0;
+    color: var(--cor-primaria);
+}
+
+.badge {
+    background: var(--cor-secundaria);
+    color: white;
+    padding: 0.35rem 0.85rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.turma-info {
+    margin-bottom: 1.5rem;
+}
+
+.turma-info p {
+    margin: 0.5rem 0;
+    color: var(--cor-texto);
+}
+
+.media-score.alta { color: #27ae60; }
+.media-score.media { color: #f39c12; }
+.media-score.baixa { color: #e74c3c; }
+
+.alunos-preview {
+    display: flex;
+    margin-bottom: 2rem;
+}
+
+.aluno-mini {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: -10px; /* Sobrepor */
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px var(--cor-borda);
+}
+
+.aluno-mini img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.aluno-mini .avatar {
+    width: 100%;
+    height: 100%;
+    background: var(--cor-texto-claro);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.aluno-mini.more {
+    background: #ccc;
+    color: var(--cor-texto);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.turma-actions {
+    margin-top: auto; /* Empurra o botão para baixo */
+}
+
+.btn-block {
+    width: 100%;
+    text-align: center;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state .empty-icon {
+    font-size: 4rem;
+    color: var(--cor-secundaria);
+    margin-bottom: 1rem;
+}
+</style>
 {% endblock %}

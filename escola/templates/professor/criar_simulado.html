@@ -7,7 +7,7 @@
 
     <div class="card">
         <h2>Monte seu Simulado</h2>
-        <p>Selecione uma turma e as questões que farão parte do simulado.</p>
+        <p class="subtitle">Selecione uma turma e as questões que farão parte do simulado.</p>
 
         <form action="{% url 'criar_simulado' %}" method="POST" class="form-simulado">
             {% csrf_token %}
@@ -42,11 +42,12 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-submit">Criar Simulado</button>
-                        <a href="{% url 'banco_questoes' %}" class="btn btn-secondary">Cadastrar Mais Questões</a>
+                        <button type="submit" class="btn btn-primary btn-large">Criar Simulado</button>
+                        <a href="{% url 'banco_questoes' %}" class="btn btn-secondary btn-large">Cadastrar Mais Questões</a>
                     </div>
                 {% else %}
                     <div class="empty-state">
+                        <div class="empty-icon">❓</div>
                         <p>Você ainda não cadastrou nenhuma questão.</p>
                         <a href="{% url 'banco_questoes' %}" class="btn btn-primary">Cadastrar Questões</a>
                     </div>
@@ -54,11 +55,18 @@
             </div>
         </form>
     </div>
-{% endblock %}
 
 <style>
 .form-simulado {
-    max-width: 900px;
+    max-width: 100%;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--borda-radius-pequeno);
+    font-size: 1rem;
 }
 
 .hint {
@@ -96,6 +104,7 @@
 .questao-checkbox-item input[type="checkbox"]:checked + label {
     background: linear-gradient(135deg, #e3f2fd, #ffffff);
     border-color: var(--cor-secundaria);
+    box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
 }
 
 .questao-checkbox-item label:hover {
@@ -127,11 +136,23 @@
     margin-top: 2rem;
 }
 
+.btn-large {
+    flex: 1;
+    padding: 1.5rem;
+    font-size: 1.1rem;
+}
+
 .empty-state {
     text-align: center;
     padding: 3rem 1rem;
     background: #f8f9fa;
     border-radius: var(--borda-radius);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    color: var(--cor-primaria);
+    margin-bottom: 1rem;
 }
 
 @media (max-width: 768px) {
@@ -144,3 +165,4 @@
     }
 }
 </style>
+{% endblock %}

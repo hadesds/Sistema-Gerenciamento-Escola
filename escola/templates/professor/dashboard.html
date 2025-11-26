@@ -1,17 +1,32 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Dashboard do Professor{% endblock %}
+{% block title %}Dashboard do Professor - CARA{% endblock %}
 
 {% block content %}
-<div class="dashboard-professor">
-    <h1>Dashboard do Professor</h1>
-    <p class="subtitle">Bem-vindo(a), <strong>{{ user.get_full_name }}</strong>!</p>
+<div class="dashboard-professor fade-in">
+    <div class="card" style="background: linear-gradient(135deg, var(--color-primary), #f5a623); color: white; margin-bottom: 3rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="color: white; margin-bottom: 0.5rem;">Dashboard do Professor</h1>
+                <p style="color: rgba(255,255,255,0.9); font-size: 1.6rem; margin: 0;">
+                    Bem-vindo(a), <strong>{{ user.get_full_name }}</strong>! 👋
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 1.4rem;">
+                    {{ "now"|date:"l, d \d\e F \d\e Y" }}
+                </p>
+                <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 1.8rem; font-weight: 600;">
+                    {{ "now"|date:"H:i" }}
+                </p>
+            </div>
+        </div>
+    </div>
 
-    <!-- Cards de Estatísticas -->
     <div class="stats-grid">
-        <div class="stat-card card">
+        <div class="stat-card">
             <div class="stat-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
-                <span>👨‍🎓</span>
+                <span class="material-icons-outlined">groups</span>
             </div>
             <div class="stat-info">
                 <h3>{{ total_alunos }}</h3>
@@ -19,9 +34,9 @@
             </div>
         </div>
 
-        <div class="stat-card card">
+        <div class="stat-card">
             <div class="stat-icon" style="background: linear-gradient(135deg, #27ae60, #229954);">
-                <span>📚</span>
+                <span class="material-icons-outlined">class</span>
             </div>
             <div class="stat-info">
                 <h3>{{ total_turmas }}</h3>
@@ -29,19 +44,19 @@
             </div>
         </div>
 
-        <div class="stat-card card">
+        <div class="stat-card">
             <div class="stat-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
-                <span>❓</span>
+                <span class="material-icons-outlined">quiz</span>
             </div>
             <div class="stat-info">
                 <h3>{{ total_questoes }}</h3>
-                <p>Questões Cadastradas</p>
+                <p>Questões no Banco</p>
             </div>
         </div>
 
-        <div class="stat-card card">
+        <div class="stat-card">
             <div class="stat-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
-                <span>📝</span>
+                <span class="material-icons-outlined">assignment</span>
             </div>
             <div class="stat-info">
                 <h3>{{ total_simulados }}</h3>
@@ -50,420 +65,243 @@
         </div>
     </div>
 
-    <!-- Ações Rápidas -->
-    <div class="quick-actions card">
-        <h2>Ações Rápidas</h2>
-        <div class="actions-grid">
-            <a href="{% url 'lista_turmas' %}" class="action-btn">
-                <span class="icon">👥</span>
+    <div class="card">
+        <h2 style="margin-bottom: 2rem;">
+            <span class="material-icons-outlined" style="vertical-align: middle; margin-right: 0.5rem;">bolt</span>
+            Ações Rápidas
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            <a href="{% url 'lista_turmas' %}" class="btn btn-primary" style="padding: 2rem; text-align: center; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+                <span class="material-icons-outlined" style="font-size: 3rem;">groups</span>
                 <span>Ver Turmas</span>
             </a>
-            <a href="{% url 'banco_questoes' %}" class="action-btn">
-                <span class="icon">📖</span>
+            <a href="{% url 'banco_questoes' %}" class="btn btn-primary" style="padding: 2rem; text-align: center; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+                <span class="material-icons-outlined" style="font-size: 3rem;">library_books</span>
                 <span>Banco de Questões</span>
             </a>
-            <a href="{% url 'criar_simulado' %}" class="action-btn">
-                <span class="icon">✏️</span>
+            <a href="{% url 'criar_simulado' %}" class="btn btn-primary" style="padding: 2rem; text-align: center; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+                <span class="material-icons-outlined" style="font-size: 3rem;">edit_note</span>
                 <span>Criar Simulado</span>
             </a>
-            <a href="{% url 'lista_simulados' %}" class="action-btn">
-                <span class="icon">📋</span>
+            <a href="{% url 'lista_simulados' %}" class="btn btn-primary" style="padding: 2rem; text-align: center; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+                <span class="material-icons-outlined" style="font-size: 3rem;">folder_special</span>
                 <span>Meus Simulados</span>
             </a>
         </div>
     </div>
 
-    <div class="dashboard-content">
-        <!-- Coluna Esquerda -->
-        <div class="dashboard-left">
-            <!-- Desempenho por Turma -->
+    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; margin-top: 2rem;">
+        
+        <div>
             <div class="card">
-                <h2>Desempenho por Turma</h2>
+                <h2 style="margin-bottom: 2rem;">
+                    <span class="material-icons-outlined" style="vertical-align: middle; margin-right: 0.5rem;">trending_up</span>
+                    Desempenho por Turma
+                </h2>
+                
                 {% if desempenho_turmas %}
-                    <div class="turmas-performance">
+                    <div style="display: flex; flex-direction: column; gap: 2rem;">
                         {% for item in desempenho_turmas %}
-                            <div class="turma-item">
-                                <div class="turma-header">
-                                    <h3>{{ item.turma }}</h3>
+                            <div class="js-turma-item" 
+                                 data-media="{{ item.media|default:'0' }}"
+                                 style="padding: 1.5rem; background: white; border-radius: 1.2rem; border-left: 4px solid var(--color-secondary);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                    <h3 style="margin: 0; font-size: 1.8rem;">{{ item.turma }}</h3>
                                     <span class="badge">{{ item.total_alunos }} alunos</span>
                                 </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: 60%; background: #cddb34;"></div>
-                                <div class="turma-stats">
-                                    <span>Média: <strong>{{ item.media|floatformat:2 }}</strong></span>
-                                    <span>{{ item.total_avaliacoes }} avaliações</span>
+                                
+                                <div class="progress-bar" style="height: 1.5rem; margin-bottom: 1rem; background-color: #eee; border-radius: 0.75rem; overflow: hidden;">
+                                    <div class="progress-fill js-turma-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-secondary)); border-radius: 0.75rem 0 0 0.75rem;"></div>
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between; font-size: 1.4rem; color: var(--text-secondary);">
+                                    <span>Média: <strong style="color: var(--text-primary);">{{ item.media|floatformat:1 }}</strong></span>
+                                    <span><strong>{{ item.total_avaliacoes }}</strong> avaliações</span>
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="empty-state">Nenhuma avaliação registrada ainda.</p>
+                    <div class="empty-state">
+                        <div class="empty-icon">📊</div>
+                        <p>Nenhuma avaliação registrada ainda.</p>
+                        <p>Comece avaliando seus alunos!</p>
+                    </div>
                 {% endif %}
             </div>
 
-            <!-- Avaliações Recentes -->
-            <div class="card">
-                <h2>Avaliações Recentes</h2>
+            <div class="card" style="margin-top: 2rem;">
+                <h2 style="margin-bottom: 2rem;">
+                    <span class="material-icons-outlined" style="vertical-align: middle; margin-right: 0.5rem;">history</span>
+                    Avaliações Recentes
+                </h2>
+                
                 {% if avaliacoes_recentes %}
-                    <div class="avaliacoes-list">
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                         {% for avaliacao in avaliacoes_recentes %}
-                            <div class="avaliacao-item">
-                                <div class="aluno-info-mini">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: white; border-radius: 1.2rem;">
+                                <div style="display: flex; align-items: center; gap: 1.5rem;">
                                     {% if avaliacao.aluno.foto %}
-                                        <img src="{{ avaliacao.aluno.foto.url }}" alt="{{ avaliacao.aluno.user.get_full_name }}">
+                                        <img src="{{ avaliacao.aluno.foto.url }}" alt="{{ avaliacao.aluno.user.get_full_name }}" style="width: 5rem; height: 5rem; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-stat-circle);">
                                     {% else %}
-                                        <div class="avatar-placeholder">{{ avaliacao.aluno.user.first_name|first }}</div>
+                                        <div style="width: 5rem; height: 5rem; border-radius: 50%; background: var(--color-stat-circle); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 2rem; color: var(--text-primary);">
+                                            {{ avaliacao.aluno.user.first_name|first }}
+                                        </div>
                                     {% endif %}
+                                    
                                     <div>
-                                        <strong>{{ avaliacao.aluno.user.get_full_name }}</strong>
-                                        <small>{{ avaliacao.aluno.turma.nome }}</small>
+                                        <strong style="font-size: 1.6rem; display: block; margin-bottom: 0.3rem;">{{ avaliacao.aluno.user.get_full_name }}</strong>
+                                        <small style="color: var(--text-secondary); font-size: 1.3rem;">{{ avaliacao.aluno.turma.nome }}</small>
                                     </div>
                                 </div>
-                                <div class="avaliacao-nota">
-                                    <span class="nota-badge {% if avaliacao.calcular_media >= 4 %}nota-alta{% elif avaliacao.calcular_media >= 3 %}nota-media{% else %}nota-baixa{% endif %}">
+                                
+                                <div style="text-align: right;">
+                                    <span class="nota-badge {% if avaliacao.calcular_media >= 4 %}alta{% elif avaliacao.calcular_media >= 3 %}media{% else %}baixa{% endif %}">
                                         {{ avaliacao.calcular_media|floatformat:1 }}
                                     </span>
-                                    <small>{{ avaliacao.data|date:"d/m/Y" }}</small>
+                                    <small style="display: block; margin-top: 0.5rem; color: var(--text-secondary); font-size: 1.2rem;">
+                                        {{ avaliacao.data|date:"d/m/Y" }}
+                                    </small>
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="empty-state">Nenhuma avaliação recente.</p>
+                    <div class="empty-state">
+                        <div class="empty-icon">📝</div>
+                        <p>Nenhuma avaliação recente.</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Coluna Direita -->
-        <div class="dashboard-right">
-            <!-- Top 5 Alunos -->
-            <div class="card">
-                <h2>Top 5 Alunos</h2>
+        <div>
+            <div class="card" style="background: linear-gradient(135deg, #fff5e6, white);">
+                <h2 style="margin-bottom: 2rem;">
+                    <span class="material-icons-outlined" style="vertical-align: middle; margin-right: 0.5rem;">emoji_events</span>
+                    Top 5 Alunos
+                </h2>
+                
                 {% if top_alunos %}
-                    <div class="top-alunos-list">
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                         {% for item in top_alunos %}
-                            <div class="top-aluno-item">
-                                <div class="ranking-position">{{ forloop.counter }}</div>
-                                <div class="aluno-info-mini">
-                                    {% if item.aluno.foto %}
-                                        <img src="{{ item.aluno.foto.url }}" alt="{{ item.aluno.user.get_full_name }}">
-                                    {% else %}
-                                        <div class="avatar-placeholder">{{ item.aluno.user.first_name|first }}</div>
-                                    {% endif %}
-                                    <div>
-                                        <strong>{{ item.aluno.user.get_full_name }}</strong>
-                                        <small>{{ item.turma }}</small>
-                                    </div>
+                            <div style="display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem; background: white; border-radius: 1.2rem; box-shadow: 0 0.2rem 0.8rem rgba(0,0,0,0.05);">
+                                
+                                <div class="js-rank-circle" 
+                                     data-rank="{{ forloop.counter }}"
+                                     style="color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.8rem; width: 4rem; height: 4rem; border-radius: 50%;">
+                                    {{ forloop.counter }}
                                 </div>
-                                <div class="aluno-media">
-                                    <span class="media-badge">{{ item.media_geral|floatformat:2 }}</span>
+                                
+                                <div style="flex: 1;">
+                                    <strong style="display: block; font-size: 1.5rem; margin-bottom: 0.3rem;">{{ item.aluno.user.get_full_name }}</strong>
+                                    <small style="color: var(--text-secondary); font-size: 1.3rem;">{{ item.turma }}</small>
+                                </div>
+                                
+                                <div style="padding: 0.8rem 1.5rem; background: linear-gradient(135deg, var(--color-success), #229954); color: white; border-radius: 1rem; font-weight: 600; font-size: 1.5rem;">
+                                    {{ item.media_geral }}
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="empty-state">Nenhuma avaliação registrada ainda.</p>
+                    <div class="empty-state">
+                        <div class="empty-icon">🏆</div>
+                        <p>Nenhuma avaliação registrada ainda.</p>
+                    </div>
                 {% endif %}
             </div>
 
-            <!-- Minhas Turmas -->
-            <div class="card">
-                <h2>Minhas Turmas</h2>
-                <div class="turmas-list-compact">
-                    {% for turma in turmas %}
-                        <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="turma-link">
-                            <div class="turma-badge">{{ turma.nome }}</div>
-                            <span>{{ turma.alunos.count }} alunos</span>
-                            <span class="arrow">→</span>
-                        </a>
-                    {% empty %}
-                        <p class="empty-state">Nenhuma turma associada.</p>
-                    {% endfor %}
-                </div>
+            <div class="card" style="margin-top: 2rem;">
+                <h2 style="margin-bottom: 2rem;">
+                    <span class="material-icons-outlined" style="vertical-align: middle; margin-right: 0.5rem;">school</span>
+                    Minhas Turmas
+                </h2>
+                
+                {% if turmas %}
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        {% for turma in turmas %}
+                            <a href="{% url 'detalhe_turma_carometro' turma.id %}" style="display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; background: white; border-radius: 1.2rem; text-decoration: none; color: inherit; transition: all 0.3s ease; border: 2px solid transparent;">
+                                <div>
+                                    <div style="padding: 0.5rem 1.2rem; background: var(--color-secondary); color: white; border-radius: 0.8rem; display: inline-block; font-weight: 600; margin-bottom: 0.5rem;">
+                                        {{ turma.nome }}
+                                    </div>
+                                    <div style="font-size: 1.3rem; color: var(--text-secondary);">
+                                        <span class="material-icons-outlined" style="vertical-align: middle; font-size: 1.6rem;">person</span>
+                                        {{ turma.alunos.count }} alunos
+                                    </div>
+                                </div>
+                                <span class="material-icons-outlined" style="color: var(--color-secondary); font-size: 2.4rem;">arrow_forward_ios</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <p>Nenhuma turma associada.</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 <style>
-.dashboard-professor {
-    animation: fadeIn 0.5s ease-in;
-}
-
-.subtitle {
-    color: var(--cor-texto-claro);
-    margin-bottom: 2rem;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.stat-card {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 1.5rem;
-}
-
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-}
-
-.stat-info h3 {
-    font-size: 2.5rem;
-    margin: 0;
-    color: var(--cor-primaria);
-}
-
-.stat-info p {
-    margin: 0;
-    color: var(--cor-texto-claro);
-    font-size: 0.9rem;
-}
-
-.quick-actions {
-    margin-bottom: 2rem;
-}
-
-.actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #ecf0f1, #ffffff);
-    border-radius: var(--borda-radius);
-    text-decoration: none;
-    color: var(--cor-primaria);
-    transition: all 0.3s ease;
-    border: 2px solid var(--cor-borda);
-}
-
-.action-btn:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px var(--cor-sombra);
-    border-color: var(--cor-secundaria);
-}
-
-.action-btn .icon {
-    font-size: 2rem;
-}
-
-.dashboard-content {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr;
-    gap: 2rem;
-}
-
-.turmas-performance {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.turma-item {
-    padding: 1rem;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: var(--borda-radius-pequeno);
-    border-left: 4px solid var(--cor-secundaria);
-}
-
-.turma-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.turma-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-}
-
-.badge {
-    background: var(--cor-secundaria);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 8px;
-    background: var(--cor-borda);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
-}
-
-.progress-fill {
-    height: 100%;
-    transition: width 0.3s ease;
-}
-
-.turma-stats {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-    color: var(--cor-texto-claro);
-}
-
-.avaliacoes-list, .top-alunos-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.avaliacao-item, .top-aluno-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: var(--borda-radius-pequeno);
-}
-
-.aluno-info-mini {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.aluno-info-mini img, .avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.avatar-placeholder {
-    background: var(--cor-secundaria);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-}
-
-.aluno-info-mini strong {
-    display: block;
-    color: var(--cor-primaria);
-    font-size: 0.95rem;
-}
-
-.aluno-info-mini small {
-    display: block;
-    color: var(--cor-texto-claro);
-    font-size: 0.8rem;
-}
-
-.nota-badge {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-    color: white;
-}
-
-.nota-alta { background: #27ae60; }
-.nota-media { background: #f39c12; }
-.nota-baixa { background: #e74c3c; }
-
-.ranking-position {
-    width: 30px;
-    height: 30px;
-    background: var(--cor-secundaria);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-}
-
-.media-badge {
-    background: linear-gradient(135deg, #f39c12, #e67e22);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-.turmas-list-compact {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.turma-link {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: var(--borda-radius-pequeno);
-    text-decoration: none;
-    color: var(--cor-texto);
-    transition: all 0.3s ease;
-}
-
-.turma-link:hover {
-    background: var(--cor-fundo);
+a[href*="detalhe_turma_carometro"]:hover {
     transform: translateX(4px);
-}
-
-.turma-badge {
-    background: var(--cor-secundaria);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-.turma-link .arrow {
-    margin-left: auto;
-    color: var(--cor-secundaria);
-    font-size: 1.2rem;
-}
-
-.empty-state {
-    text-align: center;
-    color: var(--cor-texto-claro);
-    padding: 2rem;
-}
-
-@media (max-width: 1024px) {
-    .dashboard-content {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .actions-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+    border-color: var(--color-secondary) !important;
+    box-shadow: 0 0.4rem 1.2rem rgba(52, 152, 219, 0.2);
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // --- 1. Lógica para a Barra de Progresso (Desempenho por Turma) ---
+    const turmaItems = document.querySelectorAll('.js-turma-item');
+    const maxScore = 5.0;
+
+    turmaItems.forEach(item => {
+        const progressBar = item.querySelector('.js-turma-progress');
+        const media = parseFloat(item.dataset.media);
+        
+        if (progressBar && !isNaN(media)) {
+            let percentage = (media / maxScore) * 100;
+            
+            if (percentage < 0) percentage = 0;
+            if (percentage > 100) percentage = 100;
+
+            progressBar.style.width = percentage.toFixed(0) + '%';
+        }
+    });
+
+    // --- 2. Lógica para o Ranking (Top 5 Alunos) ---
+    const rankCircles = document.querySelectorAll('.js-rank-circle');
+
+    rankCircles.forEach(circle => {
+        const rank = parseInt(circle.dataset.rank);
+        let backgroundStyle = '';
+
+        switch (rank) {
+            case 1:
+                backgroundStyle = 'linear-gradient(135deg, #f39c12, #e67e22)'; // Ouro
+                break;
+            case 2:
+                backgroundStyle = 'linear-gradient(135deg, #95a5a6, #7f8c8d)'; // Prata
+                break;
+            case 3:
+                backgroundStyle = 'linear-gradient(135deg, #cd7f32, #b8722e)'; // Bronze
+                break;
+            default:
+                // Usa a cor da variável CSS (se estiver definida) ou uma cor padrão
+                backgroundStyle = 'var(--color-stat-circle, #3498db)'; 
+                break;
+        }
+
+        circle.style.background = backgroundStyle;
+    });
+});
+</script>
 {% endblock %}

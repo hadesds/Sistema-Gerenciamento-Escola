@@ -4,33 +4,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema Escola{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}Sistema CARA{% endblock %}</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header class="navbar">
-        <img src="static/img/LOGO.png" alt="LOGO CARA">
+        <div class="logo-container">
+            <img src="{% static 'img/LOGO.png' %}" alt="CARA Logo" class="logo">
+        </div>
+        
         <nav>
             {% if user.is_authenticated %}
-                <span>Olá, {{ user.get_full_name|default:user.username }}</span>
-                <a href="{% url 'dashboard' %}">Início</a>
+                <span>Olá, <strong>{{ user.get_full_name|default:user.username }}</strong></span>
+                
+                <a href="{% url 'dashboard' %}">
+                    <span class="material-icons-outlined">home</span>
+                    Início
+                </a>
+                
                 {% if user.professor %}
-                    <a href="{% url 'lista_turmas' %}">Minhas Turmas</a>
-                    <a href="{% url 'banco_questoes' %}">Banco de Questões</a>
+                    <a href="{% url 'lista_turmas' %}">
+                        <span class="material-icons-outlined">groups</span>
+                        Minhas Turmas
+                    </a>
+                    <a href="{% url 'banco_questoes' %}">
+                        <span class="material-icons-outlined">quiz</span>
+                        Questões
+                    </a>
+                    <a href="{% url 'criar_simulado' %}">
+                        <span class="material-icons-outlined">assignment</span>
+                        Criar Simulado
+                    </a>
                 {% elif user.aluno %}
-                    <a href="{% url 'meu_feedback' %}">Meu Feedback</a>
+                    <a href="{% url 'meu_feedback' %}">
+                        <span class="material-icons-outlined">assessment</span>
+                        Meu Feedback
+                    </a>
+                    <a href="{% url 'meus_simulados' %}">
+                        <span class="material-icons-outlined">quiz</span>
+                        Simulados
+                    </a>
                 {% elif user.is_superuser %}
-                    <a href="{% url 'admin_dashboard' %}">Painel Admin</a>
+                    <a href="/admin/">
+                        <span class="material-icons-outlined">admin_panel_settings</span>
+                        Admin
+                    </a>
                 {% endif %}
-                <a href="{% url 'logout' %}">Sair</a>
+                
+                <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 1rem;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">
+                        <span class="material-icons-outlined">logout</span>
+                        Sair
+                    </button>
+                </form>
             {% endif %}
         </nav>
     </header>
 
     <main class="container">
-        {% block content %}
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">
@@ -38,6 +76,16 @@
                 </div>
             {% endfor %}
         {% endif %}
+        
+        {% block content %}
         {% endblock %}
+    </main>
+    
+    <footer style="text-align: center; padding: 3rem 2rem; color: var(--text-secondary); font-size: 1.4rem;">
+        <p>&copy; 2024 Sistema CARA - Gestão Escolar Inteligente</p>
+    </footer>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

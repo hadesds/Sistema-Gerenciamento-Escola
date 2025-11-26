@@ -1,45 +1,195 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Painel Admin{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1>Painel Administrativo</h1>
-    <p>Gerencie usuários e turmas</p>
+    <p class="subtitle">Gerencie usuários, crie turmas e acesse os links de administração.</p>
 </div>
 
 <div class="admin-grid">
-    <div class="card">
-        <h3>Cadastrar Aluno</h3>
-        <form method="post" class="admin-form">
-            {% csrf_token %}
-            <input type="text" name="nome" placeholder="Nome completo" required>
-            <input type="email" name="email" placeholder="E-mail" required>
-            <select name="turma" required>
-                <option value="">Selecionar turma</option>
-                {% for turma in turmas %}
-                <option value="{{ turma.id }}">{{ turma.nome }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-primary">Cadastrar</button>
-        </form>
-    </div>
-
-    <div class="card">
-        <h3>Estatísticas</h3>
-        <div class="stats">
-            <div class="stat">
-                <span class="number">{{ total_alunos }}</span>
+    
+    <div class="card card-stats-admin">
+        <h3>Estatísticas Rápidas</h3>
+        <p class="hint">Visão geral dos dados do sistema.</p>
+        <div class="stats-admin">
+            <div class="stat-item-admin">
+                <span class="number" style="color: #3498db;">{{ total_alunos }}</span>
                 <span class="label">Alunos</span>
             </div>
-            <div class="stat">
-                <span class="number">{{ total_professores }}</span>
+            <div class="stat-item-admin">
+                <span class="number" style="color: #27ae60;">{{ total_professores }}</span>
                 <span class="label">Professores</span>
             </div>
-            <div class="stat">
-                <span class="number">{{ total_turmas }}</span>
+            <div class="stat-item-admin">
+                <span class="number" style="color: #f39c12;">{{ total_turmas }}</span>
                 <span class="label">Turmas</span>
             </div>
         </div>
+        <div class="admin-actions-links">
+            <a href="/admin/escola/turma/add/" class="btn btn-secondary btn-block">Criar Nova Turma</a>
+        </div>
     </div>
+    
+    <div class="card card-cadastro-admin">
+        <h3>Cadastrar Aluno</h3>
+        <p class="hint">Crie um novo aluno e associe-o a uma turma. (Apenas o perfil base é criado).</p>
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="text" name="nome" placeholder="Nome completo" required>
+            </div>
+            <div class="form-group">
+                <input type="email" name="email" placeholder="E-mail" required>
+            </div>
+            <div class="form-group">
+                <select name="turma" required>
+                    <option value="">Selecionar turma</option>
+                    {% for turma in turmas %}
+                    <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Cadastrar Aluno</button>
+        </form>
+    </div>
+
+    <div class="card card-acessos-admin">
+        <h3>Acessos Rápidos</h3>
+        <div class="acessos-links">
+            <a href="/admin/" class="link-acesso">
+                <span class="material-icons-outlined">settings_suggest</span>
+                Painel Admin (Completo)
+            </a>
+            <a href="/admin/auth/user/" class="link-acesso">
+                <span class="material-icons-outlined">supervised_user_circle</span>
+                Gerenciar Usuários
+            </a>
+            <a href="/admin/escola/turma/" class="link-acesso">
+                <span class="material-icons-outlined">class</span>
+                Gerenciar Turmas
+            </a>
+            <a href="/admin/escola/professor/" class="link-acesso">
+                <span class="material-icons-outlined">people_alt</span>
+                Gerenciar Professores
+            </a>
+            <a href="/admin/escola/aluno/" class="link-acesso">
+                <span class="material-icons-outlined">school</span>
+                Gerenciar Alunos
+            </a>
+        </div>
+    </div>
+    
 </div>
+
+<style>
+.admin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+@media (max-width: 992px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card-stats-admin {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #eaf4ff, white);
+    border-left: 4px solid var(--cor-primaria);
+}
+
+.card-stats-admin h3, .card-cadastro-admin h3, .card-acessos-admin h3 {
+    color: var(--cor-primaria);
+    margin-bottom: 1rem;
+}
+
+.stats-admin {
+    display: flex;
+    justify-content: space-around;
+    padding: 2rem 0;
+}
+
+.stat-item-admin {
+    text-align: center;
+}
+
+.stat-item-admin .number {
+    display: block;
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-item-admin .label {
+    font-size: 1.1rem;
+    color: var(--cor-texto-claro);
+}
+
+.admin-actions-links {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--cor-borda);
+}
+
+.admin-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.admin-form input[type="text"],
+.admin-form input[type="email"],
+.admin-form select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--borda-radius-pequeno);
+    font-size: 1rem;
+}
+
+.btn-block {
+    width: 100%;
+    text-align: center;
+}
+
+.card-acessos-admin {
+    grid-column: 1 / -1;
+}
+
+.acessos-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.link-acesso {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--borda-radius-pequeno);
+    text-decoration: none;
+    color: var(--cor-texto);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.link-acesso:hover {
+    background: white;
+    border-color: var(--cor-secundaria);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.link-acesso .material-icons-outlined {
+    font-size: 2rem;
+    color: var(--cor-secundaria);
+}
+</style>
 {% endblock %}

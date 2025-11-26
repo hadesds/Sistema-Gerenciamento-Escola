@@ -21,6 +21,7 @@
                     <div class="simulado-info">
                         <p><strong>Turma:</strong> {{ simulado.turma_alvo.nome }}</p>
                         <p><strong>Total de Alunos:</strong> {{ simulado.turma_alvo.alunos.count }}</p>
+                        <p><strong>Criação:</strong> {{ simulado.data_criacao|date:"d/m/Y H:i" }}</p>
                     </div>
 
                     <div class="questoes-preview">
@@ -43,14 +44,21 @@
         </div>
     {% else %}
         <div class="card empty-state">
+            <div class="empty-icon">📝</div>
             <h2>Nenhum simulado criado</h2>
             <p>Você ainda não criou nenhum simulado. Crie seu primeiro simulado agora!</p>
             <a href="{% url 'criar_simulado' %}" class="btn btn-primary">Criar Primeiro Simulado</a>
         </div>
     {% endif %}
-{% endblock %}
 
 <style>
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--cor-secundaria);
+    margin-bottom: 1rem;
+}
+
 .actions-bar {
     margin-bottom: 2rem;
 }
@@ -163,3 +171,4 @@
     }
 }
 </style>
+{% endblock content %}

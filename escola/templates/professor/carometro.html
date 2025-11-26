@@ -51,7 +51,7 @@
                     <p class="turma-info">{{ item.aluno.turma.nome }}</p>
                     
                     {% if item.total_avaliacoes > 0 %}
-                        <p class="avaliacoes-count">📊 {{ item.total_avaliacoes }} avaliações</p>
+                        <p class="avaliacoes-count">{{ item.total_avaliacoes }} avaliações</p>
                     {% else %}
                         <p class="avaliacoes-count sem-avaliacoes">Sem avaliações</p>
                     {% endif %}
@@ -66,7 +66,6 @@
                     <div class="criterios-grid">
                         <div class="criterio-item">
                             <label for="assiduidade-{{item.aluno.pk}}">
-                                <span class="emoji">📌</span>
                                 Assiduidade
                             </label>
                             <input type="number" 
@@ -79,7 +78,6 @@
                         
                         <div class="criterio-item">
                             <label for="participacao-{{item.aluno.pk}}">
-                                <span class="emoji">🙋</span>
                                 Participação
                             </label>
                             <input type="number" 
@@ -92,7 +90,6 @@
                         
                         <div class="criterio-item">
                             <label for="responsabilidade-{{item.aluno.pk}}">
-                                <span class="emoji">✅</span>
                                 Responsabilidade
                             </label>
                             <input type="number" 
@@ -105,7 +102,6 @@
                         
                         <div class="criterio-item">
                             <label for="sociabilidade-{{item.aluno.pk}}">
-                                <span class="emoji">👥</span>
                                 Sociabilidade
                             </label>
                             <input type="number" 
@@ -138,17 +134,17 @@
 <style>
 .carometro-header {
     background: linear-gradient(135deg, var(--cor-primaria), var(--cor-terciaria));
-    color: white;
+    color: rgb(56, 56, 56);
     margin-bottom: 2rem;
 }
 
 .header-content h1 {
-    color: white;
+    color: rgb(58, 58, 58);
     margin-bottom: 0.5rem;
 }
 
 .header-content p {
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(47, 47, 47, 0.9);
     margin-bottom: 1rem;
 }
 
@@ -179,7 +175,7 @@
     padding: 0.75rem 1rem;
     border: 2px solid var(--cor-borda);
     border-radius: var(--borda-radius-pequeno);
-    font-size: 1rem;
+    font-size: 1.5rem;
 }
 
 .busca-input:focus {
@@ -257,18 +253,18 @@
 .aluno-info h3 {
     color: var(--cor-primaria);
     margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
+    font-size: 2.5rem;
 }
 
 .turma-info {
     color: var(--cor-texto-claro);
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 1.5rem;
 }
 
 .avaliacoes-count {
     margin: 0.5rem 0 0 0;
-    font-size: 0.85rem;
+    font-size: 1.5rem;
     color: var(--cor-secundaria);
     font-weight: 600;
 }
@@ -293,7 +289,7 @@
 .criterios-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 1.5rem;
     margin-bottom: 1rem;
 }
 
@@ -301,7 +297,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.85rem;
+    font-size: 1.5rem;
     font-weight: 600;
     color: var(--cor-primaria);
     margin-bottom: 0.35rem;
@@ -336,7 +332,7 @@
 
 .btn-small {
     padding: 0.6rem 1rem;
-    font-size: 0.9rem;
+    font-size: 1.5rem;
 }
 
 .empty-state {

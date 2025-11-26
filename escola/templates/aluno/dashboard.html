@@ -170,12 +170,12 @@
 
         .criterio-row label {
             font-weight: 600;
-            color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
+            color: var(--color-primary); 
         }
 
         .progress-bar-horizontal {
             height: 24px;
-            background: var(--border-light); /* Corrigido: --cor-borda -> --border-light */
+            background: var(--border-light); 
             border-radius: 12px;
             overflow: hidden;
         }
@@ -189,7 +189,7 @@
         .criterio-value {
             text-align: right;
             font-weight: 600;
-            color: var(--text-primary); /* Corrigido: --cor-texto -> --text-primary */
+            color: var(--text-primary);
         }
     </style>
 
@@ -200,12 +200,10 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. Lógica para a Barra de Progresso (Critérios) ---
     const chart = document.querySelector('.criterios-chart');
     const maxScore = 5.0;
 
     if (chart) {
-        // 1a. Ler os valores de média dos data-atributos
         const mediaData = {
             assiduidade: parseFloat(chart.dataset.assiduidade) || 0,
             participacao: parseFloat(chart.dataset.participacao) || 0,
@@ -225,14 +223,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 1b. Aplicar a largura para cada critério
         setProgressBar('progress-assiduidade', mediaData.assiduidade);
         setProgressBar('progress-participacao', mediaData.participacao);
         setProgressBar('progress-responsabilidade', mediaData.responsabilidade);
         setProgressBar('progress-sociabilidade', mediaData.sociabilidade);
     }
     
-    // --- 2. Lógica para as Cores dos Ícones (Jornada de Aprendizado) ---
     const jornadaItems = document.querySelectorAll('.js-jornada-item');
     
     jornadaItems.forEach(item => {
@@ -240,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const cor = item.dataset.cor;
         
         if (icon && cor) {
-            // Aplica a cor lida do data-atributo diretamente no estilo
             icon.style.color = cor;
         }
     });

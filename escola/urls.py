@@ -1,16 +1,18 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
     # Rota principal (Dashboard)
     path('', views.dashboard, name='dashboard'),
-
+    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     # =====================
     # URLs DO PROFESSOR
     # =====================
    
     # Lista de turmas
-    path('turmas/', views.lista_turmas_professor, name='lista_turmas_professor'),
+    path('turmas/', views.lista_turmas_professor, name='lista_turmas'),
     
     # Carômetro (detalhes da turma)
     path('turma/<int:turma_id>/', views.detalhe_turma_carometro, name='detalhe_turma_carometro'),

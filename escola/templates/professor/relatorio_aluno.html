@@ -157,7 +157,7 @@
 <style>
 
 .relatorio-header {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-terciaria)); /* Corrigido: --cor-primaria -> --color-primary */
+    background: linear-gradient(135deg, var(--color-primary), var(--color-terciaria)); 
     color: white;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -179,7 +179,7 @@
 
 .foto-placeholder-grande {
     background: white;
-    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
+    color: var(--color-primary); 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -224,12 +224,12 @@
 .stat-info h3 {
     font-size: 2.5rem;
     margin: 0;
-    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
+    color: var(--color-primary);
 }
 
 .stat-info p {
     margin: 0;
-    color: var(--color-texto-claro); /* Corrigido: --cor-texto-claro -> --text-secondary */
+    color: var(--color-texto-claro);
     font-size: 0.9rem;
 }
 
@@ -249,12 +249,12 @@
 
 .criterio-row label {
     font-weight: 600;
-    color: var(--color-primary); /* Corrigido: --cor-primaria -> --color-primary */
+    color: var(--color-primary);
 }
 
 .progress-bar-horizontal {
     height: 24px;
-    background: var(--border-light); /* Corrigido: --cor-borda -> --border-light */
+    background: var(--border-light);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -268,7 +268,7 @@
 .criterio-value {
     text-align: right;
     font-weight: 600;
-    color: var(--text-primary); /* Corrigido: --cor-texto -> --text-primary */
+    color: var(--text-primary);
 }
 
 .tabela-responsiva {
@@ -276,7 +276,7 @@
 }
 
 .nota-pill {
-    background: var(--color-secondary); /* Corrigido: --cor-secundaria -> --color-secondary */
+    background: var(--color-secondary);
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
@@ -307,7 +307,7 @@
 
 .empty-state {
     text-align: center;
-    color: var(--text-secondary); /* Corrigido: --cor-texto-claro -> --text-secondary */
+    color: var(--text-secondary); 
     padding: 2rem;
 }
 
@@ -345,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const chart = document.querySelector('.criterios-chart');
     if (!chart) return;
 
-    // 1. Ler os valores de média dos data-atributos
     const mediaData = {
         assiduidade: parseFloat(chart.dataset.assiduidade) || 0,
         participacao: parseFloat(chart.dataset.participacao) || 0,
@@ -356,26 +355,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxScore = 5.0;
 
     /**
-     * Calcula a porcentagem e aplica a largura do CSS.
-     * @param {string} id - O ID do elemento progress-fill (ex: 'progress-assiduidade').
-     * @param {number} media - O valor da média (0 a 5).
+
+     * @param {string} id 
+     * @param {number} media 
      */
     function setProgressBar(id, media) {
         const element = document.getElementById(id);
         if (element) {
-            // Cálculo da porcentagem: (media / 5.0) * 100
+
             let percentage = (media / maxScore) * 100;
             
-            // Garante que o valor esteja entre 0 e 100
             if (percentage < 0) percentage = 0;
             if (percentage > 100) percentage = 100;
 
-            // Define a largura do estilo CSS como string pura
             element.style.width = percentage.toFixed(0) + '%';
         }
     }
 
-    // 2. Aplicar a largura para cada critério
     setProgressBar('progress-assiduidade', mediaData.assiduidade);
     setProgressBar('progress-participacao', mediaData.participacao);
     setProgressBar('progress-responsabilidade', mediaData.responsabilidade);

@@ -2,7 +2,6 @@ from django.test import TestCase
 
 # Create your tests here.
 
-#!/usr/bin/env python
 """
 Script para testar todas as URLs do sistema
 Execute: python manage.py shell < test_urls.py

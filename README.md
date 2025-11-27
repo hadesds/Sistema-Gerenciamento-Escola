@@ -1,91 +1,120 @@
-# Sistema de Gerenciamento Escolar
+## 🏫 Sistema de Gerenciamento Escolar
 
-Este projeto é um sistema web desenvolvido em Django para gestão escolar, abrangendo recursos para professores, alunos e administradores. O sistema tem como objetivo centralizar informações acadêmicas, avaliações, atividades e comunicação entre corpo docente e discente.
+Este projeto é um **Sistema de Gerenciamento Escolar** desenvolvido para a disciplina de **Programação Orientada a Objetos (POO)** durante o quarto período da faculdade na **UNDB (Centro Universitário Dom Bosco)**.
 
-## Principais Funcionalidades
+O sistema foi construído integralmente utilizando o framework **Django** (Python) para todas as funcionalidades, abrangendo desde a persistência de dados (modelos) até a lógica de negócios (views) e a apresentação (templates).
 
-### Acesso e Perfis
-- **Login para Professores e Alunos:** Usuários autenticados acessam funcionalidades de acordo com seu perfil.
-- **Dashboard Personalizado:** Cada perfil (professor ou aluno) possui um painel específico com atalhos para suas principais funções.
+-----
 
-### Área do Professor
+## 💻 Tecnologias Utilizadas
 
-- **Gestão de Turmas:**
-  - Visualização das turmas sob responsabilidade do professor.
-  - Detalhamento das turmas, com listagem de alunos (Carômetro de Alunos).
-- **Registro de Avaliações:**
-  - Professores podem registrar avaliações de desempenho dos alunos em critérios como assiduidade, participação, responsabilidade e sociabilidade, com notas de 1 a 5.
-- **Banco de Questões:**
-  - Cadastro de novas questões, incluindo matéria/disciplina, enunciado e resposta.
-  - Acesso ao banco pessoal de questões para criar simulados e atividades.
-- **Montagem de Simulados:**
-  - Composição de simulados a partir do banco de questões, direcionados para turmas específicas.
+O projeto é baseado principalmente em:
 
-### Área do Aluno
+  * **Backend Framework:** **Django** (Python)
+  * **Banco de Dados:** **SQLite** (configuração padrão do Django)
+  * **Containerização:** **Docker** e **Docker Compose**
+  * **Frontend:** HTML, CSS (em `static/css/style.css`), JavaScript, e o sistema de templates do Django.
 
-- **Painel do Aluno:**
-  - Visualização de feedbacks e histórico de avaliações recebidas dos professores.
-  - Consulta à sua turma e desempenho individual nos critérios avaliados.
-- **Eventos e Atividades:**
-  - Visualização de eventos próximos e atividades escolares, como simulados, apresentações e ações sociais.
+-----
 
-### Funcionalidades Gerais
+## 🎨 Telas e Funcionalidades Principais
 
-- **Gestão Administrativa:**
-  - Perfis de Administrador, Aluno, Professor e Turma cadastrados e gerenciados via painel administrativo Django.
-- **Notificações:**
-  - Informações sobre eventos institucionais, novidades e comunicados exibidos no dashboard.
-- **Pesquisa:**
-  - Campo de busca para alunos, notas, eventos e demais registros escolares.
-- **Interface Responsiva:**
-  - Layout moderno e adaptável, com navegação intuitiva.
+O sistema possui diferentes perfis de usuário (Administrador, Professor e Aluno), cada um com acesso a dashboards e funcionalidades específicas.
 
-## Modelos Principais
+### 1\. Tela de Login
 
-- **Administrador**
-- **Professor**
-- **Aluno**
-- **Turma**
-- **Avaliação**
-- **Questão**
-- **Simulado**
+  * **`escola/templates/login.html`**
+  * Ponto de entrada para todos os usuários. O sistema redireciona o usuário para o dashboard apropriado após a autenticação bem-sucedida, com base no seu tipo de usuário.
 
-## Outras Funcionalidades
+### 2\. Dashboards por Perfil
 
-- **Ações Sociais e Projetos:** Registro e acompanhamento de atividades extracurriculares como ações sociais, práticas laboratoriais e aulas de idiomas.
-- **Controle de Permissões:** Acesso restrito às funcionalidades conforme o perfil do usuário.
-- **Histórico de Simulados e Avaliações:** Professores e alunos têm acesso ao histórico de simulados realizados e avaliações lançadas.
+#### 2.1. Dashboard de Administrador
 
-## Tecnologias Utilizadas
+  * **`escola/templates/admin/admin_dashboard.html`**
+  * Visão geral para o administrador do sistema.
 
-- **Backend:** Python 3, Django
-- **Frontend:** HTML5, CSS3, JavaScript
-- **Banco de Dados:** SQLite3 (padrão Django)
-- **Outros:** Templates Django, autenticação via Django Auth
+#### 2.2. Dashboard de Professor
 
-## Como Executar
+  * **`escola/templates/professor/dashboard.html`**
+  * Visão geral para o professor, com acesso rápido às suas ferramentas.
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/hadesds/Sistema-Gerenciamento-Escola.git
-   ```
-2. Instale as dependências:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Realize as migrações e crie um superusuário:
-   ```bash
-   python manage.py migrate
-   python manage.py createsuperuser
-   ```
-4. Inicie o servidor de desenvolvimento:
-   ```bash
-   python manage.py runserver
-   ```
-5. Acesse `http://localhost:8000` no navegador.
+#### 2.3. Dashboard de Aluno
 
----
+  * **`escola/templates/aluno/dashboard.html`**
+  * Visão geral para o aluno.
 
-**Observação:** Para cadastro de perfis (professor, aluno, turma) utilize o painel administrativo: `/admin/`.
+### 3\. Telas do Professor
 
----
+As telas do professor focam na gestão de conteúdo e acompanhamento dos alunos.
+
+  * **Banco de Questões**
+
+      * **`escola/templates/professor/banco_questoes.html`**
+      * Interface para visualizar, adicionar e gerenciar as questões que compõem os simulados.
+
+  * **Criar Simulado**
+
+      * **`escola/templates/professor/criar_simulado.html`**
+      * Tela para montar novos simulados, selecionando questões do banco.
+
+  * **Lista de Simulados**
+
+      * **`escola/templates/professor/lista_simulados.html`**
+      * Exibe os simulados criados pelo professor.
+
+  * **Lista de Turmas**
+
+      * **`escola/templates/professor/lista_turmas.html`**
+      * Exibe a lista de turmas sob a responsabilidade do professor.
+
+  * **Carômetro**
+
+      * **`escola/templates/professor/carometro.html`**
+      * Uma forma visual de visualizar os alunos de uma turma (pode exibir fotos e informações básicas).
+
+  * **Relatório do Aluno**
+
+      * **`escola/templates/professor/relatorio_aluno.html`**
+      * Permite ao professor visualizar o desempenho e o histórico de um aluno específico.
+
+### 4\. Telas do Aluno
+
+As telas do aluno focam no acesso aos recursos de estudo e feedback.
+
+  * **Meus Simulados**
+
+      * **`escola/templates/aluno/meus_simulados.html`**
+      * Lista os simulados disponíveis para o aluno realizar ou já realizados.
+
+  * **Visualizar Simulado**
+
+      * **`escola/templates/aluno/visualizar_simulado.html`**
+      * Tela onde o aluno interage com as questões do simulado.
+
+  * **Meu Feedback**
+
+      * **`escola/templates/aluno/meu_feedback.html`**
+      * Exibe o feedback e os resultados de desempenho do aluno.
+
+-----
+
+## 🚀 Como Executar o Projeto com Docker
+
+Este projeto utiliza **Docker** e **Docker Compose** para facilitar a configuração do ambiente.
+
+### Pré-requisitos
+
+  * Docker
+  * Docker Compose
+
+### Passos
+
+1.  **Construa e Inicie os Containers:**
+    Navegue até o diretório raiz do projeto onde se encontra o arquivo `docker-compose.yml` e execute o seguinte comando:
+
+    ```bash
+    docker-compose up --build
+    ```
+
+2.  **Acesse o Sistema:**
+    O sistema estará disponível em: `http://localhost:5433`

@@ -1,33 +1,22 @@
-// dashboard.js - Funcionalidades JavaScript para o Sistema CARA
-
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Animação de entrada dos cards
     animateCards();
-    
-    // Contadores animados
+
     animateCounters();
     
-    // Progress bars animadas
     animateProgressBars();
     
-    // Tooltips
     initializeTooltips();
     
-    // Modais
     initializeModals();
     
-    // Busca em tempo real
     initializeSearch();
     
-    // Auto-dismiss de alertas
     autoDismissAlerts();
     
-    // Validação de formulários
     initializeFormValidation();
 });
 
-// Animação de entrada dos cards
 function animateCards() {
     const cards = document.querySelectorAll('.card, .stat-card, .aluno-card, .turma-card');
     

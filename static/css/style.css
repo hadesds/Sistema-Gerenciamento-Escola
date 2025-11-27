@@ -1,20 +1,16 @@
-/* style.css - Design CARA Modernizado */
 :root {
-    /* Cores baseadas no design CARA */
-    
-    /* CORES PRINCIPAIS (Baseadas no Logo Laranja/Amarelo) */
-    --color-primary: #f5a623; /* Laranja Escuro (Base do Logo) */
-    --color-secondary: #ffc107; /* Amarelo (Destaque/Acentos) */
-    --color-terciaria: #f39c12; /* Laranja Médio */
+    --color-primary: #f5a623; 
+    --color-secondary: #ffc107;
+    --color-terciaria: #f39c12; 
 
     --bg-main: #FFF5df; 
-    --bg-card: #ffffec; /* Fundo de card muito claro */
+    --bg-card: #ffffec; 
     --bg-card-add: #FFEFE7;
     --bg-tab: #F4F4F4;
     --border-light: #F0F0F0;
     
-    --color-stat-circle: #FDD160; /* Amarelo Claro para ícones */
-    --color-add-button: #E67B59; /* Laranja avermelhado para botões CTA */
+    --color-stat-circle: #FDD160;
+    --color-add-button: #E67B59; 
     --color-pink-light: #F8B4BF;
 
     --color-bar-light: #F8B4BF;
@@ -25,10 +21,9 @@
     --text-tertiary: #555555;
     --text-placeholder: #555555;
     
-    /* CORES FUNCIONAIS (Manter para feedback) */
-    --color-success: #27ae60; /* Verde */
-    --color-warning: #f39c12; /* Amarelo (Mantido, combina) */
-    --color-danger: #e74c3c; /* Vermelho */
+    --color-success: #27ae60; 
+    --color-warning: #f39c12; 
+    --color-danger: #e74c3c;
 }
 
 html {
@@ -44,7 +39,6 @@ html {
 
 body {
     font-family: 'Poppins', sans-serif;
-    /* Ajuste de fundo para gradiente suave amarelo */
     background: radial-gradient(circle, #FFF5df, #fce8b4);
     color: var(--text-primary);
     font-size: 1.6rem;
@@ -52,9 +46,8 @@ body {
     min-height: 100vh;
 }
 
-/* Navbar Modernizada */
+
 .navbar {
-    /* Usa as cores primárias do logo */
     background: linear-gradient(135deg, var(--color-primary), var(--color-terciaria));
     padding: 1.5rem 3rem;
     display: flex;
@@ -111,14 +104,12 @@ body {
     font-size: 1.5rem;
 }
 
-/* Container Principal */
 .container {
     max-width: 160rem;
     margin: 0 auto;
     padding: 2.4rem;
 }
 
-/* Cards Base */
 .card {
     background: radial-gradient(circle, #ffffec, #faf2e0);
     border-radius: 2rem;
@@ -134,7 +125,6 @@ body {
     box-shadow: 0 0.8rem 2.5rem rgba(0, 0, 0, 0.1);
 }
 
-/* Títulos */
 h1 {
     color: var(--text-primary);
     font-size: 3.2rem;
@@ -162,7 +152,6 @@ p {
     line-height: 1.6;
 }
 
-/* Botões Modernizados */
 .btn {
     display: inline-block;
     padding: 1rem 2rem;
@@ -178,7 +167,6 @@ p {
 }
 
 .btn-primary {
-    /* Mantido CTA */
     background-color: var(--color-add-button);
     color: white;
 }
@@ -190,7 +178,6 @@ p {
 }
 
 .btn-secondary {
-    /* Mantido neutro */
     background-color: var(--bg-tab);
     color: var(--text-primary);
     border: 2px solid var(--border-light);
@@ -202,7 +189,6 @@ p {
 }
 
 .btn-submit {
-    /* Usar cor de sucesso */
     background: linear-gradient(135deg, var(--color-success), #229954);
     color: white;
 }
@@ -212,7 +198,6 @@ p {
     box-shadow: 0 0.6rem 1.6rem rgba(39, 174, 96, 0.3);
 }
 
-/* Stats Cards */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -260,7 +245,6 @@ p {
     font-size: 1.4rem;
 }
 
-/* Formulários */
 .form-group {
     margin-bottom: 2rem;
 }
@@ -290,11 +274,10 @@ p {
 .form-group textarea:focus,
 .form-group select:focus {
     outline: none;
-    border-color: var(--color-secondary); /* Usa Amarelo/Laranja como foco */
+    border-color: var(--color-secondary);
     box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.4);
 }
 
-/* Tabelas */
 .feedback-table {
     width: 100%;
     border-collapse: collapse;
@@ -314,7 +297,6 @@ p {
 }
 
 .feedback-table th {
-    /* Usa as cores primárias do logo */
     background: linear-gradient(135deg, var(--color-primary), var(--color-terciaria));
     color: white;
     font-weight: 600;
@@ -325,7 +307,6 @@ p {
     background-color: var(--bg-card);
 }
 
-/* Grid de Alunos/Turmas */
 .carometro-grid,
 .turmas-grid {
     display: grid;
@@ -334,7 +315,6 @@ p {
     margin-top: 2rem;
 }
 
-/* Badges e Pills */
 .badge {
     display: inline-block;
     padding: 0.5rem 1.2rem;
@@ -357,7 +337,6 @@ p {
 .nota-badge.media { background: var(--color-warning); }
 .nota-badge.baixa { background: var(--color-danger); }
 
-/* Progress Bars */
 .progress-bar {
     width: 100%;
     height: 1.2rem;
@@ -373,7 +352,6 @@ p {
     border-radius: 0.6rem;
 }
 
-/* Avatar */
 .avatar,
 .avatar-placeholder {
     width: 4rem;
@@ -393,7 +371,6 @@ p {
     background: var(--color-stat-circle);
 }
 
-/* Lista de Avatares */
 .avatar-list {
     display: flex;
 }
@@ -432,7 +409,6 @@ p {
 }
 
 .alert-info {
-    /* Usa a cor secundária (Amarelo) */
     background: linear-gradient(135deg, #fff3cd, #ffeeba);
     color: #856404;
     border-left: 4px solid var(--color-secondary);
@@ -486,11 +462,9 @@ p {
     animation: fadeIn 0.5s ease-in;
 }
 
-/* Removendo blocos de cores antigas duplicados e desnecessários */
-/* Os estilos abaixo são apenas redundância do seu código original e foram ajustados no topo */
 :root {
-    --color-primary: #f5a623; /* Novo primário */
-    --color-secondary: #ffc107; /* Novo secundário */
+    --color-primary: #f5a623;
+    --color-secondary: #ffc107;
     --text-primary: #333;
     --text-secondary: #6c757d;
 }

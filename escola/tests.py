@@ -16,7 +16,6 @@ print("TESTE DE URLs DO SISTEMA CARA")
 print("=" * 70)
 print()
 
-# Lista de URLs para testar
 urls_sem_parametros = [
     'dashboard',
     'lista_turmas_professor',

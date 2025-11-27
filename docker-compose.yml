@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: cara_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: cara_escola
+      POSTGRES_USER: django_user
+      POSTGRES_PASSWORD: Cara2025.
+
+  web:
+    build: .
+    container_name: cara_app
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py makemigrations escola &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:5433"
+    ports:
+      - "5433:5433"
+    volumes:
+      - .:/app
+      - media_root:/app/media
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: on-failure
+
+volumes:
+  postgres_data:
+  media_root:

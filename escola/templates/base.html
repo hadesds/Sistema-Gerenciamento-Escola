@@ -1,91 +1,116 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Sistema CARA{% endblock %}</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-    
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+
     {% block extra_css %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
     <header class="navbar">
-        <div class="logo-container">
-            <img src="{% static 'img/Vector.png' %}" alt="CARA Logo" class="logo">
+      <div class="logo-container">
+        <img src="{% static 'img/Vector.png' %}" alt="CARA Logo" class="logo" />
+      </div>
+
+      <nav>
+        {% if user.is_authenticated %}
+        <span
+          >Olá,
+          <strong>{{ user.get_full_name|default:user.username }}</strong></span
+        >
+
+        <div class="alinhamento-icon">
+          <a href="{% url 'dashboard' %}">
+            <span class="material-icons-outlined">home</span>
+            Início
+          </a>
         </div>
-        
-        <nav>
-            {% if user.is_authenticated %}
-                <span>Olá, <strong>{{ user.get_full_name|default:user.username }}</strong></span>
-                
-                <a href="{% url 'dashboard' %}">
-                    <span class="material-icons-outlined">home</span>
-                    Início
-                </a>
-                
-                {% if user.professor %}
-                    <a href="{% url 'lista_turmas' %}">
-                        <span class="material-icons-outlined">groups</span>
-                        Minhas Turmas
-                    </a>
-                    <a href="{% url 'banco_questoes' %}">
-                        <span class="material-icons-outlined">quiz</span>
-                        Questões
-                    </a>
-                    <a href="{% url 'criar_simulado' %}">
-                        <span class="material-icons-outlined">assignment</span>
-                        Criar Simulado
-                    </a>
-                {% elif user.aluno %}
-                    <a href="{% url 'meu_feedback' %}">
-                        <span class="material-icons-outlined">assessment</span>
-                        Meu Feedback
-                    </a>
-                    <a href="{% url 'meus_simulados' %}">
-                        <span class="material-icons-outlined">quiz</span>
-                        Simulados
-                    </a>
-                {% elif user.is_superuser %}
-                    <a href="/admin/">
-                        <span class="material-icons-outlined">admin_panel_settings</span>
-                        Admin
-                    </a>
-                {% endif %}
-                
-                <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 1rem;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-secondary">
-                        <span class="material-icons-outlined">logout</span>
-                        Sair
-                    </button>
-                </form>
-            {% endif %}
-        </nav>
+
+        {% if user.professor %}
+        <div class="alinhamento-icon">
+          <a href="{% url 'lista_turmas' %}">
+            <span class="material-icons-outlined">groups</span>
+            Minhas Turmas
+          </a>
+        </div>
+        <div class="alinhamento-icon">
+          <a href="{% url 'banco_questoes' %}">
+            <span class="material-icons-outlined">quiz</span>
+            Questões
+          </a>
+        </div>
+        <div class="alinhamento-icon">
+          <a href="{% url 'criar_simulado' %}">
+            <span class="material-icons-outlined">assignment</span>
+            Criar Simulado
+          </a>
+        </div>
+        {% elif user.aluno %}
+        <div class="alinhamento-icon">
+          <a href="{% url 'meu_feedback' %}">
+            <span class="material-icons-outlined">assessment</span>
+            Meu Feedback
+          </a>
+        </div>
+        <div class="alinhamento-icon">
+          <a href="{% url 'meus_simulados' %}">
+            <span class="material-icons-outlined">quiz</span>
+            Simulados
+          </a>
+        </div>
+        {% elif user.is_superuser %}
+        <a href="/admin/">
+          <span class="material-icons-outlined">admin_panel_settings</span>
+          Admin
+        </a>
+        {% endif %}
+
+        <form
+          action="{% url 'logout' %}"
+          method="post"
+          style="display: inline; margin-left: 1rem"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn btn-secondary">
+            <span class="material-icons-outlined">logout</span>
+            Sair
+          </button>
+        </form>
+        {% endif %}
+      </nav>
     </header>
 
     <main class="container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        {% block content %}
-        {% endblock %}
+      {% if messages %} {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %} {% endif %} {% block content %} {% endblock %}
     </main>
-    
-    <footer style="text-align: center; padding: 3rem 2rem; color: var(--text-secondary); font-size: 1.4rem;">
-        <p>&copy; 2025 Sistema CARA - Gestão Escolar Inteligente</p>
+
+    <footer
+      style="
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--text-secondary);
+        font-size: 1.4rem;
+      "
+    >
+      <p>&copy; 2025 Sistema CARA - Gestão Escolar Inteligente</p>
     </footer>
 
     <script src="{% static 'js/dashboard.js' %}"></script>
     {% block extra_js %}{% endblock %}
-</body>
+  </body>
 </html>

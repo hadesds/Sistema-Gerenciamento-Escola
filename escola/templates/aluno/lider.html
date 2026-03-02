@@ -1,0 +1,105 @@
+<!-- prettier-ignore -->
+{% extends 'base.html' %}
+<!-- prettier-ignore -->
+{% block title %}Lista de Chamada{% endblock %}
+<!-- prettier-ignore -->
+{% block content %}
+
+<div class="container-lider">
+  <h2>Chamada da Turma 901</h2>
+
+  <!-- Tabela da chamada -->
+  <form method="POST">
+    <div class="table-wrapper">
+      <table class="tabela-chamada">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Nome</th>
+            <th>Presente</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>João Silva</td>
+            <td>
+              <input type="checkbox" name="presente_1" />
+            </td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Maria Souza</td>
+            <td>
+              <input type="checkbox" name="presente_2" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button type="submit" class="btn-enviar">Enviar Chamada</button>
+  </form>
+</div>
+
+<style>
+  /* Css da chamada */
+  .container-lider {
+    padding: 2rem;
+
+    & h2 {
+      margin-bottom: 1.5rem;
+    }
+    & .tabela-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+    & .tabela-chamada {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 0.3rem 0.5rem rgba(0, 0, 0, 0.1);
+      min-width: 400px;
+    }
+    & .tabela-chamada th,
+    & .tabela-chamada td {
+      padding: 1rem;
+      text-align: left;
+    }
+    & .tabela-chamada thead {
+      background-color: #f5a623;
+      color: rgb(255, 255, 255);
+    }
+    & .tabela-chamada tbody tr {
+      border-bottom: 1px solid #ddd;
+    }
+    & .tabela-chamada tbody tr:hover {
+      background-color: #f9f9f9;
+    }
+    & input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    & .btn-enviar {
+      margin-top: 1.5rem;
+      padding: 0.8rem 2rem;
+      background-color: #f5a623;
+      color: white;
+      border: 2px solid #404040;
+      border-right: 3px solid #404040;
+      border-bottom: 3px solid #404040;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+    & .btn-enviar:hover {
+      background-color: #ffffff;
+      color: #f5a623;
+    }
+  }
+</style>
+{% endblock %}

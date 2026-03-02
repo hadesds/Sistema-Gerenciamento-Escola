@@ -1,236 +1,283 @@
+<!-- prettier-ignore -->
 {% extends 'base.html' %}
+<!-- prettier-ignore -->
 {% load static %}
-{% block title %}Carômetro - {{ turma.nome }}{% endblock %}
-
+<!-- prettier-ignore -->
+{% block title %}Carômetro - {{turma.nome }}
+<!-- prettier-ignore -->
+{% endblock %}
+<!-- prettier-ignore -->
 {% block content %}
-    <a href="{% url 'lista_turmas' %}">&larr; Voltar para Minhas Turmas</a>
-    
-    <div class="carometro-header card">
-        <div class="header-content">
-            <h1>Carômetro - {{ turma.nome }}</h1>
-            <p>Identifique os alunos e registre o desempenho diário de cada um.</p>
-            <div class="turma-stats">
-                <span class="stat-badge">👨‍🎓 {{ alunos_info|length }} alunos</span>
-            </div>
+<a href="{% url 'lista_turmas' %}">&larr; Voltar para Minhas Turmas</a>
+
+<div class="carometro-header card">
+  <div class="header-content">
+    <h1>Carômetro - {{ turma.nome }}</h1>
+    <p>Identifique os alunos e registre o desempenho diário de cada um.</p>
+    <div class="turma-stats">
+      <span class="stat-badge">👨‍🎓 {{ alunos_info|length }} alunos</span>
+    </div>
+  </div>
+</div>
+
+<div class="card busca-container">
+  <form
+    method="GET"
+    action="{% url 'detalhe_turma_carometro' turma.id %}"
+    class="busca-form"
+  >
+    <input
+      type="text"
+      name="busca"
+      value="{{ busca }}"
+      placeholder="🔍 Buscar aluno por nome..."
+      class="busca-input"
+    />
+    <button type="submit" class="btn btn-primary">Buscar</button>
+    {% if busca %}
+    <a
+      href="{% url 'detalhe_turma_carometro' turma.id %}"
+      class="btn btn-secondary"
+      >Limpar Busca</a
+    >
+    {% endif %}
+  </form>
+</div>
+
+<div class="carometro-grid">
+  {% for item in alunos_info %}
+  <div class="aluno-card card">
+    <div class="aluno-foto-container">
+      {% if item.aluno.foto %}
+      <img
+        src="{{ item.aluno.foto.url }}"
+        alt="Foto de {{ item.aluno.user.get_full_name }}"
+      />
+      {% else %}
+      <div class="foto-placeholder">{{ item.aluno.user.first_name|first }}</div>
+      {% endif %} {% if item.media_geral > 0 %}
+      <div
+        class="media-badge {% if item.media_geral >= 4 %}alta{% elif item.media_geral >= 3 %}media{% else %}baixa{% endif %}"
+      >
+        {{ item.media_geral|floatformat:1 }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="aluno-info">
+      <h3>{{ item.aluno.user.get_full_name }}</h3>
+      <p class="turma-info">{{ item.aluno.turma.nome }}</p>
+
+      {% if item.total_avaliacoes > 0 %}
+      <p class="avaliacoes-count">{{ item.total_avaliacoes }} avaliações</p>
+      {% else %}
+      <p class="avaliacoes-count sem-avaliacoes">Sem avaliações</p>
+      {% endif %}
+    </div>
+
+    <hr />
+
+    <form
+      action="{% url 'registrar_avaliacao' item.aluno.pk %}"
+      method="POST"
+      class="form-avaliacao"
+    >
+      {% csrf_token %}
+      <p class="form-titulo">Avaliar desempenho (1-5):</p>
+
+      <div class="criterios-grid">
+        <div class="criterio-item">
+          <label for="assiduidade-{{item.aluno.pk}}"> Assiduidade </label>
+          <input
+            type="number"
+            id="assiduidade-{{item.aluno.pk}}"
+            name="assiduidade"
+            min="1"
+            max="5"
+            value="5"
+            required
+          />
         </div>
-    </div>
 
-    <div class="card busca-container">
-        <form method="GET" action="{% url 'detalhe_turma_carometro' turma.id %}" class="busca-form">
-            <input type="text" 
-                   name="busca" 
-                   value="{{ busca }}" 
-                   placeholder="🔍 Buscar aluno por nome..." 
-                   class="busca-input">
-            <button type="submit" class="btn btn-primary">Buscar</button>
-            {% if busca %}
-                <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-secondary">Limpar Busca</a>
-            {% endif %}
-        </form>
-    </div>
+        <div class="criterio-item">
+          <label for="participacao-{{item.aluno.pk}}"> Participação </label>
+          <input
+            type="number"
+            id="participacao-{{item.aluno.pk}}"
+            name="participacao"
+            min="1"
+            max="5"
+            value="3"
+            required
+          />
+        </div>
 
-    <div class="carometro-grid">
-        {% for item in alunos_info %}
-            <div class="aluno-card card">
-                <div class="aluno-foto-container">
-                    {% if item.aluno.foto %}
-                        <img src="{{ item.aluno.foto.url }}" alt="Foto de {{ item.aluno.user.get_full_name }}">
-                    {% else %}
-                        <div class="foto-placeholder">{{ item.aluno.user.first_name|first }}</div>
-                    {% endif %}
-                    
-                    {% if item.media_geral > 0 %}
-                        <div class="media-badge {% if item.media_geral >= 4 %}alta{% elif item.media_geral >= 3 %}media{% else %}baixa{% endif %}">
-                            {{ item.media_geral|floatformat:1 }}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="aluno-info">
-                    <h3>{{ item.aluno.user.get_full_name }}</h3>
-                    <p class="turma-info">{{ item.aluno.turma.nome }}</p>
-                    
-                    {% if item.total_avaliacoes > 0 %}
-                        <p class="avaliacoes-count">{{ item.total_avaliacoes }} avaliações</p>
-                    {% else %}
-                        <p class="avaliacoes-count sem-avaliacoes">Sem avaliações</p>
-                    {% endif %}
-                </div>
-                
-                <hr>
-                
-                <form action="{% url 'registrar_avaliacao' item.aluno.pk %}" method="POST" class="form-avaliacao">
-                    {% csrf_token %}
-                    <p class="form-titulo">Avaliar desempenho (1-5):</p>
-                    
-                    <div class="criterios-grid">
-                        <div class="criterio-item">
-                            <label for="assiduidade-{{item.aluno.pk}}">
-                                Assiduidade
-                            </label>
-                            <input type="number" 
-                                   id="assiduidade-{{item.aluno.pk}}" 
-                                   name="assiduidade" 
-                                   min="1" max="5" 
-                                   value="5" 
-                                   required>
-                        </div>
-                        
-                        <div class="criterio-item">
-                            <label for="participacao-{{item.aluno.pk}}">
-                                Participação
-                            </label>
-                            <input type="number" 
-                                   id="participacao-{{item.aluno.pk}}" 
-                                   name="participacao" 
-                                   min="1" max="5" 
-                                   value="3" 
-                                   required>
-                        </div>
-                        
-                        <div class="criterio-item">
-                            <label for="responsabilidade-{{item.aluno.pk}}">
-                                Responsabilidade
-                            </label>
-                            <input type="number" 
-                                   id="responsabilidade-{{item.aluno.pk}}" 
-                                   name="responsabilidade" 
-                                   min="1" max="5" 
-                                   value="3" 
-                                   required>
-                        </div>
-                        
-                        <div class="criterio-item">
-                            <label for="sociabilidade-{{item.aluno.pk}}">
-                                Sociabilidade
-                            </label>
-                            <input type="number" 
-                                   id="sociabilidade-{{item.aluno.pk}}" 
-                                   name="sociabilidade" 
-                                   min="1" max="5" 
-                                   value="3" 
-                                   required>
-                        </div>
-                    </div>
-                    
-                    <div class="card-actions">
-                        <button type="submit" class="btn btn-primary btn-submit">Lançar Avaliação</button>
-                        <a href="{% url 'relatorio_aluno' item.aluno.pk %}" class="btn btn-secondary btn-small">Ver Relatório</a>
-                    </div>
-                </form>
-            </div>
-        {% empty %}
-            <div class="card empty-state">
-                {% if busca %}
-                    <p>Nenhum aluno encontrado com o termo **"{{ busca }}"**.</p>
-                    <a href="{% url 'detalhe_turma_carometro' turma.id %}" class="btn btn-primary">Ver Todos os Alunos</a>
-                {% else %}
-                    <p>Nenhum aluno cadastrado nesta turma.</p>
-                {% endif %}
-            </div>
-        {% endfor %}
-    </div>
+        <div class="criterio-item">
+          <label for="responsabilidade-{{item.aluno.pk}}">
+            Responsabilidade
+          </label>
+          <input
+            type="number"
+            id="responsabilidade-{{item.aluno.pk}}"
+            name="responsabilidade"
+            min="1"
+            max="5"
+            value="3"
+            required
+          />
+        </div>
+
+        <div class="criterio-item">
+          <label for="sociabilidade-{{item.aluno.pk}}"> Sociabilidade </label>
+          <input
+            type="number"
+            id="sociabilidade-{{item.aluno.pk}}"
+            name="sociabilidade"
+            min="1"
+            max="5"
+            value="3"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button type="submit" class="btn btn-primary btn-submit">
+          Lançar Avaliação
+        </button>
+        <a
+          href="{% url 'relatorio_aluno' item.aluno.pk %}"
+          class="btn btn-secondary btn-small"
+          style="border: none"
+          >Ver Relatório</a
+        >
+      </div>
+    </form>
+  </div>
+  {% empty %}
+  <div class="card empty-state">
+    {% if busca %}
+    <p>Nenhum aluno encontrado com o termo **"{{ busca }}"**.</p>
+    <a
+      href="{% url 'detalhe_turma_carometro' turma.id %}"
+      class="btn btn-primary"
+      >Ver Todos os Alunos</a
+    >
+    {% else %}
+    <p>Nenhum aluno cadastrado nesta turma.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
 
 <style>
-.carometro-header {
-    background: linear-gradient(135deg, var(--cor-primaria), var(--cor-terciaria));
+  .carometro-header {
+    background: linear-gradient(
+      135deg,
+      var(--cor-primaria),
+      var(--cor-terciaria)
+    );
     color: rgb(56, 56, 56);
     margin-bottom: 2rem;
-}
+  }
 
-.header-content h1 {
+  .header-content h1 {
     color: rgb(58, 58, 58);
     margin-bottom: 0.5rem;
-}
+  }
 
-.header-content p {
+  .header-content p {
     color: rgba(47, 47, 47, 0.9);
     margin-bottom: 1rem;
-}
+  }
 
-.turma-stats {
+  .turma-stats {
     display: flex;
     gap: 1rem;
-}
+  }
 
-.stat-badge {
+  .stat-badge {
     background: rgba(255, 255, 255, 0.2);
     padding: 0.5rem 1rem;
     border-radius: 12px;
     font-weight: 600;
-}
+  }
 
-.busca-container {
+  .busca-container {
     margin-bottom: 2rem;
-}
+  }
 
-.busca-form {
+  .busca-form {
     display: flex;
     gap: 1rem;
     align-items: center;
-}
+  }
 
-.busca-input {
+  .busca-input {
     flex: 1;
     padding: 0.75rem 1rem;
     border: 2px solid var(--cor-borda);
     border-radius: var(--borda-radius-pequeno);
     font-size: 1.5rem;
-}
+  }
 
-.busca-input:focus {
+  .busca-input:focus {
     outline: none;
     border-color: var(--cor-secundaria);
-}
+  }
 
-.carometro-grid {
+  .carometro-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 2rem;
-}
+  }
 
-.aluno-card {
+  .aluno-card {
     background: var(--cor-fundo-card);
     border-radius: var(--borda-radius);
     padding: 1.5rem;
     box-shadow: 0 4px 12px var(--cor-sombra);
     border: 2px solid var(--cor-borda);
     transition: all 0.3s ease;
-}
+  }
 
-.aluno-card:hover {
+  .aluno-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 20px var(--cor-sombra);
     border-color: var(--cor-secundaria);
-}
+  }
 
-.aluno-foto-container {
+  .aluno-foto-container {
     position: relative;
     display: flex;
     justify-content: center;
     margin-bottom: 1rem;
-}
+  }
 
-.aluno-foto-container img,
-.foto-placeholder {
+  .aluno-foto-container img,
+  .foto-placeholder {
     width: 120px;
     height: 120px;
     border-radius: 50%;
     object-fit: cover;
     border: 4px solid var(--cor-secundaria);
-}
+  }
 
-.foto-placeholder {
-    background: linear-gradient(135deg, var(--cor-secundaria), var(--cor-terciaria));
+  .foto-placeholder {
+    background: linear-gradient(
+      135deg,
+      var(--cor-secundaria),
+      var(--cor-terciaria)
+    );
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 3rem;
     font-weight: 700;
-}
+  }
 
-.media-badge {
+  .media-badge {
     position: absolute;
     bottom: 0;
     right: calc(50% - 70px);
@@ -239,61 +286,67 @@
     font-weight: 700;
     color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
+  }
 
-.media-badge.alta { background: #27ae60; }
-.media-badge.media { background: #f39c12; }
-.media-badge.baixa { background: #e74c3c; }
+  .media-badge.alta {
+    background: #27ae60;
+  }
+  .media-badge.media {
+    background: #f39c12;
+  }
+  .media-badge.baixa {
+    background: #e74c3c;
+  }
 
-.aluno-info {
+  .aluno-info {
     text-align: center;
     margin-bottom: 1rem;
-}
+  }
 
-.aluno-info h3 {
+  .aluno-info h3 {
     color: var(--cor-primaria);
     margin: 0 0 0.5rem 0;
     font-size: 2.5rem;
-}
+  }
 
-.turma-info {
+  .turma-info {
     color: var(--cor-texto-claro);
     margin: 0;
     font-size: 1.5rem;
-}
+  }
 
-.avaliacoes-count {
+  .avaliacoes-count {
     margin: 0.5rem 0 0 0;
     font-size: 1.5rem;
     color: var(--cor-secundaria);
     font-weight: 600;
-}
+  }
 
-.avaliacoes-count.sem-avaliacoes {
+  .avaliacoes-count.sem-avaliacoes {
     color: var(--cor-texto-claro);
-}
+  }
 
-.aluno-card hr {
+  .aluno-card hr {
     margin: 1.5rem 0;
     border: none;
     border-top: 2px solid var(--cor-borda);
-}
+  }
 
-.form-titulo {
+  .form-titulo {
     text-align: center;
     font-weight: 600;
     color: var(--cor-primaria);
     margin-bottom: 1rem;
-}
+  }
 
-.criterios-grid {
+  .criterios-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     margin-bottom: 1rem;
-}
+  }
 
-.criterio-item label {
+  .criterio-item label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -301,13 +354,13 @@
     font-weight: 600;
     color: var(--cor-primaria);
     margin-bottom: 0.35rem;
-}
+  }
 
-.emoji {
+  .emoji {
     font-size: 1.1rem;
-}
+  }
 
-.criterio-item input[type="number"] {
+  .criterio-item input[type="number"] {
     width: 100%;
     padding: 0.6rem;
     border: 2px solid var(--cor-borda);
@@ -316,48 +369,48 @@
     text-align: center;
     font-weight: 600;
     transition: all 0.3s ease;
-}
+  }
 
-.criterio-item input[type="number"]:focus {
+  .criterio-item input[type="number"]:focus {
     outline: none;
     border-color: var(--cor-secundaria);
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-}
+  }
 
-.card-actions {
+  .card-actions {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-}
+  }
 
-.btn-small {
+  .btn-small {
     padding: 0.6rem 1rem;
     font-size: 1.5rem;
-}
+  }
 
-.empty-state {
+  .empty-state {
     grid-column: 1 / -1;
     text-align: center;
     padding: 3rem;
-}
+  }
 
-.empty-state p {
+  .empty-state p {
     color: var(--cor-texto-claro);
     margin-bottom: 1.5rem;
-}
+  }
 
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
     .carometro-grid {
-        grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
-    
+
     .busca-form {
-        flex-direction: column;
+      flex-direction: column;
     }
-    
+
     .busca-input {
-        width: 100%;
+      width: 100%;
     }
-}
+  }
 </style>
 {% endblock %}

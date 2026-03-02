@@ -181,6 +181,22 @@ p {
   box-shadow: 0 0.6rem 1.6rem rgba(230, 123, 89, 0.3);
 }
 
+.btn-out {
+  background-color: #f5a623;
+  color: white;
+  border: 2px solid white;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  justify-content: center;
+
+  &:hover {
+    transform: translateY(-2px);
+    background-color: rgb(255, 0, 0);
+  }
+}
+
 .btn-secondary {
   background-color: #f5a623;
   color: white;

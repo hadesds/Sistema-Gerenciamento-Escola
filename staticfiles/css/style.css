@@ -59,6 +59,7 @@ body {
   box-shadow: 0 0.3rem 0.4rem rgba(0, 0, 0, 0.15);
   position: sticky;
   top: 0;
+  gap: 2rem;
   z-index: 1000;
 }
 
@@ -188,12 +189,15 @@ p {
   display: flex;
   align-items: center;
   gap: 0.3rem;
+  justify-content: center;
 }
 
 .btn-secondary:hover {
-  background-color: rgb(255, 255, 255);
-  color: #f5a623;
   transform: translateY(-2px);
+
+  & span {
+    color: #ffffff;
+  }
 }
 
 .btn-submit {

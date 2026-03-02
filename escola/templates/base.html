@@ -71,6 +71,27 @@
             Simulados
           </a>
         </div>
+        <!-- Usario de lider, funcionalidades de aluno + chamada para o lider e vice -->
+        {% elif user.lider %}
+        <div class="alinhamento-icon">
+          <a href="{% url 'meu_feedback' %}">
+            <span class="material-icons-outlined">assessment</span>
+            Meu Feedback
+          </a>
+        </div>
+        <div class="alinhamento-icon">
+          <a href="{% url 'meus_simulados' %}">
+            <span class="material-icons-outlined">quiz</span>
+            Simulados
+          </a>
+        </div>
+        <!-- Adicionar o link para a tabela da chamada -->
+        <div class="alinhamento-icon">
+          <a href="{% url 'meus_simulados' %}">
+            <span class="material-icons-outlined">check</span>
+            Chamada
+          </a>
+        </div>
         {% elif user.is_superuser %}
         <a href="/admin/">
           <span class="material-icons-outlined">admin_panel_settings</span>
@@ -84,7 +105,7 @@
           style="display: inline; margin-left: 1rem"
         >
           {% csrf_token %}
-          <button type="submit" class="btn btn-secondary">
+          <button type="submit" class="btn btn-out">
             <span class="material-icons-outlined">logout</span>
             Sair
           </button>

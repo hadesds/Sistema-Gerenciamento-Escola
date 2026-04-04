@@ -67,7 +67,7 @@ export default function CriarSimuladoPage() {
     }
   }
 
-  const materias = data ? [...new Set(data.questoes.map(q => q.materia))] : [];
+  const materias = data ? Array.from(new Set(data.questoes.map(q => q.materia))) : [];
   const questoesFiltradas = data
     ? (materiaFiltro ? data.questoes.filter(q => q.materia === materiaFiltro) : data.questoes)
     : [];

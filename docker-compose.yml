@@ -28,6 +28,17 @@ services:
       - db
     restart: on-failure
 
+  frontend:
+    build: ./frontend
+    container_name: cara_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5433
+    depends_on:
+      - web
+    restart: on-failure
+
 volumes:
   postgres_data:
   media_root:

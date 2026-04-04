@@ -1,0 +1,95 @@
+import Cookies from 'js-cookie';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433';
+
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = Cookies.get('access_token');
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  const res = await fetch(`${API_URL}/api${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (res.status === 401) {
+    // Token expirado: tenta refresh
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      const newToken = Cookies.get('access_token');
+      const retryHeaders: HeadersInit = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${newToken}`,
+        ...((options.headers as Record<string, string>) || {}),
+      };
+      const retryRes = await fetch(`${API_URL}/api${path}`, {
+        ...options,
+        headers: retryHeaders,
+      });
+      if (!retryRes.ok) throw new Error(await retryRes.text());
+      return retryRes.json();
+    } else {
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      if (typeof window !== 'undefined') window.location.href = '/login';
+      throw new Error('Sessão expirada');
+    }
+  }
+
+  if (!res.ok) {
+    const errData = await res.text();
+    throw new Error(errData);
+  }
+
+  if (res.status === 204) return {} as T;
+  return res.json();
+}
+
+async function tryRefreshToken(): Promise<boolean> {
+  const refresh = Cookies.get('refresh_token');
+  if (!refresh) return false;
+  try {
+    const res = await fetch(`${API_URL}/api/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    Cookies.set('access_token', data.access, { expires: 1 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function login(username: string, password: string) {
+  const res = await fetch(`${API_URL}/api/token/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    throw new Error('Credenciais inválidas');
+  }
+  const data = await res.json();
+  Cookies.set('access_token', data.access, { expires: 1 });
+  Cookies.set('refresh_token', data.refresh, { expires: 7 });
+  return data;
+}
+
+export function logout() {
+  Cookies.remove('access_token');
+  Cookies.remove('refresh_token');
+}
+
+export function isAuthenticated(): boolean {
+  return !!Cookies.get('access_token');
+}

@@ -1,0 +1,106 @@
+from rest_framework import serializers
+from django.contrib.auth.models import User
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado
+
+
+class TurmaSerializer(serializers.ModelSerializer):
+    turno_display = serializers.CharField(source='get_turno_display', read_only=True)
+
+    class Meta:
+        model = Turma
+        fields = ['id', 'nome', 'serie', 'turno', 'turno_display', 'sala']
+
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+
+
+class AlunoBasicSerializer(serializers.ModelSerializer):
+    user = UserBasicSerializer(read_only=True)
+    nome_completo = serializers.SerializerMethodField()
+    foto_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Aluno
+        fields = ['user', 'matricula', 'turma', 'foto_url', 'nome_completo']
+
+    def get_nome_completo(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
+    def get_foto_url(self, obj):
+        request = self.context.get('request')
+        if obj.foto and request:
+            return request.build_absolute_uri(obj.foto.url)
+        return None
+
+
+class AvaliacaoSerializer(serializers.ModelSerializer):
+    aluno_nome = serializers.SerializerMethodField()
+    aluno_turma = serializers.SerializerMethodField()
+    media = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Avaliacao
+        fields = [
+            'id', 'aluno', 'aluno_nome', 'aluno_turma',
+            'assiduidade', 'participacao', 'responsabilidade', 'sociabilidade',
+            'data', 'media'
+        ]
+
+    def get_aluno_nome(self, obj):
+        return obj.aluno.user.get_full_name() or obj.aluno.user.username
+
+    def get_aluno_turma(self, obj):
+        return obj.aluno.turma.nome if obj.aluno.turma else ''
+
+    def get_media(self, obj):
+        return round(obj.calcular_media(), 2)
+
+
+class QuestaoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Questao
+        fields = ['id', 'enunciado', 'resposta', 'materia', 'data_criacao']
+
+
+class SimuladoSerializer(serializers.ModelSerializer):
+    turma_nome = serializers.SerializerMethodField()
+    autor_nome = serializers.SerializerMethodField()
+    total_questoes = serializers.SerializerMethodField()
+    questoes = QuestaoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Simulado
+        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'total_questoes', 'questoes']
+
+    def get_turma_nome(self, obj):
+        return obj.turma_alvo.nome if obj.turma_alvo else ''
+
+    def get_autor_nome(self, obj):
+        return obj.autor.user.get_full_name() or obj.autor.user.username
+
+    def get_total_questoes(self, obj):
+        return obj.questoes.count()
+
+
+class MeSerializer(serializers.ModelSerializer):
+    tipo = serializers.SerializerMethodField()
+    nome_completo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'tipo', 'nome_completo']
+
+    def get_tipo(self, obj):
+        if obj.is_superuser:
+            return 'admin'
+        if hasattr(obj, 'professor'):
+            return 'professor'
+        if hasattr(obj, 'aluno'):
+            return 'aluno'
+        return 'unknown'
+
+    def get_nome_completo(self, obj):
+        return obj.get_full_name() or obj.username

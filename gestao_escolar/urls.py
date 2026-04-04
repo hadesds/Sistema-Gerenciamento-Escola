@@ -6,12 +6,15 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
-    # URLs de autenticação
+
+    # URLs de autenticação (mantidas para compatibilidade)
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    
-    # URLs da aplicação escola
+
+    # API REST
+    path('api/', include('escola.api_urls')),
+
+    # URLs da aplicação escola (server-side, mantidas)
     path('', include('escola.urls')),
 ]
 

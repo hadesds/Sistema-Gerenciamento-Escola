@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria
 
 
 class TurmaSerializer(serializers.ModelSerializer):
@@ -83,6 +83,15 @@ class SimuladoSerializer(serializers.ModelSerializer):
 
     def get_total_questoes(self, obj):
         return obj.questoes.count()
+
+
+class NotaMateriaSerializer(serializers.ModelSerializer):
+    materia_display = serializers.CharField(source='get_materia_display', read_only=True)
+    epoca_display   = serializers.CharField(source='get_epoca_display',   read_only=True)
+
+    class Meta:
+        model  = NotaMateria
+        fields = ['id', 'materia', 'materia_display', 'nota', 'epoca', 'epoca_display', 'data']
 
 
 class MeSerializer(serializers.ModelSerializer):

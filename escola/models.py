@@ -74,6 +74,45 @@ class Avaliacao(models.Model):
     def __str__(self):
         return f"Avaliação de {self.aluno} por {self.professor} em {self.data}"
 
+class NotaMateria(models.Model):
+    MATERIAS = [
+        ('portugues',       'Português'),
+        ('matematica',      'Matemática'),
+        ('ciencias',        'Ciências'),
+        ('religiao',        'Religião'),
+        ('geografia',       'Geografia'),
+        ('historia',        'História'),
+        ('artes',           'Artes'),
+        ('ingles',          'Inglês'),
+        ('educacao_fisica', 'Educação Física'),
+        ('filosofia',       'Filosofia'),
+    ]
+
+    EPOCAS = [
+        ('1B', '1° Bimestre'),
+        ('2B', '2° Bimestre'),
+        ('3B', '3° Bimestre'),
+        ('4B', '4° Bimestre'),
+    ]
+
+    aluno     = models.ForeignKey(Aluno,     on_delete=models.CASCADE,    related_name='notas_materias')
+    professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name='notas_dadas')
+    materia   = models.CharField(max_length=20, choices=MATERIAS)
+    nota      = models.DecimalField(max_digits=4, decimal_places=2,
+                    validators=[MinValueValidator(0), MaxValueValidator(10)])
+    epoca     = models.CharField(max_length=2, choices=EPOCAS)
+    data      = models.DateField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('aluno', 'materia', 'epoca')
+        ordering = ['epoca', 'materia']
+        verbose_name = 'Nota por Matéria'
+        verbose_name_plural = 'Notas por Matéria'
+
+    def __str__(self):
+        return f"{self.aluno} – {self.get_materia_display()} ({self.get_epoca_display()}): {self.nota}"
+
+
 class Questao(models.Model):
     enunciado = models.TextField()
     resposta = models.TextField()

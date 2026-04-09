@@ -18,6 +18,7 @@ urlpatterns = [
     path('professor/criar-simulado/', api_views.professor_criar_simulado, name='api_criar_simulado'),
     path('professor/simulados/', api_views.professor_lista_simulados, name='api_lista_simulados'),
     path('professor/relatorio/<int:aluno_id>/', api_views.professor_relatorio_aluno, name='api_relatorio_aluno'),
+    path('professor/notas/<int:aluno_id>/', api_views.professor_notas_aluno, name='api_professor_notas'),
 
     # Aluno
     path('aluno/dashboard/', api_views.aluno_dashboard, name='api_aluno_dashboard'),

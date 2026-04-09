@@ -39,14 +39,25 @@ interface RelatorioData {
     media: number;
     data: string;
   }>;
+  notas_por_epoca: Record<string, Record<string, number>>;
+  medias_materias: Record<string, number>;
+  media_geral_materias: number | null;
 }
 
 const CRITERIOS = [
-  { key: 'assiduidade', label: 'Assiduidade', pct: 'assiduidade_percentual' },
-  { key: 'participacao', label: 'Participação', pct: 'participacao_percentual' },
-  { key: 'responsabilidade', label: 'Responsabilidade', pct: 'responsabilidade_percentual' },
-  { key: 'sociabilidade', label: 'Sociabilidade', pct: 'sociabilidade_percentual' },
-] as const;
+  { key: 'assiduidade'    as const, label: 'Assiduidade',     pct: 'assiduidade_percentual'     as const },
+  { key: 'participacao'   as const, label: 'Participação',    pct: 'participacao_percentual'    as const },
+  { key: 'responsabilidade' as const, label: 'Responsabilidade', pct: 'responsabilidade_percentual' as const },
+  { key: 'sociabilidade'  as const, label: 'Sociabilidade',   pct: 'sociabilidade_percentual'   as const },
+];
+
+const EPOCAS_ORDER = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre'];
+
+function notaColor(nota: number) {
+  if (nota >= 7) return 'var(--color-success)';
+  if (nota >= 5) return 'var(--color-warning)';
+  return 'var(--color-danger)';
+}
 
 export default function RelatorioAlunoPage() {
   const params = useParams();
@@ -70,12 +81,10 @@ export default function RelatorioAlunoPage() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
               <h1>Relatório do Aluno</h1>
-              <Link href={`/professor/turma/${data.aluno.id}`} className="btn btn-secondary">
-                ← Voltar
-              </Link>
+              <Link href={`/professor/turmas`} className="btn btn-secondary">← Voltar</Link>
             </div>
 
-            {/* Perfil do aluno */}
+            {/* Perfil */}
             <div className="card">
               <div className="perfil-header">
                 {data.aluno.foto_url ? (
@@ -92,29 +101,23 @@ export default function RelatorioAlunoPage() {
               </div>
             </div>
 
-            {/* Média Geral */}
+            {/* Stats comportamento */}
             <div className="stats-grid">
               <div className="stat-card">
                 <div className="stat-icon"><span className="material-icons-outlined">grade</span></div>
-                <div className="stat-info">
-                  <h3>{data.media_geral.toFixed(2)}</h3>
-                  <p>Média Geral</p>
-                </div>
+                <div className="stat-info"><h3>{data.media_geral.toFixed(2)}</h3><p>Média Comportamental</p></div>
               </div>
-              {CRITERIOS.map(c => (
-                <div key={c.key} className="stat-card">
-                  <div className="stat-icon"><span className="material-icons-outlined">analytics</span></div>
-                  <div className="stat-info">
-                    <h3>{data.medias[c.key].toFixed(2)}</h3>
-                    <p>{c.label}</p>
-                  </div>
+              {data.media_geral_materias !== null && (
+                <div className="stat-card">
+                  <div className="stat-icon"><span className="material-icons-outlined">school</span></div>
+                  <div className="stat-info"><h3>{data.media_geral_materias.toFixed(2)}</h3><p>Média Geral Matérias</p></div>
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Barras de progresso */}
+            {/* Barras comportamento */}
             <div className="card mb-2">
-              <h2>Desempenho por Critério</h2>
+              <h2>Comportamento</h2>
               {CRITERIOS.map(c => (
                 <div key={c.key} style={{ marginBottom: '2rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
@@ -122,22 +125,86 @@ export default function RelatorioAlunoPage() {
                     <span>{data.medias[c.key].toFixed(2)} / 5.00 ({data.medias[c.pct]}%)</span>
                   </div>
                   <div className="progress-bar" style={{ height: '1.8rem' }}>
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${data.medias[c.pct]}%`,
-                        background: 'linear-gradient(135deg, var(--color-bar-light), var(--color-bar-accent))',
-                      }}
-                    />
+                    <div className="progress-fill" style={{
+                      width: `${data.medias[c.pct]}%`,
+                      background: 'linear-gradient(135deg, var(--color-bar-light), var(--color-bar-accent))',
+                    }} />
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Histórico de avaliações */}
+            {/* Tabela de notas por matéria */}
+            {Object.keys(data.notas_por_epoca).length > 0 && (() => {
+              const epocasPresentes = EPOCAS_ORDER.filter(e => data.notas_por_epoca[e]);
+              const materias = Object.keys(data.medias_materias);
+
+              return (
+                <div className="card mb-2">
+                  <h2>Notas por Matéria</h2>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="feedback-table">
+                      <thead>
+                        <tr>
+                          <th>Matéria</th>
+                          {epocasPresentes.map(e => <th key={e}>{e}</th>)}
+                          <th>Média</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {materias.map(mat => (
+                          <tr key={mat}>
+                            <td><strong>{mat}</strong></td>
+                            {epocasPresentes.map(e => {
+                              const nota = data.notas_por_epoca[e]?.[mat];
+                              return (
+                                <td key={e}>
+                                  {nota !== undefined
+                                    ? <span style={{ fontWeight: 600, color: notaColor(nota) }}>{nota.toFixed(1)}</span>
+                                    : <span style={{ color: 'var(--text-secondary)' }}>–</span>}
+                                </td>
+                              );
+                            })}
+                            <td>
+                              <span style={{ fontWeight: 700, color: notaColor(data.medias_materias[mat]) }}>
+                                {data.medias_materias[mat].toFixed(2)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                        {/* Linha de média por época */}
+                        <tr style={{ background: 'var(--bg-card-add)' }}>
+                          <td><strong>Média Geral</strong></td>
+                          {epocasPresentes.map(e => {
+                            const vals = Object.values(data.notas_por_epoca[e] || {}) as number[];
+                            const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+                            return (
+                              <td key={e}>
+                                {avg !== null
+                                  ? <strong style={{ color: notaColor(avg) }}>{avg.toFixed(2)}</strong>
+                                  : '–'}
+                              </td>
+                            );
+                          })}
+                          <td>
+                            {data.media_geral_materias !== null && (
+                              <strong style={{ color: notaColor(data.media_geral_materias) }}>
+                                {data.media_geral_materias.toFixed(2)}
+                              </strong>
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Histórico comportamental */}
             {data.avaliacoes.length > 0 && (
               <div className="card">
-                <h2>Histórico de Avaliações</h2>
+                <h2>Histórico Comportamental</h2>
                 <table className="feedback-table">
                   <thead>
                     <tr>

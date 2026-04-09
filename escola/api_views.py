@@ -6,10 +6,10 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
-    QuestaoSerializer, SimuladoSerializer, MeSerializer
+    QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer
 )
 
 
@@ -319,13 +319,31 @@ def professor_relatorio_aluno(request, aluno_id):
         media_geral = sum(medias.values()) / 4
 
     def calc_percent(value):
-        if value and MAX_SCORE > 0:
-            return round((value / MAX_SCORE) * 100)
-        return 0
+        return round((value / MAX_SCORE) * 100) if value and MAX_SCORE > 0 else 0
 
     foto_url = None
     if aluno.foto:
         foto_url = request.build_absolute_uri(aluno.foto.url)
+
+    # Notas por matéria
+    notas_qs = NotaMateria.objects.filter(aluno=aluno).order_by('epoca', 'materia')
+    notas_por_epoca = {}
+    medias_por_materia = {}
+
+    for nota in notas_qs:
+        epoca_key = nota.get_epoca_display()
+        mat_key   = nota.get_materia_display()
+        notas_por_epoca.setdefault(epoca_key, {})[mat_key] = float(nota.nota)
+        medias_por_materia.setdefault(mat_key, []).append(float(nota.nota))
+
+    medias_materias = {
+        mat: round(sum(vals) / len(vals), 2)
+        for mat, vals in medias_por_materia.items()
+    }
+    media_geral_materias = (
+        round(sum(medias_materias.values()) / len(medias_materias), 2)
+        if medias_materias else None
+    )
 
     return Response({
         'aluno': {
@@ -347,8 +365,58 @@ def professor_relatorio_aluno(request, aluno_id):
         },
         'media_geral': round(media_geral, 2),
         'total_avaliacoes': avaliacoes.count(),
-        'avaliacoes': AvaliacaoSerializer(avaliacoes, many=True).data
+        'avaliacoes': AvaliacaoSerializer(avaliacoes, many=True).data,
+        # notas por matéria
+        'notas_por_epoca': notas_por_epoca,
+        'medias_materias': medias_materias,
+        'media_geral_materias': media_geral_materias,
     })
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def professor_notas_aluno(request, aluno_id):
+    """GET: retorna notas do aluno. POST: lança/atualiza notas de uma época."""
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+
+    if request.method == 'GET':
+        notas = NotaMateria.objects.filter(aluno=aluno)
+        return Response(NotaMateriaSerializer(notas, many=True).data)
+
+    # POST: { epoca: '1B', notas: { portugues: 8.5, matematica: 7.0, ... } }
+    epoca = request.data.get('epoca')
+    notas_dict = request.data.get('notas', {})
+
+    if not epoca or not notas_dict:
+        return Response({'detail': 'Informe a época e as notas.'}, status=400)
+
+    epocas_validas = [e[0] for e in NotaMateria.EPOCAS]
+    if epoca not in epocas_validas:
+        return Response({'detail': 'Época inválida.'}, status=400)
+
+    materias_validas = [m[0] for m in NotaMateria.MATERIAS]
+    criadas = []
+    for materia, nota_val in notas_dict.items():
+        if materia not in materias_validas:
+            continue
+        try:
+            nota_float = float(nota_val)
+            if not (0 <= nota_float <= 10):
+                continue
+        except (TypeError, ValueError):
+            continue
+
+        obj, _ = NotaMateria.objects.update_or_create(
+            aluno=aluno, materia=materia, epoca=epoca,
+            defaults={'professor': professor, 'nota': nota_float}
+        )
+        criadas.append(obj)
+
+    return Response(NotaMateriaSerializer(criadas, many=True).data, status=201)
 
 
 # ==========================================
@@ -443,6 +511,25 @@ def aluno_meu_feedback(request):
     if aluno.foto:
         foto_url = request.build_absolute_uri(aluno.foto.url)
 
+    # Notas por matéria
+    notas_qs = NotaMateria.objects.filter(aluno=aluno).order_by('epoca', 'materia')
+    notas_por_epoca = {}
+    medias_por_materia = {}
+    for nota in notas_qs:
+        ep  = nota.get_epoca_display()
+        mat = nota.get_materia_display()
+        notas_por_epoca.setdefault(ep, {})[mat] = float(nota.nota)
+        medias_por_materia.setdefault(mat, []).append(float(nota.nota))
+
+    medias_materias = {
+        mat: round(sum(v) / len(v), 2)
+        for mat, v in medias_por_materia.items()
+    }
+    media_geral_materias = (
+        round(sum(medias_materias.values()) / len(medias_materias), 2)
+        if medias_materias else None
+    )
+
     return Response({
         'aluno': {
             'id': aluno.user.id,
@@ -456,7 +543,10 @@ def aluno_meu_feedback(request):
             'sociabilidade': round(medias['media_sociabilidade'], 2),
         },
         'media_geral': round(media_geral, 2),
-        'avaliacoes': AvaliacaoSerializer(avaliacoes, many=True).data
+        'avaliacoes': AvaliacaoSerializer(avaliacoes, many=True).data,
+        'notas_por_epoca': notas_por_epoca,
+        'medias_materias': medias_materias,
+        'media_geral_materias': media_geral_materias,
     })
 
 

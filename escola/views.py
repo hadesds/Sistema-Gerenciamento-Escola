@@ -322,7 +322,8 @@ def banco_questoes(request):
                 autor=professor,
                 enunciado=request.POST.get('enunciado'),
                 resposta=request.POST.get('resposta'),
-                materia=request.POST.get('materia')
+                materia=request.POST.get('materia'),
+                dificuldade=request.POST.get('dificuldade', 'medio')
             )
             messages.success(request, 'Questão cadastrada com sucesso!')
         except Exception as e:
@@ -516,4 +517,61 @@ def visualizar_simulado(request, simulado_id):
     return render(request, 'aluno/visualizar_simulado.html', {
         'simulado': simulado,
         'questoes': questoes
+    })
+
+# ==========================================
+# ÁREA DO LÍDER / VICE-LÍDER
+# ==========================================
+
+@login_required
+@aluno_required
+def registrar_assiduidade(request):
+    aluno = request.user.aluno
+    try:
+        perfil = aluno.perfil_turma
+    except:
+        messages.error(request, 'Você não tem permissão para registrar assiduidade.')
+        return redirect('dashboard')
+
+    turma = perfil.turma
+    alunos_turma = turma.alunos.all().order_by('user__first_name')
+
+    if request.method == 'POST':
+        from .models import RegistroAssiduidade, PresencaAluno
+        registro = RegistroAssiduidade.objects.create(
+            turma=turma,
+            registrado_por=aluno,
+            observacao=request.POST.get('observacao', '')
+        )
+        for a in alunos_turma:
+            presente = request.POST.get(f'aluno_{a.user.pk}') == 'on'
+            PresencaAluno.objects.create(registro=registro, aluno=a, presente=presente)
+        messages.success(request, 'Assiduidade registrada com sucesso!')
+        return redirect('historico_assiduidade')
+
+    return render(request, 'aluno/registrar_assiduidade.html', {
+        'turma': turma,
+        'alunos': alunos_turma,
+        'perfil': perfil,
+    })
+
+
+@login_required
+@aluno_required
+def historico_assiduidade(request):
+    aluno = request.user.aluno
+    try:
+        perfil = aluno.perfil_turma
+    except:
+        messages.error(request, 'Você não tem permissão para ver este histórico.')
+        return redirect('dashboard')
+
+    from .models import RegistroAssiduidade
+    turma = perfil.turma
+    registros = RegistroAssiduidade.objects.filter(turma=turma).prefetch_related('presencas__aluno')
+
+    return render(request, 'aluno/historico_assiduidade.html', {
+        'turma': turma,
+        'registros': registros,
+        'perfil': perfil,
     })

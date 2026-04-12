@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Histórico de Assiduidade{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Histórico de Assiduidade</h1>
+    <p class="subtitle">{{ turma.nome }} — {{ perfil.get_papel_display }}</p>
+</div>
+
+<div style="margin-bottom:1.5rem;">
+    <a href="{% url 'registrar_assiduidade' %}" class="btn btn-primary">+ Novo Registro</a>
+</div>
+
+{% for registro in registros %}
+<div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <strong style="font-size:1.5rem;">{{ registro.data|date:"d/m/Y" }}</strong>
+        <span style="font-size:1.2rem; color:var(--cor-texto-claro);">Registrado por: {{ registro.registrado_por.user.get_full_name|default:registro.registrado_por.user.username }}</span>
+    </div>
+    {% if registro.observacao %}
+        <p style="color:var(--cor-texto-claro); font-size:1.3rem; margin-bottom:1rem;">📝 {{ registro.observacao }}</p>
+    {% endif %}
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="background:var(--cor-primaria); color:#fff;">
+                <th style="padding:0.5rem 1rem; text-align:left;">Aluno</th>
+                <th style="padding:0.5rem 1rem; text-align:center;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for presenca in registro.presencas.all %}
+            <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:0.5rem 1rem;">{{ presenca.aluno.user.get_full_name|default:presenca.aluno.user.username }}</td>
+                <td style="padding:0.5rem 1rem; text-align:center;">
+                    {% if presenca.presente %}
+                        <span style="background:#d4edda; color:#155724; padding:2px 12px; border-radius:12px; font-size:1.2rem; font-weight:600;">✓ Presente</span>
+                    {% else %}
+                        <span style="background:#f8d7da; color:#721c24; padding:2px 12px; border-radius:12px; font-size:1.2rem; font-weight:600;">✗ Ausente</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% empty %}
+<div class="card">
+    <p style="text-align:center; color:var(--cor-texto-claro);">Nenhum registro de assiduidade ainda.</p>
+    <div style="text-align:center; margin-top:1rem;">
+        <a href="{% url 'registrar_assiduidade' %}" class="btn btn-primary">Fazer primeiro registro</a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -18,6 +18,14 @@
                 <input type="text" id="materia" name="materia" placeholder="Ex: Matemática, História..." required>
             </div>
             <div class="form-group">
+                <label for="dificuldade">Dificuldade *</label>
+                <select id="dificuldade" name="dificuldade">
+                    <option value="facil">🟢 Fácil</option>
+                    <option value="medio" selected>🟡 Médio</option>
+                    <option value="dificil">🔴 Difícil</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="enunciado">Enunciado da questão *</label>
                 <textarea id="enunciado" name="enunciado" placeholder="Digite o texto da questão..." rows="5" required></textarea>
             </div>
@@ -31,7 +39,7 @@
 
     <div class="card">
         <h3>Minhas Questões ({{ questoes.count }})</h3>
-        
+
         <div class="filtro-container">
             <form method="GET" action="{% url 'banco_questoes' %}" class="filtro-form">
                 <select name="materia" onchange="this.form.submit()" class="filtro-select">
@@ -42,24 +50,36 @@
                         </option>
                     {% endfor %}
                 </select>
-                {% if materia_filtro %}
-                    <a href="{% url 'banco_questoes' %}" class="btn btn-secondary">Limpar Filtro</a>
+                <select name="dificuldade" onchange="this.form.submit()" class="filtro-select">
+                    <option value="">Todas as Dificuldades</option>
+                    <option value="facil" {% if dificuldade_filtro == "facil" %}selected{% endif %}>🟢 Fácil</option>
+                    <option value="medio" {% if dificuldade_filtro == "medio" %}selected{% endif %}>🟡 Médio</option>
+                    <option value="dificil" {% if dificuldade_filtro == "dificil" %}selected{% endif %}>🔴 Difícil</option>
+                </select>
+                {% if materia_filtro or dificuldade_filtro %}
+                    <a href="{% url 'banco_questoes' %}" class="btn btn-secondary">Limpar Filtros</a>
                 {% endif %}
             </form>
         </div>
-        
+
         <div class="questoes-list">
             {% for questao in questoes %}
-            <div class="questao-item">
+            <div class="questao-item dificuldade-{{ questao.dificuldade }}">
                 <div class="questao-header">
-                    <strong>{{ questao.materia }}</strong>
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <strong>{{ questao.materia }}</strong>
+                        <span class="badge-dificuldade badge-{{ questao.dificuldade }}">
+                            {% if questao.dificuldade == 'facil' %}🟢{% elif questao.dificuldade == 'medio' %}🟡{% else %}🔴{% endif %}
+                            {{ questao.get_dificuldade_display }}
+                        </span>
+                    </div>
                     <small>Criada em: {{ questao.data_criacao|date:"d/m/Y H:i" }}</small>
                 </div>
                 <p class="questao-enunciado-curto">{{ questao.enunciado|truncatewords:20 }}</p>
                 <p class="questao-resposta-curta">Resposta: <span class="resposta-preview">{{ questao.resposta|truncatewords:5 }}</span></p>
             </div>
             {% empty %}
-            <p class="empty-state">Nenhuma questão cadastrada {% if materia_filtro %} para a matéria **{{ materia_filtro }}**{% endif %}.</p>
+            <p class="empty-state">Nenhuma questão cadastrada{% if materia_filtro %} para a matéria <strong>{{ materia_filtro }}</strong>{% endif %}.</p>
             <a href="{% url 'criar_simulado' %}" class="btn btn-secondary">Criar Simulado</a>
             {% endfor %}
         </div>
@@ -74,14 +94,10 @@
 }
 
 @media (max-width: 992px) {
-    .questoes-layout {
-        grid-template-columns: 1fr;
-    }
+    .questoes-layout { grid-template-columns: 1fr; }
 }
 
-.questao-form .form-group {
-    margin-bottom: 1.5rem;
-}
+.questao-form .form-group { margin-bottom: 1.5rem; }
 
 .questao-form label {
     display: block;
@@ -91,7 +107,8 @@
 }
 
 .questao-form input[type="text"],
-.questao-form textarea {
+.questao-form textarea,
+.questao-form select {
     width: 100%;
     padding: 0.75rem 1rem;
     border: 1px solid var(--cor-borda);
@@ -102,7 +119,8 @@
 }
 
 .questao-form input:focus,
-.questao-form textarea:focus {
+.questao-form textarea:focus,
+.questao-form select:focus {
     border-color: var(--cor-secundaria);
     outline: none;
 }
@@ -123,6 +141,7 @@
     display: flex;
     gap: 1rem;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .filtro-select {
@@ -146,6 +165,22 @@
     background: #fdfdfd;
 }
 
+.questao-item.dificuldade-facil  { border-left-color: #28a745; }
+.questao-item.dificuldade-medio  { border-left-color: #ffc107; }
+.questao-item.dificuldade-dificil { border-left-color: #dc3545; }
+
+.badge-dificuldade {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.badge-facil   { background: #d4edda; color: #155724; }
+.badge-medio   { background: #fff3cd; color: #856404; }
+.badge-dificil { background: #f8d7da; color: #721c24; }
+
 .questao-header {
     display: flex;
     justify-content: space-between;
@@ -155,9 +190,7 @@
     color: var(--cor-primaria);
 }
 
-.questao-header strong {
-    font-size: 1.1rem;
-}
+.questao-header strong { font-size: 1.1rem; }
 
 .questao-enunciado-curto {
     margin: 0.5rem 0;
@@ -175,8 +208,6 @@
     color: var(--cor-sucesso);
 }
 
-.btn-block {
-    width: 100%;
-}
+.btn-block { width: 100%; }
 </style>
 {% endblock %}

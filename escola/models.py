@@ -5,7 +5,6 @@ from datetime import date
 
 class Administrador(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-
     def __str__(self):
         return self.user.username
 
@@ -15,19 +14,16 @@ class Turma(models.Model):
         ('T', 'Tarde'),
         ('N', 'Noite'),
     ]
-    
     nome = models.CharField(max_length=100)
     serie = models.CharField(max_length=50, default='', blank=True)
     turno = models.CharField(max_length=1, choices=TURNOS, default='M', blank=True)
     sala = models.CharField(max_length=20, blank=True)
-   
     def __str__(self):
         return self.nome
 
 class Professor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    turmas = models.ManyToManyField(Turma, related_name="professores", blank=True) 
-    
+    turmas = models.ManyToManyField(Turma, related_name="professores", blank=True)
     def __str__(self):
         return self.user.get_full_name() or self.user.username
 
@@ -36,38 +32,68 @@ class Aluno(models.Model):
     foto = models.ImageField(upload_to='fotos_alunos/', blank=True, null=True)
     turma = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, blank=True, related_name="alunos")
     matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
-
     def __str__(self):
         return self.user.get_full_name() or self.user.username
+
+class PerfilTurma(models.Model):
+    PAPEL_CHOICES = [
+        ('lider', 'Líder'),
+        ('vice', 'Vice-Líder'),
+    ]
+    aluno = models.OneToOneField(Aluno, on_delete=models.CASCADE, related_name='perfil_turma')
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, related_name='perfis')
+    papel = models.CharField(max_length=10, choices=PAPEL_CHOICES)
+
+    class Meta:
+        unique_together = ('turma', 'papel')
+        verbose_name = 'Perfil de Turma'
+        verbose_name_plural = 'Perfis de Turma'
+
+    def __str__(self):
+        return f"{self.get_papel_display()} da {self.turma} — {self.aluno}"
+
+class RegistroAssiduidade(models.Model):
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, related_name='registros_assiduidade')
+    registrado_por = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='registros_feitos')
+    data = models.DateField(auto_now_add=True)
+    observacao = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-data']
+        verbose_name = 'Registro de Assiduidade'
+        verbose_name_plural = 'Registros de Assiduidade'
+
+    def __str__(self):
+        return f"Assiduidade {self.turma} em {self.data}"
+
+class PresencaAluno(models.Model):
+    registro = models.ForeignKey(RegistroAssiduidade, on_delete=models.CASCADE, related_name='presencas')
+    aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='presencas')
+    presente = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('registro', 'aluno')
+        verbose_name = 'Presença'
+        verbose_name_plural = 'Presenças'
+
+    def __str__(self):
+        status = 'Presente' if self.presente else 'Ausente'
+        return f"{self.aluno} — {status} em {self.registro.data}"
 
 class Avaliacao(models.Model):
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name="avaliacoes")
     professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name="avaliacoes_dadas")
-    
-    assiduidade = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
-    )
-    participacao = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
-    )
-    responsabilidade = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
-    )
-    sociabilidade = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
-    )
-    
+    assiduidade = models.IntegerField(default=3, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    participacao = models.IntegerField(default=3, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    responsabilidade = models.IntegerField(default=3, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    sociabilidade = models.IntegerField(default=3, validators=[MinValueValidator(1), MaxValueValidator(5)])
     data = models.DateField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-data']
         verbose_name = 'Avaliação'
         verbose_name_plural = 'Avaliações'
-    
+
     def calcular_media(self):
         return (self.assiduidade + self.participacao + self.responsabilidade + self.sociabilidade) / 4.0
 
@@ -75,12 +101,18 @@ class Avaliacao(models.Model):
         return f"Avaliação de {self.aluno} por {self.professor} em {self.data}"
 
 class Questao(models.Model):
+    DIFICULDADE_CHOICES = [
+        ('facil', 'Fácil'),
+        ('medio', 'Médio'),
+        ('dificil', 'Difícil'),
+    ]
     enunciado = models.TextField()
     resposta = models.TextField()
-    materia = models.CharField(max_length=100) 
+    materia = models.CharField(max_length=100)
     autor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
+    dificuldade = models.CharField(max_length=10, choices=DIFICULDADE_CHOICES, default='medio')
     data_criacao = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-data_criacao']
         verbose_name = 'Questão'
@@ -94,7 +126,7 @@ class Simulado(models.Model):
     autor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="simulados_criados")
     turma_alvo = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, related_name="simulados")
     data_criacao = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-data_criacao']
         verbose_name = 'Simulado'

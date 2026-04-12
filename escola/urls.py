@@ -44,4 +44,10 @@ urlpatterns = [
     
     # Visualizar simulado
     path('simulado/<int:simulado_id>/', views.visualizar_simulado, name='visualizar_simulado'),
+
+    # =====================
+    # URLs DO LÍDER/VICE
+    # =====================
+    path('assiduidade/registrar/', views.registrar_assiduidade, name='registrar_assiduidade'),
+    path('assiduidade/historico/', views.historico_assiduidade, name='historico_assiduidade'),
 ]

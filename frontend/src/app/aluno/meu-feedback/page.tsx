@@ -64,24 +64,25 @@ export default function MeuFeedbackPage() {
 
         {loading ? <Loading /> : !data ? null : (
           <>
-            {/* Stats resumo */}
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon"><span className="material-icons-outlined">grade</span></div>
-                <div className="stat-info"><h3>{data.media_geral.toFixed(2)}</h3><p>Média Comportamental</p></div>
+            {/* Gradient summary card */}
+            <div className="card mb-2" style={{ background: 'linear-gradient(135deg, var(--color-secondary), var(--color-terciaria))', color: 'white', textAlign: 'center', padding: '2.5rem' }}>
+              <h3 style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.8rem' }}>Desempenho Geral</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-around', gap: '1.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '4rem', fontWeight: 700, lineHeight: 1, marginBottom: '0.5rem' }}>{data.media_geral.toFixed(2)}</span>
+                  <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>Média Geral (Max: 5.0)</span>
+                </div>
+                {data.media_geral_materias !== null && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <span style={{ fontSize: '4rem', fontWeight: 700, lineHeight: 1, marginBottom: '0.5rem' }}>{data.media_geral_materias.toFixed(2)}</span>
+                    <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>Média Matérias (Max: 10.0)</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '3rem', fontWeight: 700, lineHeight: 1, marginBottom: '0.5rem' }}>{data.avaliacoes.length}</span>
+                  <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>Avaliações Recebidas</span>
+                </div>
               </div>
-              {data.media_geral_materias !== null && (
-                <div className="stat-card">
-                  <div className="stat-icon"><span className="material-icons-outlined">school</span></div>
-                  <div className="stat-info"><h3>{data.media_geral_materias.toFixed(2)}</h3><p>Média Geral Matérias</p></div>
-                </div>
-              )}
-              {CRITERIOS.map(c => (
-                <div key={c.key} className="stat-card">
-                  <div className="stat-icon"><span className="material-icons-outlined">analytics</span></div>
-                  <div className="stat-info"><h3>{data.medias[c.key].toFixed(2)}</h3><p>{c.label}</p></div>
-                </div>
-              ))}
             </div>
 
             {/* Abas */}
@@ -124,37 +125,29 @@ export default function MeuFeedbackPage() {
                 </div>
 
                 <div className="card">
-                  <h2>Histórico de Avaliações</h2>
+                  <h2 style={{ color: 'var(--color-primary)' }}>Histórico de Avaliações</h2>
                   {data.avaliacoes.length === 0 ? (
                     <div className="empty-state">
                       <div className="empty-icon">📊</div>
                       <p>Nenhuma avaliação registrada ainda.</p>
                     </div>
                   ) : (
-                    <table className="feedback-table">
-                      <thead>
-                        <tr>
-                          <th>Data</th>
-                          <th>Assiduidade</th>
-                          <th>Participação</th>
-                          <th>Responsabilidade</th>
-                          <th>Sociabilidade</th>
-                          <th>Média</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.avaliacoes.map(av => (
-                          <tr key={av.id}>
-                            <td>{new Date(av.data).toLocaleDateString('pt-BR')}</td>
-                            <td>{av.assiduidade}/5</td>
-                            <td>{av.participacao}/5</td>
-                            <td>{av.responsabilidade}/5</td>
-                            <td>{av.sociabilidade}/5</td>
-                            <td><NotaBadge nota={av.media} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {data.avaliacoes.map(av => (
+                        <div key={av.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', border: '1px solid var(--border-light)', borderLeft: '4px solid var(--color-primary)', borderRadius: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                          <div style={{ minWidth: '12rem' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '1.5rem' }}>{new Date(av.data).toLocaleDateString('pt-BR')}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '1.3rem', flex: 1, flexWrap: 'wrap' }}>
+                            <span>📌 A: <strong>{av.assiduidade}</strong></span>
+                            <span>🙋 P: <strong>{av.participacao}</strong></span>
+                            <span>✅ R: <strong>{av.responsabilidade}</strong></span>
+                            <span>👥 S: <strong>{av.sociabilidade}</strong></span>
+                          </div>
+                          <NotaBadge nota={av.media} />
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </>

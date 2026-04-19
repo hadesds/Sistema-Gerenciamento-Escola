@@ -519,6 +519,13 @@ p {
   html { font-size: 52%; }
 }
 
+/* Turma link hover in dashboard */
+.turma-link-item:hover {
+  transform: translateX(4px);
+  border-color: var(--color-secondary) !important;
+  box-shadow: 0 0.4rem 1.2rem rgba(52, 152, 219, 0.2);
+}
+
 /* Loading spinner */
 .loading-container {
   display: flex;

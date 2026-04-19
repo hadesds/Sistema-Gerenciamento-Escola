@@ -111,6 +111,14 @@ def professor_dashboard(request):
                 'total_avaliacoes': avaliacoes_turma.count()
             })
 
+    turmas_lista = []
+    for turma in turmas:
+        turmas_lista.append({
+            'id': turma.id,
+            'nome': turma.nome,
+            'total_alunos': turma.alunos.count(),
+        })
+
     return Response({
         'total_alunos': total_alunos,
         'total_turmas': total_turmas,
@@ -119,6 +127,7 @@ def professor_dashboard(request):
         'avaliacoes_recentes': avaliacoes_recentes,
         'top_alunos': top_alunos,
         'desempenho_turmas': desempenho_turmas,
+        'turmas': turmas_lista,
     })
 
 
@@ -137,11 +146,19 @@ def professor_turmas(request):
         media_turma = 0
         if avaliacoes_turma.exists():
             media_turma = avaliacoes_turma.aggregate(Avg('assiduidade'))['assiduidade__avg'] or 0
+        alunos_preview = []
+        for aluno in turma.alunos.all()[:4]:
+            foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else None
+            alunos_preview.append({
+                'nome': aluno.user.get_full_name() or aluno.user.username,
+                'foto_url': foto_url,
+            })
         turmas_info.append({
             'turma': TurmaSerializer(turma).data,
             'total_alunos': total_alunos,
             'media_turma': round(media_turma, 2),
-            'total_avaliacoes': avaliacoes_turma.count()
+            'total_avaliacoes': avaliacoes_turma.count(),
+            'alunos_preview': alunos_preview,
         })
 
     return Response(turmas_info)

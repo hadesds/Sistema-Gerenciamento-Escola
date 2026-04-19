@@ -2,20 +2,21 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth import views as auth_views
+from django.http import JsonResponse
+
+
+def api_root(request):
+    return JsonResponse({'detail': 'API do Sistema CARA. Use /api/ para os endpoints REST ou /admin/ para o painel administrativo.'})
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # URLs de autenticação (mantidas para compatibilidade)
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-
     # API REST
     path('api/', include('escola.api_urls')),
 
-    # URLs da aplicação escola (server-side, mantidas)
-    path('', include('escola.urls')),
+    # Raiz — resposta informativa
+    path('', api_root),
 ]
 
 if settings.DEBUG:

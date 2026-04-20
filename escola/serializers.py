@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma
 
 
 class TurmaSerializer(serializers.ModelSerializer):
@@ -60,9 +60,11 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
 
 
 class QuestaoSerializer(serializers.ModelSerializer):
+    dificuldade_display = serializers.CharField(source='get_dificuldade_display', read_only=True)
+
     class Meta:
         model = Questao
-        fields = ['id', 'enunciado', 'resposta', 'materia', 'data_criacao']
+        fields = ['id', 'enunciado', 'resposta', 'materia', 'dificuldade', 'dificuldade_display', 'data_criacao']
 
 
 class SimuladoSerializer(serializers.ModelSerializer):
@@ -95,12 +97,13 @@ class NotaMateriaSerializer(serializers.ModelSerializer):
 
 
 class MeSerializer(serializers.ModelSerializer):
-    tipo = serializers.SerializerMethodField()
+    tipo          = serializers.SerializerMethodField()
     nome_completo = serializers.SerializerMethodField()
+    papel         = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'tipo', 'nome_completo']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'tipo', 'nome_completo', 'papel']
 
     def get_tipo(self, obj):
         if obj.is_superuser:
@@ -113,3 +116,11 @@ class MeSerializer(serializers.ModelSerializer):
 
     def get_nome_completo(self, obj):
         return obj.get_full_name() or obj.username
+
+    def get_papel(self, obj):
+        if hasattr(obj, 'aluno'):
+            try:
+                return obj.aluno.perfil_turma.papel
+            except Exception:
+                pass
+        return None

@@ -1,0 +1,55 @@
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('escola', '0003_questao_dificuldade'),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='PerfilTurma',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('papel', models.CharField(choices=[('lider', 'Líder'), ('vice', 'Vice-Líder')], max_length=10)),
+                ('aluno', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='perfil_turma', to='escola.aluno')),
+                ('turma', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='perfis', to='escola.turma')),
+            ],
+            options={
+                'verbose_name': 'Perfil de Turma',
+                'verbose_name_plural': 'Perfis de Turma',
+                'unique_together': {('turma', 'papel')},
+            },
+        ),
+        migrations.CreateModel(
+            name='RegistroAssiduidade',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('data', models.DateField(auto_now_add=True)),
+                ('observacao', models.TextField(blank=True)),
+                ('registrado_por', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros_feitos', to='escola.aluno')),
+                ('turma', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros_assiduidade', to='escola.turma')),
+            ],
+            options={
+                'verbose_name': 'Registro de Assiduidade',
+                'verbose_name_plural': 'Registros de Assiduidade',
+                'ordering': ['-data'],
+            },
+        ),
+        migrations.CreateModel(
+            name='PresencaAluno',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('presente', models.BooleanField(default=True)),
+                ('aluno', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='presencas', to='escola.aluno')),
+                ('registro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='presencas', to='escola.registroassiduidade')),
+            ],
+            options={
+                'verbose_name': 'Presença',
+                'verbose_name_plural': 'Presenças',
+                'unique_together': {('registro', 'aluno')},
+            },
+        ),
+    ]

@@ -18,6 +18,7 @@ interface AlunoInfo {
   foto_url: string | null;
   media_geral: number;
   total_avaliacoes: number;
+  papel: 'lider' | 'vice' | null;
 }
 
 interface CarometroData {
@@ -75,6 +76,7 @@ export default function CarometroPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [perfilSubmitting, setPerfilSubmitting] = useState<number | null>(null);
 
   function fetchData(query = '') {
     setLoading(true);
@@ -142,6 +144,35 @@ export default function CarometroPage() {
       init[m.key] = String(notasExistentes[epoca]?.[m.key] ?? '');
     });
     setNotasForm(init);
+  }
+
+  async function handleAtribuirPerfil(aluno: AlunoInfo, papel: 'lider' | 'vice') {
+    setPerfilSubmitting(aluno.id);
+    try {
+      await apiFetch(`/professor/perfil/${aluno.id}/`, {
+        method: 'POST',
+        body: JSON.stringify({ papel }),
+      });
+      setAlert({ type: 'success', message: `${aluno.nome} definido como ${papel === 'lider' ? 'Líder' : 'Vice-Líder'}!` });
+      fetchData(busca);
+    } catch {
+      setAlert({ type: 'error', message: 'Erro ao atribuir perfil.' });
+    } finally {
+      setPerfilSubmitting(null);
+    }
+  }
+
+  async function handleRemoverPerfil(aluno: AlunoInfo) {
+    setPerfilSubmitting(aluno.id);
+    try {
+      await apiFetch(`/professor/perfil/${aluno.id}/`, { method: 'DELETE' });
+      setAlert({ type: 'success', message: `Perfil de ${aluno.nome} removido.` });
+      fetchData(busca);
+    } catch {
+      setAlert({ type: 'error', message: 'Erro ao remover perfil.' });
+    } finally {
+      setPerfilSubmitting(null);
+    }
   }
 
   async function handleSalvarNotas(e: React.FormEvent) {
@@ -225,14 +256,19 @@ export default function CarometroPage() {
             ) : (
               <div className="carometro-grid">
                 {data.alunos.map(aluno => (
-                  <div key={aluno.id} className="card" style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                  <div key={aluno.id} className="card" style={{ textAlign: 'center', borderLeft: aluno.papel ? `4px solid ${aluno.papel === 'lider' ? 'var(--color-primary)' : 'var(--color-secondary)'}` : undefined }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', position: 'relative' }}>
                       {aluno.foto_url ? (
                         <Image src={aluno.foto_url} alt={aluno.nome} width={100} height={100} className="perfil-foto" unoptimized />
                       ) : (
                         <div className="perfil-foto-placeholder">{aluno.nome.charAt(0).toUpperCase()}</div>
                       )}
                     </div>
+                    {aluno.papel && (
+                      <span className="badge mb-1" style={{ background: aluno.papel === 'lider' ? 'var(--color-primary)' : 'var(--color-secondary)', color: '#fff' }}>
+                        {aluno.papel === 'lider' ? '👑 Líder' : '⭐ Vice-Líder'}
+                      </span>
+                    )}
                     <h3>{aluno.nome}</h3>
                     {aluno.matricula && <p>Matrícula: {aluno.matricula}</p>}
                     <div style={{ margin: '1rem 0' }}>
@@ -256,6 +292,39 @@ export default function CarometroPage() {
                         <span className="material-icons-outlined">bar_chart</span>
                         Relatório
                       </Link>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '0.8rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.8rem' }}>
+                      {aluno.papel ? (
+                        <button
+                          className="btn btn-secondary"
+                          style={{ fontSize: '1.2rem' }}
+                          disabled={perfilSubmitting === aluno.id}
+                          onClick={() => handleRemoverPerfil(aluno)}
+                        >
+                          <span className="material-icons-outlined">person_remove</span>
+                          Remover Cargo
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ fontSize: '1.2rem' }}
+                            disabled={perfilSubmitting === aluno.id}
+                            onClick={() => handleAtribuirPerfil(aluno, 'lider')}
+                          >
+                            👑 Líder
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ fontSize: '1.2rem' }}
+                            disabled={perfilSubmitting === aluno.id}
+                            onClick={() => handleAtribuirPerfil(aluno, 'vice')}
+                          >
+                            ⭐ Vice
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer
@@ -190,13 +190,19 @@ def professor_turma_carometro(request, turma_id):
         foto_url = None
         if aluno.foto:
             foto_url = request.build_absolute_uri(aluno.foto.url)
+        papel = None
+        try:
+            papel = aluno.perfil_turma.papel
+        except Exception:
+            pass
         alunos_info.append({
             'id': aluno.user.id,
             'nome': aluno.user.get_full_name() or aluno.user.username,
             'matricula': aluno.matricula,
             'foto_url': foto_url,
             'media_geral': round(media, 2),
-            'total_avaliacoes': avaliacoes.count()
+            'total_avaliacoes': avaliacoes.count(),
+            'papel': papel,
         })
 
     return Response({
@@ -244,7 +250,8 @@ def professor_banco_questoes(request):
                 autor=professor,
                 enunciado=request.data.get('enunciado'),
                 resposta=request.data.get('resposta'),
-                materia=request.data.get('materia')
+                materia=request.data.get('materia'),
+                dificuldade=request.data.get('dificuldade', 'medio'),
             )
             return Response(QuestaoSerializer(questao).data, status=201)
         except Exception as e:
@@ -590,3 +597,114 @@ def aluno_visualizar_simulado(request, simulado_id):
         return Response({'detail': 'Sem acesso a este simulado.'}, status=403)
 
     return Response(SimuladoSerializer(simulado).data)
+
+
+# ==========================================
+# PERFIL TURMA (líder / vice-líder)
+# ==========================================
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def professor_perfil_turma(request, aluno_id):
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+
+    if request.method == 'DELETE':
+        PerfilTurma.objects.filter(aluno=aluno).delete()
+        return Response({'detail': 'Perfil removido.'})
+
+    papel = request.data.get('papel')
+    if papel not in ('lider', 'vice'):
+        return Response({'detail': 'Papel inválido. Use "lider" ou "vice".'}, status=400)
+
+    if not aluno.turma:
+        return Response({'detail': 'Aluno sem turma.'}, status=400)
+
+    # Garante unicidade: remove perfil anterior do mesmo papel na turma e do aluno
+    PerfilTurma.objects.filter(turma=aluno.turma, papel=papel).delete()
+    PerfilTurma.objects.filter(aluno=aluno).delete()
+
+    perfil = PerfilTurma.objects.create(aluno=aluno, turma=aluno.turma, papel=papel)
+    return Response({
+        'id': perfil.id,
+        'papel': perfil.papel,
+        'papel_display': perfil.get_papel_display(),
+    }, status=201)
+
+
+# ==========================================
+# ASSIDUIDADE (registrado pelo líder/vice)
+# ==========================================
+
+def _get_aluno_lider(request):
+    aluno = _get_aluno(request)
+    if not aluno:
+        return None, 'Acesso negado.'
+    try:
+        _ = aluno.perfil_turma
+    except Exception:
+        return None, 'Apenas líderes e vice-líderes podem registrar assiduidade.'
+    return aluno, None
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def aluno_assiduidade(request):
+    aluno, erro = _get_aluno_lider(request)
+    if erro:
+        return Response({'detail': erro}, status=403)
+
+    turma = aluno.turma
+    if not turma:
+        return Response({'detail': 'Aluno sem turma.'}, status=400)
+
+    if request.method == 'GET':
+        alunos_turma = [
+            {
+                'id': a.user.pk,
+                'nome': a.user.get_full_name() or a.user.username,
+                'matricula': a.matricula,
+                'presente': True,
+            }
+            for a in Aluno.objects.filter(turma=turma).select_related('user').order_by('user__first_name')
+        ]
+        registros_qs = RegistroAssiduidade.objects.filter(turma=turma).prefetch_related('presencas')[:30]
+        historico = []
+        for reg in registros_qs:
+            presencas_list = list(reg.presencas.all())
+            total = len(presencas_list)
+            presentes = sum(1 for p in presencas_list if p.presente)
+            historico.append({
+                'id': reg.id,
+                'data': reg.data.isoformat(),
+                'observacao': reg.observacao,
+                'registrado_por': reg.registrado_por.user.get_full_name() or reg.registrado_por.user.username,
+                'total': total,
+                'presentes': presentes,
+                'ausentes': total - presentes,
+            })
+        return Response({
+            'turma': turma.nome,
+            'papel': aluno.perfil_turma.papel,
+            'papel_display': aluno.perfil_turma.get_papel_display(),
+            'alunos': alunos_turma,
+            'historico': historico,
+        })
+
+    # POST — registrar nova chamada
+    presencas_data = request.data.get('presencas_data', {})  # {str(aluno_id): bool}
+    observacao = request.data.get('observacao', '')
+
+    registro = RegistroAssiduidade.objects.create(
+        turma=turma,
+        registrado_por=aluno,
+        observacao=observacao,
+    )
+    for a in Aluno.objects.filter(turma=turma):
+        presente = presencas_data.get(str(a.user.pk), True)
+        PresencaAluno.objects.create(registro=registro, aluno=a, presente=bool(presente))
+
+    return Response({'detail': 'Assiduidade registrada!', 'id': registro.id}, status=201)

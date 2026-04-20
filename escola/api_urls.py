@@ -19,10 +19,12 @@ urlpatterns = [
     path('professor/simulados/', api_views.professor_lista_simulados, name='api_lista_simulados'),
     path('professor/relatorio/<int:aluno_id>/', api_views.professor_relatorio_aluno, name='api_relatorio_aluno'),
     path('professor/notas/<int:aluno_id>/', api_views.professor_notas_aluno, name='api_professor_notas'),
+    path('professor/perfil/<int:aluno_id>/', api_views.professor_perfil_turma, name='api_professor_perfil'),
 
     # Aluno
     path('aluno/dashboard/', api_views.aluno_dashboard, name='api_aluno_dashboard'),
     path('aluno/meu-feedback/', api_views.aluno_meu_feedback, name='api_aluno_feedback'),
     path('aluno/meus-simulados/', api_views.aluno_meus_simulados, name='api_aluno_simulados'),
     path('aluno/simulado/<int:simulado_id>/', api_views.aluno_visualizar_simulado, name='api_aluno_simulado'),
+    path('aluno/assiduidade/', api_views.aluno_assiduidade, name='api_aluno_assiduidade'),
 ]

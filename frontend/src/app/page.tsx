@@ -23,6 +23,39 @@ export default function Home() {
 
   if (loading || user) return null;
 
+  const features = [
+    { icon: 'assessment',        title: 'Avaliações Comportamentais', color: '#f5a623',
+      desc: 'Avalie assiduidade, participação, responsabilidade e sociabilidade. Relatórios gerados automaticamente.' },
+    { icon: 'quiz',              title: 'Banco de Questões & Simulados', color: '#e67b59',
+      desc: 'Crie questões por dificuldade, monte simulados personalizados e acompanhe o aproveitamento da turma.' },
+    { icon: 'menu_book',         title: 'Notas por Bimestre', color: '#27ae60',
+      desc: 'Registre notas de todas as matérias em cada bimestre. Alunos acompanham seu histórico completo.' },
+    { icon: 'checklist',         title: 'Controle de Assiduidade', color: '#3498db',
+      desc: 'Líder e vice-líder registram a chamada diária. Histórico completo com presentes e ausentes.' },
+    { icon: 'workspace_premium', title: 'Perfis de Liderança', color: '#9b59b6',
+      desc: 'Defina líder e vice-líder para cada turma com acesso especial ao registro de assiduidade.' },
+    { icon: 'leaderboard',       title: 'Ranking & Relatórios', color: '#f39c12',
+      desc: 'Visualize o top 5 da turma, relatórios individuais e médias gerais por turma em tempo real.' },
+  ];
+
+  const professorItems = [
+    'Visualize turmas e alunos',
+    'Registre avaliações comportamentais',
+    'Lance notas por bimestre e matéria',
+    'Crie questões e monte simulados',
+    'Atribua cargos de líder e vice-líder',
+    'Acompanhe rankings e relatórios',
+  ];
+
+  const alunoItems = [
+    'Acesse seu feedback comportamental',
+    'Veja suas notas por matéria e bimestre',
+    'Faça e revise os simulados da turma',
+    'Acompanhe seu histórico de desempenho',
+    'Líderes registram a chamada diária',
+    'Monitore seu progresso em tempo real',
+  ];
+
   return (
     <div style={{ fontFamily: "'Poppins', sans-serif", background: 'radial-gradient(circle, #FFF5df, #fce8b4)', minHeight: '100vh' }}>
 
@@ -43,8 +76,10 @@ export default function Home() {
           padding: '0.8rem 2.4rem', borderRadius: '5rem',
           textDecoration: 'none', fontSize: '1.5rem',
           boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          display: 'flex', alignItems: 'center', gap: '0.4rem',
         }}>
-          Entrar →
+          Entrar
+          <span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>arrow_forward</span>
         </Link>
       </header>
 
@@ -68,7 +103,8 @@ export default function Home() {
             padding: '0.6rem 2rem', marginBottom: '2.5rem',
             fontSize: '1.4rem', color: '#fff', fontWeight: 600,
           }}>
-            <span>🏫</span> Sistema de Gestão Escolar
+            <span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>school</span>
+            Sistema de Gestão Escolar
           </div>
           <h1 style={{
             fontSize: 'clamp(3.6rem, 7vw, 6rem)',
@@ -93,16 +129,20 @@ export default function Home() {
               padding: '1.4rem 4rem', borderRadius: '5rem',
               textDecoration: 'none',
               boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+              display: 'inline-flex', alignItems: 'center', gap: '0.8rem',
             }}>
               Acessar o Sistema
+              <span className="material-icons-outlined" style={{ fontSize: '2rem' }}>login</span>
             </Link>
             <a href="#funcionalidades" style={{
               background: 'rgba(255,255,255,0.2)', color: '#fff',
               fontWeight: 600, fontSize: '1.7rem',
               padding: '1.4rem 4rem', borderRadius: '5rem',
               textDecoration: 'none', border: '2px solid rgba(255,255,255,0.5)',
+              display: 'inline-flex', alignItems: 'center', gap: '0.8rem',
             }}>
-              Saiba mais ↓
+              Saiba mais
+              <span className="material-icons-outlined" style={{ fontSize: '2rem' }}>expand_more</span>
             </a>
           </div>
         </div>
@@ -115,13 +155,14 @@ export default function Home() {
         boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
       }}>
         {[
-          { value: '100%', label: 'Desempenho em tempo real' },
-          { value: '4', label: 'Bimestres acompanhados' },
-          { value: '10+', label: 'Matérias suportadas' },
+          { value: '100%', label: 'Desempenho em tempo real', icon: 'speed' },
+          { value: '4',    label: 'Bimestres acompanhados',   icon: 'calendar_month' },
+          { value: '10+',  label: 'Matérias suportadas',      icon: 'auto_stories' },
         ].map(s => (
-          <div key={s.label} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3.6rem', fontWeight: 800, color: '#f5a623' }}>{s.value}</div>
-            <div style={{ fontSize: '1.4rem', color: '#555', marginTop: '0.3rem' }}>{s.label}</div>
+          <div key={s.label} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+            <span className="material-icons-outlined" style={{ fontSize: '2.8rem', color: '#f5a623' }}>{s.icon}</span>
+            <div style={{ fontSize: '3.2rem', fontWeight: 800, color: '#333' }}>{s.value}</div>
+            <div style={{ fontSize: '1.4rem', color: '#555' }}>{s.label}</div>
           </div>
         ))}
       </section>
@@ -138,27 +179,21 @@ export default function Home() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(28rem, 1fr))', gap: '2.4rem' }}>
-          {[
-            { icon: '📊', title: 'Avaliações Comportamentais', color: '#f5a623',
-              desc: 'Avalie assiduidade, participação, responsabilidade e sociabilidade. Relatórios gerados automaticamente.' },
-            { icon: '📝', title: 'Banco de Questões & Simulados', color: '#e67b59',
-              desc: 'Crie questões por dificuldade, monte simulados personalizados e acompanhe o aproveitamento da turma.' },
-            { icon: '📚', title: 'Notas por Bimestre', color: '#27ae60',
-              desc: 'Registre notas de todas as matérias em cada bimestre. Alunos acompanham seu histórico completo.' },
-            { icon: '✅', title: 'Controle de Assiduidade', color: '#3498db',
-              desc: 'Líder e vice-líder registram a chamada diária. Histórico completo com presentes e ausentes.' },
-            { icon: '👑', title: 'Perfis de Liderança', color: '#9b59b6',
-              desc: 'Defina líder e vice-líder para cada turma com acesso especial ao registro de assiduidade.' },
-            { icon: '🏆', title: 'Ranking & Relatórios', color: '#f39c12',
-              desc: 'Visualize o top 5 da turma, relatórios individuais e médias gerais por turma em tempo real.' },
-          ].map(f => (
+          {features.map(f => (
             <div key={f.title} style={{
               background: '#fff', borderRadius: '1.6rem',
               padding: '3rem 2.5rem',
               boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
               borderLeft: `4px solid ${f.color}`,
             }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1.6rem' }}>{f.icon}</div>
+              <div style={{
+                width: '5.6rem', height: '5.6rem', borderRadius: '1.4rem',
+                background: `${f.color}18`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '1.8rem',
+              }}>
+                <span className="material-icons-outlined" style={{ fontSize: '2.8rem', color: f.color }}>{f.icon}</span>
+              </div>
               <h3 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#333', marginBottom: '1rem' }}>{f.title}</h3>
               <p style={{ fontSize: '1.5rem', color: '#666', lineHeight: 1.7 }}>{f.desc}</p>
             </div>
@@ -182,14 +217,25 @@ export default function Home() {
               borderRadius: '2rem', padding: '4rem 3.5rem', color: '#fff',
               boxShadow: '0 8px 32px rgba(245,166,35,0.3)',
             }}>
-              <div style={{ fontSize: '5rem', marginBottom: '2rem' }}>👨‍🏫</div>
+              <div style={{
+                width: '7rem', height: '7rem', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '2rem',
+              }}>
+                <span className="material-icons-outlined" style={{ fontSize: '3.6rem', color: '#fff' }}>person_outline</span>
+              </div>
               <h3 style={{ fontSize: '2.4rem', fontWeight: 800, marginBottom: '2rem' }}>Professores</h3>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                {['Visualize turmas e alunos', 'Registre avaliações comportamentais',
-                  'Lance notas por bimestre e matéria', 'Crie questões e monte simulados',
-                  'Atribua cargos de líder e vice-líder', 'Acompanhe rankings e relatórios'].map(item => (
+                {professorItems.map(item => (
                   <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', fontSize: '1.6rem' }}>
-                    <span style={{ background: 'rgba(255,255,255,0.3)', borderRadius: '50%', width: '2.4rem', height: '2.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>✓</span>
+                    <span style={{
+                      background: 'rgba(255,255,255,0.3)', borderRadius: '50%',
+                      width: '2.4rem', height: '2.4rem',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <span className="material-icons-outlined" style={{ fontSize: '1.4rem', color: '#fff' }}>check</span>
+                    </span>
                     {item}
                   </li>
                 ))}
@@ -201,14 +247,25 @@ export default function Home() {
               borderRadius: '2rem', padding: '4rem 3.5rem', color: '#fff',
               boxShadow: '0 8px 32px rgba(230,123,89,0.3)',
             }}>
-              <div style={{ fontSize: '5rem', marginBottom: '2rem' }}>🎓</div>
+              <div style={{
+                width: '7rem', height: '7rem', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '2rem',
+              }}>
+                <span className="material-icons-outlined" style={{ fontSize: '3.6rem', color: '#fff' }}>school</span>
+              </div>
               <h3 style={{ fontSize: '2.4rem', fontWeight: 800, marginBottom: '2rem' }}>Alunos</h3>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                {['Acesse seu feedback comportamental', 'Veja suas notas por matéria e bimestre',
-                  'Faça e revise os simulados da turma', 'Acompanhe seu histórico de desempenho',
-                  'Líderes registram a chamada diária', 'Monitore seu progresso em tempo real'].map(item => (
+                {alunoItems.map(item => (
                   <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', fontSize: '1.6rem' }}>
-                    <span style={{ background: 'rgba(255,255,255,0.3)', borderRadius: '50%', width: '2.4rem', height: '2.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>✓</span>
+                    <span style={{
+                      background: 'rgba(255,255,255,0.3)', borderRadius: '50%',
+                      width: '2.4rem', height: '2.4rem',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <span className="material-icons-outlined" style={{ fontSize: '1.4rem', color: '#fff' }}>check</span>
+                    </span>
                     {item}
                   </li>
                 ))}
@@ -234,9 +291,10 @@ export default function Home() {
             padding: '1.6rem 5rem', borderRadius: '5rem',
             textDecoration: 'none',
             boxShadow: '0 6px 24px rgba(245,166,35,0.4)',
-            display: 'inline-block',
+            display: 'inline-flex', alignItems: 'center', gap: '1rem',
           }}>
-            Entrar no Sistema →
+            Entrar no Sistema
+            <span className="material-icons-outlined" style={{ fontSize: '2.2rem' }}>arrow_forward</span>
           </Link>
         </div>
       </section>

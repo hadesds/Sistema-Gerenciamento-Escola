@@ -12,6 +12,8 @@ interface Questao {
   enunciado: string;
   resposta: string;
   materia: string;
+  dificuldade: 'facil' | 'medio' | 'dificil';
+  dificuldade_display: string;
   data_criacao: string;
 }
 
@@ -26,7 +28,7 @@ export default function BancoQuestoesPage() {
   const [loading, setLoading] = useState(true);
   const [materiaFiltro, setMateriaFiltro] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ enunciado: '', resposta: '', materia: '' });
+  const [form, setForm] = useState({ enunciado: '', resposta: '', materia: '', dificuldade: 'medio' });
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,7 +50,7 @@ export default function BancoQuestoesPage() {
         body: JSON.stringify(form),
       });
       setAlert({ type: 'success', message: 'Questão cadastrada com sucesso!' });
-      setForm({ enunciado: '', resposta: '', materia: '' });
+      setForm({ enunciado: '', resposta: '', materia: '', dificuldade: 'medio' });
       setShowForm(false);
       fetchData(materiaFiltro);
     } catch {
@@ -96,6 +98,14 @@ export default function BancoQuestoesPage() {
                   rows={4}
                   required
                 />
+              </div>
+              <div className="form-group">
+                <label>Dificuldade</label>
+                <select value={form.dificuldade} onChange={e => setForm(f => ({ ...f, dificuldade: e.target.value }))}>
+                  <option value="facil">Fácil</option>
+                  <option value="medio">Médio</option>
+                  <option value="dificil">Difícil</option>
+                </select>
               </div>
               <div className="form-group">
                 <label>Resposta</label>
@@ -146,9 +156,14 @@ export default function BancoQuestoesPage() {
           <>
             <span className="badge mb-1">{data.questoes.length} questão(ões)</span>
             {data.questoes.map((q, idx) => (
-              <div key={q.id} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <span className="badge">{q.materia}</span>
+              <div key={q.id} className="card" style={{ borderLeft: `4px solid ${q.dificuldade === 'facil' ? 'var(--color-success)' : q.dificuldade === 'dificil' ? 'var(--color-danger)' : 'var(--color-warning)'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+                  <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                    <span className="badge">{q.materia}</span>
+                    <span className="badge" style={{ background: q.dificuldade === 'facil' ? 'var(--color-success)' : q.dificuldade === 'dificil' ? 'var(--color-danger)' : 'var(--color-warning)', color: '#fff' }}>
+                      {q.dificuldade_display}
+                    </span>
+                  </div>
                   <span style={{ fontSize: '1.3rem', color: 'var(--text-secondary)' }}>
                     #{idx + 1} · {new Date(q.data_criacao).toLocaleDateString('pt-BR')}
                   </span>

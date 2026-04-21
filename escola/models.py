@@ -113,11 +113,64 @@ class NotaMateria(models.Model):
         return f"{self.aluno} – {self.get_materia_display()} ({self.get_epoca_display()}): {self.nota}"
 
 
+class PerfilTurma(models.Model):
+    PAPEL_CHOICES = [
+        ('lider', 'Líder'),
+        ('vice',  'Vice-Líder'),
+    ]
+    aluno  = models.OneToOneField(Aluno, on_delete=models.CASCADE, related_name='perfil_turma')
+    turma  = models.ForeignKey(Turma,   on_delete=models.CASCADE, related_name='perfis')
+    papel  = models.CharField(max_length=10, choices=PAPEL_CHOICES)
+
+    class Meta:
+        unique_together = ('turma', 'papel')
+        verbose_name = 'Perfil de Turma'
+        verbose_name_plural = 'Perfis de Turma'
+
+    def __str__(self):
+        return f"{self.get_papel_display()} da {self.turma} — {self.aluno}"
+
+
+class RegistroAssiduidade(models.Model):
+    turma          = models.ForeignKey(Turma,  on_delete=models.CASCADE, related_name='registros_assiduidade')
+    registrado_por = models.ForeignKey(Aluno,  on_delete=models.CASCADE, related_name='registros_feitos')
+    data           = models.DateField(auto_now_add=True)
+    observacao     = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-data']
+        verbose_name = 'Registro de Assiduidade'
+        verbose_name_plural = 'Registros de Assiduidade'
+
+    def __str__(self):
+        return f"Assiduidade {self.turma} em {self.data}"
+
+
+class PresencaAluno(models.Model):
+    registro = models.ForeignKey(RegistroAssiduidade, on_delete=models.CASCADE, related_name='presencas')
+    aluno    = models.ForeignKey(Aluno,               on_delete=models.CASCADE, related_name='presencas')
+    presente = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('registro', 'aluno')
+        verbose_name = 'Presença'
+        verbose_name_plural = 'Presenças'
+
+    def __str__(self):
+        return f"{self.aluno} — {'Presente' if self.presente else 'Ausente'} em {self.registro.data}"
+
+
 class Questao(models.Model):
-    enunciado = models.TextField()
-    resposta = models.TextField()
-    materia = models.CharField(max_length=100) 
-    autor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
+    DIFICULDADE_CHOICES = [
+        ('facil',   'Fácil'),
+        ('medio',   'Médio'),
+        ('dificil', 'Difícil'),
+    ]
+    enunciado    = models.TextField()
+    resposta     = models.TextField()
+    materia      = models.CharField(max_length=100)
+    autor        = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
+    dificuldade  = models.CharField(max_length=10, choices=DIFICULDADE_CHOICES, default='medio')
     data_criacao = models.DateTimeField(auto_now_add=True)
     
     class Meta:

@@ -53,6 +53,12 @@ export default function Navbar() {
               <span className="material-icons-outlined">quiz</span>
               Simulados
             </Link>
+            {(user.papel === 'lider' || user.papel === 'vice') && (
+              <Link href="/aluno/assiduidade">
+                <span className="material-icons-outlined">checklist</span>
+                Assiduidade
+              </Link>
+            )}
           </>
         )}
 

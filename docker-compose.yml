@@ -14,7 +14,6 @@ services:
     container_name: cara_app
     command: >
       sh -c "python manage.py collectstatic --noinput &&
-             python manage.py makemigrations escola &&
              python manage.py migrate &&
              python manage.py runserver 0.0.0.0:5433"
     ports:
@@ -31,10 +30,15 @@ services:
   frontend:
     build: ./frontend
     container_name: cara_frontend
+    command: npm run dev
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:5433
+      - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       - web
     restart: on-failure

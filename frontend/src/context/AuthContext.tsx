@@ -12,6 +12,7 @@ interface User {
   email: string;
   tipo: 'admin' | 'professor' | 'aluno' | 'unknown';
   nome_completo: string;
+  papel: 'lider' | 'vice' | null;
 }
 
 interface AuthContextType {

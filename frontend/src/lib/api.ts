@@ -38,7 +38,6 @@ export async function apiFetch<T>(
     } else {
       Cookies.remove('access_token');
       Cookies.remove('refresh_token');
-      if (typeof window !== 'undefined') window.location.href = '/login';
       throw new Error('Sessão expirada');
     }
   }

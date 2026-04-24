@@ -23,6 +23,9 @@ services:
       - media_root:/app/media
     env_file:
       - .env
+    environment:
+      - DEBUG=True
+      - POSTGRES_HOST=db
     depends_on:
       - db
     restart: on-failure

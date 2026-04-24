@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433';
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433').replace(/\/$/, '');
 
 export async function apiFetch<T>(
   path: string,

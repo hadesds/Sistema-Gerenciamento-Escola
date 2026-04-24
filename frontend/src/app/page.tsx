@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { API_URL } from '@/lib/api';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -15,8 +16,7 @@ export default function Home() {
       if (user.tipo === 'professor') router.push('/professor/dashboard');
       else if (user.tipo === 'aluno') router.push('/aluno/dashboard');
       else if (user.tipo === 'admin') {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433';
-        window.location.href = `${apiUrl}/admin/`;
+        window.location.href = `${API_URL}/admin/`;
       }
     }
   }, [user, loading, router]);

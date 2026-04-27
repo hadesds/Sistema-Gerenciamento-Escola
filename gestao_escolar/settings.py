@@ -201,6 +201,10 @@ if os.environ.get('CLOUDINARY_URL'):
         'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
     }
 
+# django-cloudinary-storage 0.3.0 reads this attribute directly; Django 4.2+ removed it
+STATICFILES_STORAGE = STORAGES['staticfiles']['BACKEND']
+DEFAULT_FILE_STORAGE = STORAGES['default']['BACKEND']
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG

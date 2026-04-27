@@ -2,23 +2,23 @@
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
 
 :root {
-  --color-primary: #f5a623;
-  --color-secondary: #ffc107;
-  --color-terciaria: #f39c12;
+  --color-primary: #0d2d6b;
+  --color-secondary: #1a73c7;
+  --color-terciaria: #1a4fa0;
 
-  --bg-main: #FFF5df;
-  --bg-card: #ffffec;
-  --bg-card-add: #FFEFE7;
+  --bg-main: #f0f4fb;
+  --bg-card: #ffffff;
+  --bg-card-add: #e8f0fc;
   --bg-tab: #F4F4F4;
   --border-light: #F0F0F0;
 
-  --color-stat-circle: #FDD160;
-  --color-add-button: #E67B59;
-  --color-pink-light: #F8B4BF;
-  --color-bar-light: #F8B4BF;
-  --color-bar-accent: #E67B59;
+  --color-stat-circle: #1a73c7;
+  --color-add-button: #1a73c7;
+  --color-pink-light: #a8c4e8;
+  --color-bar-light: #a8c4e8;
+  --color-bar-accent: #0d2d6b;
 
-  --text-primary: #000000;
+  --text-primary: #0d2d6b;
   --text-secondary: #555555;
   --text-tertiary: #555555;
   --text-placeholder: #555555;
@@ -41,7 +41,7 @@ html {
 
 body {
   font-family: 'Poppins', sans-serif;
-  background: radial-gradient(circle, #FFF5df, #fce8b4);
+  background: linear-gradient(135deg, #e8f0fc, #f0f4fb);
   color: var(--text-primary);
   font-size: 1.6rem;
   line-height: 1.6;
@@ -117,7 +117,7 @@ body {
 }
 
 .card {
-  background: radial-gradient(circle, #ffffec, #faf2e0);
+  background: #ffffff;
   border-radius: 2rem;
   padding: 2.4rem;
   box-shadow: 0 0.4rem 1.5rem rgba(0, 0, 0, 0.05);
@@ -218,7 +218,7 @@ p {
   align-items: center;
   gap: 1.5rem;
   padding: 2rem;
-  background: radial-gradient(circle, #ffffec, #faf2e0);
+  background: #ffffff;
   border-radius: 2rem;
   box-shadow: 0 0.4rem 1.5rem rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
@@ -405,7 +405,7 @@ p {
   max-width: 450px;
   margin: 6rem auto;
   padding: 3rem;
-  background: radial-gradient(circle, #ffffec, #faf2e0);
+  background: #ffffff;
   border-radius: 2rem;
   box-shadow: 0 0.8rem 2.5rem rgba(0, 0, 0, 0.1);
 }

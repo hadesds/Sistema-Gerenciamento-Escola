@@ -86,7 +86,7 @@ export default function ProfessorDashboardPage() {
       <main className="container fade-in">
 
         {/* Hero card */}
-        <div className="card" style={{ background: 'linear-gradient(135deg, var(--color-primary), #f5a623)', color: 'white', marginBottom: '3rem' }}>
+        <div className="card" style={{ background: 'linear-gradient(135deg, #0d2d6b, #1a73c7)', color: 'white', marginBottom: '3rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h1 style={{ color: 'white', marginBottom: '0.5rem' }}>Dashboard do Professor</h1>
@@ -211,7 +211,7 @@ export default function ProfessorDashboardPage() {
               {/* Right column */}
               <div>
                 {/* Top 5 Alunos */}
-                <div className="card mb-2" style={{ background: 'linear-gradient(135deg, #fff5e6, white)' }}>
+                <div className="card mb-2" style={{ background: 'linear-gradient(135deg, #e8f0fc, white)' }}>
                   <h2 style={{ marginBottom: '2rem' }}>
                     <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>emoji_events</span>
                     Top 5 Alunos

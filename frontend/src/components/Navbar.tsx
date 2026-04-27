@@ -12,7 +12,7 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="logo-container">
-        <Image src="/logo.png" alt="CARA Logo" height={45} width={45} style={{ height: '4.5rem', width: 'auto' }} />
+        <Image src="/logo.png" alt="CARA Logo" height={200} width={200} style={{ height: "8rem", width: "auto", objectFit: "contain" }} />
         <h1>CARA</h1>
       </div>
 

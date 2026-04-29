@@ -121,7 +121,7 @@ https://github.com/hadesds/Sistema-Gerenciamento-Escola
 Service name: projetocara-api
 Runtime: Python
 Build command: bash build.sh
-Start command: gunicorn gestao_escolar.wsgi:application
+Start command: gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
 4. Configurar as variaveis:
@@ -150,7 +150,7 @@ CSRF_TRUSTED_ORIGINS=https://*.onrender.com,https://*.vercel.app
 pip install -r requirements.txt
 python manage.py collectstatic --noinput
 python manage.py migrate
-gunicorn gestao_escolar.wsgi:application
+gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
 7. Copiar a URL publica do backend, algo como:
@@ -386,6 +386,30 @@ CSRF_TRUSTED_ORIGINS=https://*.onrender.com,https://*.vercel.app
 ```
 
 Depois rode novo deploy na Render.
+
+### Render tenta rodar `gunicorn app:app`
+
+Esse erro indica que a Render criou o servico com o comando padrao errado, geralmente de Flask:
+
+```text
+ModuleNotFoundError: No module named 'app'
+```
+
+Corrija no painel da Render:
+
+```text
+Build Command: bash build.sh
+Start Command: gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
+```
+
+Tambem confira:
+
+```text
+Root Directory: vazio / raiz do repositorio
+PYTHON_VERSION: 3.11.9
+```
+
+Depois clique em `Manual Deploy` e use `Clear build cache & deploy`.
 
 ### Build do frontend falha por versao local
 

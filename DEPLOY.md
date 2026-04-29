@@ -353,6 +353,18 @@ CORS_ALLOWED_ORIGINS=https://URL-DA-VERCEL
 
 Depois faca redeploy do frontend.
 
+Importante: em `CORS_ALLOWED_ORIGINS`, use a origem sem barra final:
+
+```env
+CORS_ALLOWED_ORIGINS=https://sistemacara.vercel.app
+```
+
+Evite:
+
+```env
+CORS_ALLOWED_ORIGINS=https://sistemacara.vercel.app/
+```
+
 ### Erro de banco no backend
 
 Verifique:

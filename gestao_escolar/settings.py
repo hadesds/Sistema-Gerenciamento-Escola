@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from urllib.parse import urlsplit
 import dj_database_url
 
 
@@ -21,6 +22,17 @@ def env_list(name, default=None):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def env_origin_list(name, default=None):
+    origins = []
+    for item in env_list(name, default):
+        parsed = urlsplit(item)
+        if parsed.scheme in ("http", "https") and parsed.netloc:
+            origins.append(f"{parsed.scheme}://{parsed.netloc}")
+        else:
+            origins.append(item.rstrip("/"))
+    return origins
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -36,7 +48,7 @@ DEBUG = env_bool('DEBUG', True)
 ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', ['*'] if DEBUG else [])
 
 # CORS
-CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', [
+CORS_ALLOWED_ORIGINS = env_origin_list('CORS_ALLOWED_ORIGINS', [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://frontend:3000",
@@ -45,7 +57,7 @@ CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', [
 ])
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', [])
+CSRF_TRUSTED_ORIGINS = env_origin_list('CSRF_TRUSTED_ORIGINS', [])
 CORS_ALLOWED_ORIGIN_REGEXES = env_list('CORS_ALLOWED_ORIGIN_REGEXES', [])
 
 # Django REST Framework

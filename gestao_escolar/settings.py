@@ -192,7 +192,7 @@ STORAGES = {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     },
 }
 
@@ -201,7 +201,7 @@ if os.environ.get('CLOUDINARY_URL'):
         'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
     }
 
-# django-cloudinary-storage 0.3.0 reads this attribute directly; Django 4.2+ removed it
+# django-cloudinary-storage 0.3.0 reads these legacy settings directly.
 STATICFILES_STORAGE = STORAGES['staticfiles']['BACKEND']
 DEFAULT_FILE_STORAGE = STORAGES['default']['BACKEND']
 

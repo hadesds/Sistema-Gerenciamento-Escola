@@ -21,7 +21,7 @@ Arquivos principais:
 - `gestao_escolar/settings.py`
   - Passou a ler `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, CORS/CSRF e banco via variaveis de ambiente.
   - Passou a aceitar `DATABASE_URL` para usar Neon.
-  - Adicionou WhiteNoise para arquivos estaticos.
+  - Adicionou WhiteNoise para servir arquivos estaticos.
   - Adicionou suporte opcional a Cloudinary quando `CLOUDINARY_URL` existir.
   - Manteve armazenamento local em `media/` quando `CLOUDINARY_URL` nao existir, util para desenvolvimento.
 
@@ -122,6 +122,7 @@ Service name: projetocara-api
 Runtime: Python
 Build command: bash build.sh
 Start command: gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
+Python version: 3.11.9
 ```
 
 4. Configurar as variaveis:
@@ -148,7 +149,7 @@ CSRF_TRUSTED_ORIGINS=https://*.onrender.com,https://*.vercel.app
 
 ```text
 pip install -r requirements.txt
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --clear
 python manage.py migrate
 gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
 ```
@@ -410,6 +411,26 @@ PYTHON_VERSION: 3.11.9
 ```
 
 Depois clique em `Manual Deploy` e use `Clear build cache & deploy`.
+
+### `collectstatic` falha em arquivo do Cloudinary/WhiteNoise
+
+Erro parecido:
+
+```text
+FileNotFoundError: staticfiles/cloudinary/js/jquery.ui.widget.js
+```
+
+O projeto foi ajustado para usar `StaticFilesStorage` no build da Render e evitar a etapa de compressao/manifest que falhava nesse arquivo do pacote Cloudinary. O `build.sh` tambem usa:
+
+```bash
+python manage.py collectstatic --noinput --clear
+```
+
+Depois de atualizar a branch `main`, rode na Render:
+
+```text
+Manual Deploy > Clear build cache & deploy
+```
 
 ### Build do frontend falha por versao local
 

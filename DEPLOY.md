@@ -454,6 +454,37 @@ npm ci
 
 Isso ignora `node_modules` local e instala exatamente pelo lockfile.
 
+### Vercel tenta publicar Django em vez do frontend
+
+Erro parecido:
+
+```text
+Error: No django entrypoint found.
+```
+
+Isso acontece quando a Vercel esta usando a raiz do repositorio como projeto. Como este repo tem Django na raiz e Next.js dentro de `frontend`, a Vercel precisa estar configurada assim:
+
+```text
+Root Directory: frontend
+Framework Preset: Next.js
+Install Command: npm ci
+Build Command: npm run build
+```
+
+Tambem confira se o projeto da Vercel esta conectado ao repositorio correto. Se ela mostrar algo como:
+
+```text
+Cloning github.com/davilslv/sistemacara
+```
+
+mas o deploy deve vir de:
+
+```text
+github.com/hadesds/Sistema-Gerenciamento-Escola
+```
+
+entao remova esse projeto da Vercel ou reconecte o projeto ao repositorio correto. Se voce quiser continuar usando `davilslv/sistemacara`, garanta que esse repo tambem tenha a pasta `frontend` e configure `Root Directory: frontend`.
+
 ## Checklist Final
 
 - [ ] Neon criado e `DATABASE_URL` copiada.

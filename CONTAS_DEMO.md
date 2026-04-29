@@ -10,10 +10,29 @@ Nao use essas credenciais padrao em producao real.
 
 ## Comando
 
-No shell da Render, rode:
+Se sua instancia da Render tiver Shell, rode:
 
 ```bash
 python manage.py seed_demo
+```
+
+Se sua instancia for Free e nao tiver Shell, configure as variaveis abaixo na Render e faca um novo deploy:
+
+```env
+SEED_DEMO=true
+DEMO_PASSWORD=UmaSenhaForteAqui
+```
+
+O `build.sh` roda migrations e, quando `SEED_DEMO=true`, executa:
+
+```bash
+python manage.py seed_demo
+```
+
+Depois que os dados forem criados, voce pode deixar `SEED_DEMO=true` durante a fase de prototipo, porque o comando e idempotente e atualiza os dados demo. Para producao real, remova ou coloque:
+
+```env
+SEED_DEMO=false
 ```
 
 Por padrao, ele cria/atualiza as contas com a senha:
@@ -84,6 +103,7 @@ Antes de entregar producao real:
 
 - trocar senhas;
 - remover usuarios demo se nao forem necessarios;
+- remover/desativar `SEED_DEMO`;
 - criar usuarios reais pelo admin;
 - evitar compartilhar credenciais em documento publico;
 - garantir que o cliente tenha uma conta admin propria.

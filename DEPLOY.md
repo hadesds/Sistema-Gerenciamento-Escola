@@ -233,6 +233,21 @@ Depois acesse:
 https://URL-DO-BACKEND-RENDER/admin/
 ```
 
+Se estiver usando instancia Free da Render, o Shell pode nao estar disponivel. Para prototipo, use o comando de seed automatico:
+
+```env
+SEED_DEMO=true
+DEMO_PASSWORD=UmaSenhaForteAqui
+```
+
+Depois faca um novo deploy. O build executara `python manage.py seed_demo` apos as migrations e criara contas demo, incluindo um admin.
+
+Para producao real, remova ou desative:
+
+```env
+SEED_DEMO=false
+```
+
 ## Variaveis De Ambiente
 
 ### Backend

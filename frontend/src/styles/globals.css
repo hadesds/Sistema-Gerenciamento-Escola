@@ -546,3 +546,8 @@ p {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.material-icons-outlined {
+  height: 21px;
+  width: 21px;
+}

@@ -83,15 +83,14 @@ class Command(BaseCommand):
         )
 
         for aluno in alunos:
-            Avaliacao.objects.get_or_create(
+            Avaliacao.objects.filter(aluno=aluno, professor=professor).delete()
+            Avaliacao.objects.create(
                 aluno=aluno,
                 professor=professor,
-                defaults={
-                    "assiduidade": 5,
-                    "participacao": 4,
-                    "responsabilidade": 5,
-                    "sociabilidade": 4,
-                },
+                assiduidade=5,
+                participacao=4,
+                responsabilidade=5,
+                sociabilidade=4,
             )
 
             for materia, nota in [

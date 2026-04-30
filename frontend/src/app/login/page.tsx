@@ -260,6 +260,20 @@ export default function LoginPage() {
           .login-card { padding: 2.4rem 1.8rem; }
           .login-input-wrap { padding: 1rem 1.1rem; }
         }
+
+        .login-back {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          color: #4a6080;
+          text-decoration: none;
+          font-size: 1.35rem;
+          font-weight: 600;
+          margin-bottom: 2rem;
+          transition: color 0.2s;
+        }
+        .login-back:hover { color: #0d2d6b; }
+        .login-back .material-icons-outlined { font-size: 1.8rem; }
       `}</style>
 
       <div className="login-page">
@@ -271,6 +285,12 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="login-card">
+
+          {/* Botão voltar */}
+          <a href="/" className="login-back">
+            <span className="material-icons-outlined">arrow_back</span>
+            Voltar
+          </a>
 
           {/* Logo sem fundo */}
           <div className="login-logo-area">

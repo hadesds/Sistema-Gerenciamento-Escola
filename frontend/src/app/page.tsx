@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -29,6 +29,9 @@ export default function Home() {
       else if (user.tipo === 'admin') window.location.href = `${API_URL}/admin/`;
     }
   }, [user, loading, router]);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
 
   if (loading || user) return null;
 
@@ -102,44 +105,143 @@ export default function Home() {
   return (
     <div style={{ fontFamily: "'Poppins', sans-serif", background: C.bg, minHeight: '100vh', color: C.text }}>
 
-      {/* ── Header ── */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: `linear-gradient(135deg, ${C.primary}, ${C.secondary})`,
-        padding: '1.2rem 4rem',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        boxShadow: '0 0.4rem 1.8rem rgba(13,45,107,0.3)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.4rem' }}>
-          <Image
-            src="/logo_escola.png" alt="Logo CARA"
-            width={48} height={48}
-            style={{ height: '4.8rem', width: 'auto', borderRadius: '0.8rem' }}
-          />
-          <div>
-            <div style={{ color: '#fff', fontWeight: 800, fontSize: '2rem', letterSpacing: '0.06em', lineHeight: 1 }}>CARA</div>
-            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.1rem', fontWeight: 500 }}>Gestão Escolar</div>
-          </div>
-        </div>
+      <style>{`
+        .lp-header {
+          position: sticky; top: 0; z-index: 100;
+          background: linear-gradient(135deg, ${C.primary}, ${C.secondary});
+          padding: 1.2rem 4rem;
+          display: flex; justify-content: space-between; align-items: center;
+          box-shadow: 0 0.4rem 1.8rem rgba(13,45,107,0.3);
+        }
+        .lp-logo { display: flex; align-items: center; gap: 1.4rem; text-decoration: none; }
+        .lp-logo-img { height: 4.8rem; width: auto; border-radius: 0.8rem; }
+        .lp-logo-name { color: #fff; font-weight: 800; font-size: 2rem; letter-spacing: 0.06em; line-height: 1; }
+        .lp-logo-sub  { color: rgba(255,255,255,0.65); font-size: 1.1rem; font-weight: 500; }
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '2.4rem' }}>
-          <a href="#funcionalidades" style={{ color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '1.4rem', fontWeight: 500 }}>
-            Funcionalidades
-          </a>
-          <a href="#como-funciona" style={{ color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '1.4rem', fontWeight: 500 }}>
-            Como Funciona
-          </a>
-          <Link href="/login" style={{
-            background: '#fff', color: C.primary, fontWeight: 700,
-            padding: '0.8rem 2.4rem', borderRadius: '5rem',
-            textDecoration: 'none', fontSize: '1.5rem',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-          }}>
+        .lp-nav { display: flex; align-items: center; gap: 2.4rem; }
+        .lp-nav-link {
+          color: rgba(255,255,255,0.82); text-decoration: none;
+          font-size: 1.4rem; font-weight: 500; white-space: nowrap;
+          transition: color 0.2s;
+        }
+        .lp-nav-link:hover { color: #fff; }
+        .lp-nav-btn {
+          background: #fff; color: ${C.primary}; font-weight: 700;
+          padding: 0.8rem 2.4rem; border-radius: 5rem;
+          text-decoration: none; font-size: 1.5rem;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+          display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;
+          transition: box-shadow 0.2s;
+        }
+        .lp-nav-btn:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+        .lp-nav-btn .material-icons-outlined { font-size: 1.8rem; }
+
+        /* Hamburger — oculto no desktop */
+        .lp-hamburger {
+          display: none;
+          background: rgba(255,255,255,0.15);
+          border: 1.5px solid rgba(255,255,255,0.35);
+          border-radius: 0.8rem;
+          padding: 0.6rem;
+          cursor: pointer;
+          color: #fff;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s;
+        }
+        .lp-hamburger:hover { background: rgba(255,255,255,0.25); }
+        .lp-hamburger .material-icons-outlined { font-size: 2.6rem; }
+
+        /* Menu mobile — oculto por padrão */
+        .lp-mobile-menu {
+          display: none;
+          position: absolute; top: 100%; left: 0; right: 0;
+          background: linear-gradient(180deg, ${C.secondary}, ${C.primary});
+          flex-direction: column;
+          padding: 1.6rem 2.4rem 2.4rem;
+          gap: 0.4rem;
+          box-shadow: 0 8px 24px rgba(13,45,107,0.35);
+          z-index: 99;
+        }
+        .lp-mobile-menu.open { display: flex; }
+        .lp-mobile-link {
+          color: rgba(255,255,255,0.88); text-decoration: none;
+          font-size: 1.6rem; font-weight: 500;
+          padding: 1.2rem 0;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          display: flex; align-items: center; gap: 0.8rem;
+          transition: color 0.2s;
+        }
+        .lp-mobile-link:hover { color: #fff; }
+        .lp-mobile-link .material-icons-outlined { font-size: 2rem; }
+        .lp-mobile-btn {
+          margin-top: 1.2rem;
+          background: #fff; color: ${C.primary};
+          font-weight: 700; font-size: 1.6rem;
+          padding: 1.2rem 2rem; border-radius: 5rem;
+          text-decoration: none;
+          display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .lp-mobile-btn .material-icons-outlined { font-size: 2rem; }
+
+        @media (max-width: 768px) {
+          .lp-header { padding: 1.2rem 2rem; position: relative; }
+          .lp-nav { display: none; }
+          .lp-hamburger { display: flex; }
+        }
+        @media (max-width: 480px) {
+          .lp-header { padding: 1rem 1.6rem; }
+          .lp-logo-img { height: 3.8rem; }
+          .lp-logo-name { font-size: 1.7rem; }
+          .lp-logo-sub { font-size: 1rem; }
+        }
+      `}</style>
+
+      {/* ── Header ── */}
+      <header className="lp-header">
+        <a href="/" className="lp-logo">
+          <Image src="/logo_escola.png" alt="Logo CARA" width={48} height={48} className="lp-logo-img" />
+          <div>
+            <div className="lp-logo-name">CARA</div>
+            <div className="lp-logo-sub">Gestão Escolar</div>
+          </div>
+        </a>
+
+        {/* Nav desktop */}
+        <nav className="lp-nav">
+          <a href="#funcionalidades" className="lp-nav-link">Funcionalidades</a>
+          <a href="#como-funciona" className="lp-nav-link">Como Funciona</a>
+          <Link href="/login" className="lp-nav-btn">
             Entrar
-            <span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>arrow_forward</span>
+            <span className="material-icons-outlined">arrow_forward</span>
           </Link>
         </nav>
+
+        {/* Hamburger mobile */}
+        <button
+          className="lp-hamburger"
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+        >
+          <span className="material-icons-outlined">{menuOpen ? 'close' : 'menu'}</span>
+        </button>
+
+        {/* Menu mobile dropdown */}
+        <div className={`lp-mobile-menu${menuOpen ? ' open' : ''}`}>
+          <a href="#funcionalidades" className="lp-mobile-link" onClick={closeMenu}>
+            <span className="material-icons-outlined">grid_view</span>
+            Funcionalidades
+          </a>
+          <a href="#como-funciona" className="lp-mobile-link" onClick={closeMenu}>
+            <span className="material-icons-outlined">help_outline</span>
+            Como Funciona
+          </a>
+          <Link href="/login" className="lp-mobile-btn" onClick={closeMenu}>
+            <span className="material-icons-outlined">login</span>
+            Entrar no Sistema
+          </Link>
+        </div>
       </header>
 
       {/* ── Hero ── */}

@@ -222,9 +222,10 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
 # URL base do frontend (ex: https://projetocara.vercel.app).
-# Se não definida, redireciona para o login do próprio admin Django.
+# Usada em frontend_login_redirect (urls.py) para redirecionar após logout do admin.
 FRONTEND_URL = os.environ.get('FRONTEND_URL', '').rstrip('/')
 
-LOGIN_URL           = f'{FRONTEND_URL}/login' if FRONTEND_URL else '/admin/login/'
-LOGIN_REDIRECT_URL  = f'{FRONTEND_URL}/'      if FRONTEND_URL else '/admin/'
-LOGOUT_REDIRECT_URL = f'{FRONTEND_URL}/login' if FRONTEND_URL else '/admin/login/'
+# /login/ existe no urls.py e redireciona para FRONTEND_URL/login (ou /admin/login/).
+LOGIN_URL           = '/login/'
+LOGIN_REDIRECT_URL  = '/admin/'
+LOGOUT_REDIRECT_URL = '/login/'

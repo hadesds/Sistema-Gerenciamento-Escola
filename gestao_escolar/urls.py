@@ -10,10 +10,18 @@ def api_root(request):
 
 
 def frontend_login_redirect(request):
-    """Redireciona /login/ para a página de login do frontend (Next.js/Vercel)."""
+    """Redireciona /login/ para a página de login do frontend (Next.js/Vercel).
+
+    Evita loop infinito verificando se FRONTEND_URL aponta para o próprio backend.
+    """
     frontend = getattr(settings, 'FRONTEND_URL', '').rstrip('/')
     if frontend:
-        return HttpResponseRedirect(f'{frontend}/login')
+        # Protege contra FRONTEND_URL apontando para o próprio domínio Django
+        current_host = request.get_host()  # ex: sistema-gerenciamento-escola.onrender.com
+        from urllib.parse import urlsplit
+        parsed = urlsplit(frontend)
+        if parsed.netloc and parsed.netloc != current_host:
+            return HttpResponseRedirect(f'{frontend}/login')
     return HttpResponseRedirect('/admin/login/')
 
 

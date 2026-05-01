@@ -204,7 +204,7 @@ STORAGES = {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
@@ -225,7 +225,8 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Usada em frontend_login_redirect (urls.py) para redirecionar após logout do admin.
 FRONTEND_URL = os.environ.get('FRONTEND_URL', '').rstrip('/')
 
-# /login/ existe no urls.py e redireciona para FRONTEND_URL/login (ou /admin/login/).
-LOGIN_URL           = '/login/'
+# O admin usa seu próprio login. Após logout vai para /login/ (urls.py),
+# que redireciona para o frontend se FRONTEND_URL estiver configurado.
+LOGIN_URL           = '/admin/login/'
 LOGIN_REDIRECT_URL  = '/admin/'
 LOGOUT_REDIRECT_URL = '/login/'

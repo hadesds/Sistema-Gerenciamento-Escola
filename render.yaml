@@ -24,3 +24,5 @@ services:
         value: "https://*.onrender.com,https://*.vercel.app"
       - key: CLOUDINARY_URL
         sync: false
+      - key: FRONTEND_URL
+        sync: false

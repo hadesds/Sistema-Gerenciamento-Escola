@@ -221,7 +221,10 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
-# Authentication settings — apontam para o admin Django (sem nomes de URL inexistentes)
-LOGIN_REDIRECT_URL = '/admin/'
-LOGOUT_REDIRECT_URL = '/admin/login/'
-LOGIN_URL = '/admin/login/'
+# URL base do frontend (ex: https://projetocara.vercel.app).
+# Se não definida, redireciona para o login do próprio admin Django.
+FRONTEND_URL = os.environ.get('FRONTEND_URL', '').rstrip('/')
+
+LOGIN_URL           = f'{FRONTEND_URL}/login' if FRONTEND_URL else '/admin/login/'
+LOGIN_REDIRECT_URL  = f'{FRONTEND_URL}/'      if FRONTEND_URL else '/admin/'
+LOGOUT_REDIRECT_URL = f'{FRONTEND_URL}/login' if FRONTEND_URL else '/admin/login/'

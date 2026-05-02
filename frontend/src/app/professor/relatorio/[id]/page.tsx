@@ -75,17 +75,66 @@ export default function RelatorioAlunoPage() {
     <ProtectedRoute tipo="professor">
       <Navbar />
       <main className="container fade-in">
+        <style>{`
+          /* Cabeçalho da página (título + botão voltar) */
+          .relatorio-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+          }
+          .relatorio-page-header h1 { margin: 0; }
+
+          /* Stats responsivos */
+          @media (max-width: 900px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          }
+          @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr !important; }
+          }
+          .stat-card { min-width: 0; overflow: hidden; }
+          .stat-info { min-width: 0; overflow: hidden; }
+          .stat-info h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+          /* Barras de comportamento */
+          .comportamento-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+          }
+          .comportamento-row strong { font-size: 1.5rem; }
+          .comportamento-row span  { font-size: 1.3rem; color: var(--text-secondary); white-space: nowrap; }
+
+          /* Tabelas com scroll horizontal */
+          .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 1.2rem;
+          }
+          .table-scroll .feedback-table { margin-top: 0; }
+
+          /* Perfil */
+          @media (max-width: 480px) {
+            .perfil-header { flex-direction: column; align-items: flex-start; }
+          }
+        `}</style>
+
         {loading ? <Loading /> : !data ? (
           <div className="empty-state"><h2>Relatório não encontrado.</h2></div>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div className="relatorio-page-header">
               <h1>Relatório do Aluno</h1>
-              <Link href={`/professor/turmas`} className="btn btn-secondary">← Voltar</Link>
+              <Link href="/professor/turmas" className="btn btn-secondary">← Voltar</Link>
             </div>
 
             {/* Perfil */}
-            <div className="card">
+            <div className="card" style={{ marginBottom: '2rem' }}>
               <div className="perfil-header">
                 {data.aluno.foto_url ? (
                   <Image src={data.aluno.foto_url} alt={data.aluno.nome} width={120} height={120} className="perfil-foto" unoptimized />
@@ -102,14 +151,18 @@ export default function RelatorioAlunoPage() {
             </div>
 
             {/* Stats comportamento */}
-            <div className="stats-grid">
+            <div className="stats-grid" style={{ marginBottom: '2rem' }}>
               <div className="stat-card">
-                <div className="stat-icon"><span className="material-icons-outlined">grade</span></div>
+                <div className="stat-icon" style={{ background: 'linear-gradient(135deg,#0d2d6b,#1a4fa0)' }}>
+                  <span className="material-icons-outlined">grade</span>
+                </div>
                 <div className="stat-info"><h3>{data.media_geral.toFixed(2)}</h3><p>Média Comportamental</p></div>
               </div>
               {data.media_geral_materias !== null && (
                 <div className="stat-card">
-                  <div className="stat-icon"><span className="material-icons-outlined">school</span></div>
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg,#27ae60,#229954)' }}>
+                    <span className="material-icons-outlined">school</span>
+                  </div>
                   <div className="stat-info"><h3>{data.media_geral_materias.toFixed(2)}</h3><p>Média Geral Matérias</p></div>
                 </div>
               )}
@@ -117,12 +170,15 @@ export default function RelatorioAlunoPage() {
 
             {/* Barras comportamento */}
             <div className="card mb-2">
-              <h2>Comportamento</h2>
+              <h2 style={{ marginBottom: '2rem' }}>
+                <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>bar_chart</span>
+                Comportamento
+              </h2>
               {CRITERIOS.map(c => (
                 <div key={c.key} style={{ marginBottom: '2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <strong style={{ fontSize: '1.5rem' }}>{c.label}</strong>
-                    <span>{data.medias[c.key].toFixed(2)} / 5.00 ({data.medias[c.pct]}%)</span>
+                  <div className="comportamento-row">
+                    <strong>{c.label}</strong>
+                    <span>{data.medias[c.key].toFixed(2)} / 5.00 &nbsp;({data.medias[c.pct]}%)</span>
                   </div>
                   <div className="progress-bar" style={{ height: '1.8rem' }}>
                     <div className="progress-fill" style={{
@@ -141,8 +197,11 @@ export default function RelatorioAlunoPage() {
 
               return (
                 <div className="card mb-2">
-                  <h2>Notas por Matéria</h2>
-                  <div style={{ overflowX: 'auto' }}>
+                  <h2 style={{ marginBottom: '1.5rem' }}>
+                    <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>menu_book</span>
+                    Notas por Matéria
+                  </h2>
+                  <div className="table-scroll">
                     <table className="feedback-table">
                       <thead>
                         <tr>
@@ -172,7 +231,6 @@ export default function RelatorioAlunoPage() {
                             </td>
                           </tr>
                         ))}
-                        {/* Linha de média por época */}
                         <tr style={{ background: 'var(--bg-card-add)' }}>
                           <td><strong>Média Geral</strong></td>
                           {epocasPresentes.map(e => {
@@ -204,31 +262,36 @@ export default function RelatorioAlunoPage() {
             {/* Histórico comportamental */}
             {data.avaliacoes.length > 0 && (
               <div className="card">
-                <h2>Histórico Comportamental</h2>
-                <table className="feedback-table">
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Assiduidade</th>
-                      <th>Participação</th>
-                      <th>Responsabilidade</th>
-                      <th>Sociabilidade</th>
-                      <th>Média</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.avaliacoes.map(av => (
-                      <tr key={av.id}>
-                        <td>{new Date(av.data).toLocaleDateString('pt-BR')}</td>
-                        <td>{av.assiduidade}/5</td>
-                        <td>{av.participacao}/5</td>
-                        <td>{av.responsabilidade}/5</td>
-                        <td>{av.sociabilidade}/5</td>
-                        <td><NotaBadge nota={av.media} /></td>
+                <h2 style={{ marginBottom: '1.5rem' }}>
+                  <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>history</span>
+                  Histórico Comportamental
+                </h2>
+                <div className="table-scroll">
+                  <table className="feedback-table">
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        <th>Assid.</th>
+                        <th>Part.</th>
+                        <th>Resp.</th>
+                        <th>Soc.</th>
+                        <th>Média</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {data.avaliacoes.map(av => (
+                        <tr key={av.id}>
+                          <td style={{ whiteSpace: 'nowrap' }}>{new Date(av.data).toLocaleDateString('pt-BR')}</td>
+                          <td>{av.assiduidade}/5</td>
+                          <td>{av.participacao}/5</td>
+                          <td>{av.responsabilidade}/5</td>
+                          <td>{av.sociabilidade}/5</td>
+                          <td><NotaBadge nota={av.media} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>

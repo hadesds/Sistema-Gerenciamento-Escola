@@ -102,15 +102,31 @@ export default function ProfessorDashboardPage() {
             grid-template-columns: 1.5fr 1fr;
             gap: 2rem;
           }
-          @media (max-width: 768px) {
+          /* Filhos do grid não ultrapassam a coluna (min-width: auto default causa overflow) */
+          .dash-two-col > * { min-width: 0; }
+
+          /* Cards internos também não extravasam */
+          .dash-two-col .card { min-width: 0; overflow: hidden; }
+
+          @media (max-width: 900px) {
             .dash-two-col { grid-template-columns: 1fr; }
-            .stats-grid   { grid-template-columns: repeat(2, 1fr); }
+          }
+
+          /* Stats: 2 colunas em telas médias, 1 coluna em mobile pequeno */
+          @media (max-width: 900px) {
+            .stats-grid   { grid-template-columns: repeat(2, 1fr) !important; }
+            .dash-actions-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .dash-actions-grid a { width: 100% !important; }
+          }
+          @media (max-width: 480px) {
+            .stats-grid        { grid-template-columns: 1fr !important; }
             .dash-actions-grid { grid-template-columns: repeat(2, 1fr) !important; }
           }
-          @media (max-width: 400px) {
-            .stats-grid   { grid-template-columns: 1fr; }
-            .dash-actions-grid { grid-template-columns: 1fr !important; }
-          }
+
+          /* Stat card: garante que o conteúdo não extravasa em colunas estreitas */
+          .stat-card { min-width: 0; overflow: hidden; }
+          .stat-info { min-width: 0; overflow: hidden; }
+          .stat-info h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
           /* Barra de busca */
           .dash-search-wrap {
@@ -243,7 +259,7 @@ export default function ProfessorDashboardPage() {
             <div className="dash-two-col">
 
               {/* Coluna esquerda */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', minWidth: 0 }}>
                 {showDesempenho && (
                   <div id="desempenho" className="card">
                     <h2 style={{ marginBottom: '2rem' }}>
@@ -310,7 +326,7 @@ export default function ProfessorDashboardPage() {
               </div>
 
               {/* Coluna direita */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', minWidth: 0 }}>
                 {showTop && (
                   <div id="top-alunos" className="card" style={{ background: 'linear-gradient(135deg, #e8f0fc, white)' }}>
                     <h2 style={{ marginBottom: '2rem' }}>

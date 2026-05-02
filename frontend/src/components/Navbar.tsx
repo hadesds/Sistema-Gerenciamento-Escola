@@ -82,11 +82,20 @@ export default function Navbar() {
           align-items: center;
           gap: 1rem;
           text-decoration: none;
+          flex: 1;
+          min-width: 0;
+          overflow: hidden;
         }
         .sb-topbar-brand img {
           height: 3.4rem;
-          width: auto;
+          width: 3.4rem;
           border-radius: 0.5rem;
+          flex-shrink: 0;
+          object-fit: cover;
+        }
+        .sb-topbar-brand > div {
+          min-width: 0;
+          overflow: hidden;
         }
         .sb-topbar-brand-name {
           color: #fff;
@@ -94,17 +103,25 @@ export default function Navbar() {
           font-size: 1.8rem;
           letter-spacing: 0.06em;
           line-height: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .sb-topbar-brand-sub {
           color: rgba(255,255,255,0.6);
           font-size: 1rem;
           font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .sb-topbar-actions {
           display: flex;
           align-items: center;
           gap: 0.6rem;
+          flex-shrink: 0;
+          margin-left: 0.8rem;
         }
 
         .sb-topbar-btn {

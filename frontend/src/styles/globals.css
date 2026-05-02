@@ -46,6 +46,7 @@ body {
   font-size: 1.6rem;
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .navbar {

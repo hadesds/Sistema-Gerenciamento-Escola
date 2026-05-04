@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, AlternativaQuestao
 
 
 class TurmaSerializer(serializers.ModelSerializer):
@@ -59,12 +59,27 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
         return round(obj.calcular_media(), 2)
 
 
+class AlternativaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlternativaQuestao
+        fields = ['id', 'texto', 'correta', 'ordem']
+
+
 class QuestaoSerializer(serializers.ModelSerializer):
     dificuldade_display = serializers.CharField(source='get_dificuldade_display', read_only=True)
+    tipo_display        = serializers.CharField(source='get_tipo_display', read_only=True)
+    alternativas        = AlternativaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Questao
-        fields = ['id', 'enunciado', 'resposta', 'materia', 'dificuldade', 'dificuldade_display', 'data_criacao']
+        fields = [
+            'id', 'enunciado', 'resposta', 'materia',
+            'dificuldade', 'dificuldade_display',
+            'tipo', 'tipo_display',
+            'exige_justificativa',
+            'alternativas',
+            'data_criacao',
+        ]
 
 
 class SimuladoSerializer(serializers.ModelSerializer):

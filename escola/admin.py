@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, Administrador
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, Administrador, AlternativaQuestao
 
 # Inline para Professor
 class ProfessorInline(admin.StackedInline):
@@ -87,13 +87,19 @@ class AvaliacaoAdmin(admin.ModelAdmin):
     calcular_media.short_description = 'Média'
 
 # Questão Admin
+class AlternativaInline(admin.TabularInline):
+    model = AlternativaQuestao
+    extra = 2
+    fields = ['ordem', 'texto', 'correta']
+
 @admin.register(Questao)
 class QuestaoAdmin(admin.ModelAdmin):
-    list_display = ['materia', 'get_enunciado_curto', 'autor', 'data_criacao']
-    list_filter = ['materia', 'data_criacao', 'autor']
+    list_display = ['materia', 'tipo', 'get_enunciado_curto', 'exige_justificativa', 'autor', 'data_criacao']
+    list_filter = ['materia', 'tipo', 'dificuldade', 'exige_justificativa', 'data_criacao', 'autor']
     search_fields = ['materia', 'enunciado', 'autor__user__first_name']
     date_hierarchy = 'data_criacao'
-    
+    inlines = [AlternativaInline]
+
     def get_enunciado_curto(self, obj):
         return obj.enunciado[:50] + '...' if len(obj.enunciado) > 50 else obj.enunciado
     get_enunciado_curto.short_description = 'Enunciado'

@@ -166,13 +166,19 @@ class Questao(models.Model):
         ('medio',   'Médio'),
         ('dificil', 'Difícil'),
     ]
-    enunciado    = models.TextField()
-    resposta     = models.TextField()
-    materia      = models.CharField(max_length=100)
-    autor        = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
-    dificuldade  = models.CharField(max_length=10, choices=DIFICULDADE_CHOICES, default='medio')
-    data_criacao = models.DateTimeField(auto_now_add=True)
-    
+    TIPO_CHOICES = [
+        ('discursiva', 'Discursiva'),
+        ('objetiva',   'Objetiva'),
+    ]
+    enunciado           = models.TextField()
+    resposta            = models.TextField(blank=True, default='')
+    materia             = models.CharField(max_length=100)
+    autor               = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
+    dificuldade         = models.CharField(max_length=10, choices=DIFICULDADE_CHOICES, default='medio')
+    tipo                = models.CharField(max_length=12, choices=TIPO_CHOICES, default='discursiva')
+    exige_justificativa = models.BooleanField(default=False)
+    data_criacao        = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ['-data_criacao']
         verbose_name = 'Questão'
@@ -180,6 +186,21 @@ class Questao(models.Model):
 
     def __str__(self):
         return f"{self.materia} - {self.enunciado[:50]}..."
+
+
+class AlternativaQuestao(models.Model):
+    questao = models.ForeignKey(Questao, on_delete=models.CASCADE, related_name='alternativas')
+    texto   = models.CharField(max_length=500)
+    correta = models.BooleanField(default=False)
+    ordem   = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['ordem']
+        verbose_name = 'Alternativa'
+        verbose_name_plural = 'Alternativas'
+
+    def __str__(self):
+        return f"{'✓' if self.correta else '○'} {self.texto[:60]}"
 
 class Simulado(models.Model):
     questoes = models.ManyToManyField(Questao, related_name="simulados")

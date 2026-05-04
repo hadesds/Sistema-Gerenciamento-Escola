@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer
@@ -246,13 +246,26 @@ def professor_banco_questoes(request):
 
     if request.method == 'POST':
         try:
+            tipo = request.data.get('tipo', 'discursiva')
             questao = Questao.objects.create(
                 autor=professor,
-                enunciado=request.data.get('enunciado'),
-                resposta=request.data.get('resposta'),
-                materia=request.data.get('materia'),
+                enunciado=request.data.get('enunciado', ''),
+                resposta=request.data.get('resposta', ''),
+                materia=request.data.get('materia', ''),
                 dificuldade=request.data.get('dificuldade', 'medio'),
+                tipo=tipo,
+                exige_justificativa=bool(request.data.get('exige_justificativa', False)),
             )
+            if tipo == 'objetiva':
+                for i, alt in enumerate(request.data.get('alternativas', [])):
+                    texto = str(alt.get('texto', '')).strip()
+                    if texto:
+                        AlternativaQuestao.objects.create(
+                            questao=questao,
+                            texto=texto,
+                            correta=bool(alt.get('correta', False)),
+                            ordem=i,
+                        )
             return Response(QuestaoSerializer(questao).data, status=201)
         except Exception as e:
             return Response({'detail': str(e)}, status=400)

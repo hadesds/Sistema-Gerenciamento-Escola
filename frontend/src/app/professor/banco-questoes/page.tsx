@@ -212,18 +212,22 @@ export default function BancoQuestoesPage() {
             background: linear-gradient(135deg, #27ae60, #229954);
             color: #fff;
           }
+          /* Isola o input de alternativa do .form-group input do globals.css */
           .alt-input {
-            flex: 1;
-            padding: 1rem 1.4rem;
-            border: 2px solid #d0daea;
-            border-radius: 1rem;
-            font-size: 1.4rem;
-            font-family: 'Poppins', sans-serif;
-            outline: none;
-            transition: border-color 0.2s;
-            min-width: 0;
+            flex: 1 !important;
+            width: auto !important;
+            min-width: 0 !important;
+            padding: 1rem 1.4rem !important;
+            border: 2px solid #d0daea !important;
+            border-radius: 1rem !important;
+            font-size: 1.4rem !important;
+            font-family: 'Poppins', sans-serif !important;
+            outline: none !important;
+            background: #fff !important;
+            transition: border-color 0.2s !important;
+            box-shadow: none !important;
           }
-          .alt-input:focus { border-color: #1a73c7; }
+          .alt-input:focus { border-color: #1a73c7 !important; }
           .alt-radio {
             width: 2rem;
             height: 2rem;
@@ -423,8 +427,8 @@ export default function BancoQuestoesPage() {
 
               {/* ── OBJETIVA: alternativas ── */}
               {form.tipo === 'objetiva' && (
-                <div className="form-group">
-                  <label>
+                <div style={{ marginBottom: '2rem' }}>
+                  <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 600, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
                     Alternativas &nbsp;
                     <span style={{ fontSize: '1.3rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
                       — selecione o botão circular para marcar a correta

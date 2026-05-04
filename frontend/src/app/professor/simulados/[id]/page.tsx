@@ -58,6 +58,7 @@ export default function DetalheSimuladoPage() {
   const [simulado, setSimulado] = useState<Simulado | null>(null);
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -83,6 +84,8 @@ export default function DetalheSimuladoPage() {
       setUsarTempo(!!s.tempo_limite);
       setTempo(s.tempo_limite ? String(s.tempo_limite) : '');
       setArea(s.area_conhecimento || '');
+    }).catch(() => {
+      setError('Não foi possível carregar o simulado. Verifique se ele existe e tente novamente.');
     }).finally(() => setLoading(false));
   }, [id]);
 
@@ -139,7 +142,22 @@ export default function DetalheSimuladoPage() {
   }
 
   if (loading) return <ProtectedRoute tipo="professor"><Navbar /><Loading /></ProtectedRoute>;
-  if (!simulado) return null;
+
+  if (error || !simulado) return (
+    <ProtectedRoute tipo="professor">
+      <Navbar />
+      <main className="container fade-in">
+        <div className="card empty-state" style={{ marginTop: '4rem' }}>
+          <div className="empty-icon">⚠️</div>
+          <h2>Simulado não encontrado</h2>
+          <p>{error || 'Este simulado não existe ou você não tem permissão para acessá-lo.'}</p>
+          <button className="btn btn-secondary" onClick={() => router.push('/professor/simulados')} style={{ marginTop: '1.5rem' }}>
+            Voltar para Meus Simulados
+          </button>
+        </div>
+      </main>
+    </ProtectedRoute>
+  );
 
   const dirty =
     titulo !== (simulado.titulo || '') ||

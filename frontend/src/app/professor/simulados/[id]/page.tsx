@@ -73,20 +73,36 @@ export default function DetalheSimuladoPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      apiFetch<Simulado>(`/professor/simulado/${id}/`),
-      apiFetch<{ turmas: Turma[] }>('/professor/criar-simulado/data/'),
-    ]).then(([s, data]) => {
-      setSimulado(s);
-      setTurmas(data.turmas);
-      setTitulo(s.titulo || '');
-      setTurmaId(String(s.turma_alvo ?? ''));
-      setUsarTempo(!!s.tempo_limite);
-      setTempo(s.tempo_limite ? String(s.tempo_limite) : '');
-      setArea(s.area_conhecimento || '');
-    }).catch(() => {
-      setError('Não foi possível carregar o simulado. Verifique se ele existe e tente novamente.');
-    }).finally(() => setLoading(false));
+    const numId = Number(id);
+
+    const fetchSimulado = apiFetch<Simulado>(`/professor/simulado/${id}/`)
+      .catch(() =>
+        apiFetch<Simulado[]>('/professor/simulados/').then(list => {
+          const found = list.find(s => s.id === numId);
+          if (!found) throw new Error('Simulado não encontrado na lista.');
+          return found;
+        })
+      );
+
+    const fetchTurmas = apiFetch<{ turmas: Turma[] }>('/professor/criar-simulado/data/')
+      .then(d => d.turmas)
+      .catch(() => [] as Turma[]);
+
+    Promise.all([fetchSimulado, fetchTurmas])
+      .then(([s, turmaList]) => {
+        setSimulado(s);
+        setTurmas(turmaList);
+        setTitulo(s.titulo || '');
+        setTurmaId(String(s.turma_alvo ?? ''));
+        setUsarTempo(!!s.tempo_limite);
+        setTempo(s.tempo_limite ? String(s.tempo_limite) : '');
+        setArea(s.area_conhecimento || '');
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        setError(`Erro ao carregar simulado: ${msg}`);
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   function showToast(msg: string, ok = true) {

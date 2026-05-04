@@ -85,14 +85,18 @@ export default function BancoQuestoesPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  function setAlt(idx: number, field: 'texto' | 'correta', value: string | boolean) {
-    setForm(f => {
-      const alts = f.alternativas.map((a, i) => {
-        if (field === 'correta') return { ...a, correta: i === idx };
-        return i === idx ? { ...a, [field]: value } : a;
-      });
-      return { ...f, alternativas: alts };
-    });
+  function setAltTexto(idx: number, texto: string) {
+    setForm(f => ({
+      ...f,
+      alternativas: f.alternativas.map((a, i) => i === idx ? { ...a, texto } : a),
+    }));
+  }
+
+  function setAltCorreta(idx: number) {
+    setForm(f => ({
+      ...f,
+      alternativas: f.alternativas.map((a, i) => ({ ...a, correta: i === idx })),
+    }));
   }
 
   function addAlt() {
@@ -435,7 +439,7 @@ export default function BancoQuestoesPage() {
                           type="text"
                           placeholder={`Alternativa ${ALPHA[i]}…`}
                           value={alt.texto}
-                          onChange={e => setAlt(i, 'texto', e.target.value)}
+                          onChange={e => setAltTexto(i, e.target.value)}
                         />
                         <input
                           type="radio"
@@ -443,7 +447,7 @@ export default function BancoQuestoesPage() {
                           name="correta"
                           title="Marcar como correta"
                           checked={alt.correta}
-                          onChange={() => setAlt(i, 'correta', true)}
+                          onChange={() => setAltCorreta(i)}
                         />
                         <button
                           type="button"

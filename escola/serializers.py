@@ -90,7 +90,7 @@ class SimuladoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Simulado
-        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'total_questoes', 'questoes']
+        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'total_questoes', 'questoes']
 
     def get_turma_nome(self, obj):
         return obj.turma_alvo.nome if obj.turma_alvo else ''

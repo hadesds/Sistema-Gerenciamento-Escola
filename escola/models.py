@@ -207,6 +207,9 @@ class Simulado(models.Model):
     autor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="simulados_criados")
     turma_alvo = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, related_name="simulados")
     data_criacao = models.DateTimeField(auto_now_add=True)
+    titulo            = models.CharField(max_length=200, blank=True, default='')
+    tempo_limite      = models.PositiveIntegerField(null=True, blank=True, help_text='Tempo limite em minutos')
+    area_conhecimento = models.CharField(max_length=100, blank=True, default='')
     
     class Meta:
         ordering = ['-data_criacao']

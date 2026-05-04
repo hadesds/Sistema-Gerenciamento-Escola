@@ -315,6 +315,10 @@ def professor_criar_simulado(request):
     turma = get_object_or_404(Turma, id=turma_id)
     simulado = Simulado.objects.create(autor=professor, turma_alvo=turma)
     simulado.questoes.set(questoes_ids)
+    simulado.titulo = request.data.get('titulo', '')
+    simulado.tempo_limite = request.data.get('tempo_limite') or None
+    simulado.area_conhecimento = request.data.get('area_conhecimento', '')
+    simulado.save()
 
     return Response(SimuladoSerializer(simulado).data, status=201)
 

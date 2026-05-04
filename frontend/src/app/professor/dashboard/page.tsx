@@ -19,6 +19,7 @@ interface DashboardData {
     id: number;
     aluno_nome: string;
     aluno_turma: string;
+    aluno_foto_url: string | null;
     media: number;
     data: string;
   }>;
@@ -303,8 +304,11 @@ export default function ProfessorDashboardPage() {
                         {data.avaliacoes_recentes.map(av => (
                           <div key={av.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', background: 'white', borderRadius: '1.2rem', gap: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', minWidth: 0 }}>
-                              <div style={{ width: '5rem', height: '5rem', borderRadius: '50%', background: 'var(--color-stat-circle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '2rem', color: 'var(--text-primary)', flexShrink: 0 }}>
-                                {av.aluno_nome.charAt(0).toUpperCase()}
+                              <div style={{ width: '5rem', height: '5rem', borderRadius: '50%', background: 'var(--color-stat-circle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '2rem', color: 'var(--text-primary)', flexShrink: 0, overflow: 'hidden' }}>
+                                {av.aluno_foto_url
+                                  ? <Image src={av.aluno_foto_url} alt={av.aluno_nome} width={50} height={50} style={{ width: '100%', height: '100%', objectFit: 'cover' }} unoptimized />
+                                  : av.aluno_nome.charAt(0).toUpperCase()
+                                }
                               </div>
                               <div style={{ minWidth: 0 }}>
                                 <strong style={{ fontSize: '1.5rem', display: 'block', marginBottom: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{av.aluno_nome}</strong>

@@ -39,12 +39,13 @@ class AlunoBasicSerializer(serializers.ModelSerializer):
 class AvaliacaoSerializer(serializers.ModelSerializer):
     aluno_nome = serializers.SerializerMethodField()
     aluno_turma = serializers.SerializerMethodField()
+    aluno_foto_url = serializers.SerializerMethodField()
     media = serializers.SerializerMethodField()
 
     class Meta:
         model = Avaliacao
         fields = [
-            'id', 'aluno', 'aluno_nome', 'aluno_turma',
+            'id', 'aluno', 'aluno_nome', 'aluno_turma', 'aluno_foto_url',
             'assiduidade', 'participacao', 'responsabilidade', 'sociabilidade',
             'data', 'media'
         ]
@@ -54,6 +55,12 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
 
     def get_aluno_turma(self, obj):
         return obj.aluno.turma.nome if obj.aluno.turma else ''
+
+    def get_aluno_foto_url(self, obj):
+        request = self.context.get('request')
+        if obj.aluno.foto and request:
+            return request.build_absolute_uri(obj.aluno.foto.url)
+        return None
 
     def get_media(self, obj):
         return round(obj.calcular_media(), 2)

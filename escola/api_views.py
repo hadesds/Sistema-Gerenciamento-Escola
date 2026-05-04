@@ -334,6 +334,49 @@ def professor_lista_simulados(request):
     return Response(SimuladoSerializer(simulados, many=True).data)
 
 
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def professor_detalhe_simulado(request, simulado_id):
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
+
+    if request.method == 'GET':
+        return Response(SimuladoSerializer(simulado).data)
+
+    if request.method == 'PATCH':
+        if 'titulo' in request.data:
+            simulado.titulo = request.data['titulo']
+        if 'tempo_limite' in request.data:
+            simulado.tempo_limite = request.data['tempo_limite'] or None
+        if 'area_conhecimento' in request.data:
+            simulado.area_conhecimento = request.data['area_conhecimento']
+        if 'turma' in request.data:
+            turma = get_object_or_404(Turma, id=request.data['turma'])
+            simulado.turma_alvo = turma
+        simulado.save()
+        return Response(SimuladoSerializer(simulado).data)
+
+    if request.method == 'DELETE':
+        simulado.delete()
+        return Response(status=204)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def professor_remover_questao_simulado(request, simulado_id, questao_id):
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
+    questao = get_object_or_404(Questao, id=questao_id)
+    simulado.questoes.remove(questao)
+    return Response(SimuladoSerializer(simulado).data)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def professor_relatorio_aluno(request, aluno_id):

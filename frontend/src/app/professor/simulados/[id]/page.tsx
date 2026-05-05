@@ -124,8 +124,9 @@ export default function DetalheSimuladoPage() {
       });
       setSimulado(updated);
       showToast('Simulado atualizado com sucesso!');
-    } catch {
-      showToast('Erro ao salvar alterações.', false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      showToast(`Erro ao salvar: ${msg}`, false);
     } finally {
       setSaving(false);
     }
@@ -140,8 +141,9 @@ export default function DetalheSimuladoPage() {
       );
       setSimulado(updated);
       showToast('Questão removida do simulado.');
-    } catch {
-      showToast('Erro ao remover questão.', false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      showToast(`Erro ao remover questão: ${msg}`, false);
     } finally {
       setDeletingId(null);
     }
@@ -151,8 +153,9 @@ export default function DetalheSimuladoPage() {
     try {
       await apiFetch(`/professor/simulado/${id}/`, { method: 'DELETE' });
       router.push('/professor/simulados');
-    } catch {
-      showToast('Erro ao excluir simulado.', false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      showToast(`Erro ao excluir simulado: ${msg}`, false);
       setConfirmDelete(false);
     }
   }

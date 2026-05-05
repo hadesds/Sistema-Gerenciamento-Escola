@@ -107,7 +107,6 @@ export default function ListaTurmasPage() {
                 {/* Action */}
                 <div style={{ marginTop: 'auto' }}>
                   <Link href={`/professor/turma/${turma.id}`} className="btn btn-primary" style={{ display: 'block', textAlign: 'center' }}>
-                    <span className="material-icons-outlined">people</span>
                     Ver Carômetro e Avaliar
                   </Link>
                 </div>

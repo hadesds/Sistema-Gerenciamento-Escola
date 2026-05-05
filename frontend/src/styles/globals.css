@@ -324,14 +324,14 @@ p {
   margin-top: 2rem;
 }
 
-.badge {
+.badge {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   display: inline-block;
   padding: 0.5rem 1.2rem;
   border-radius: 1.2rem;
   font-size: 1.3rem;
   font-weight: 600;
   background-color: var(--color-stat-circle);
-  color: var(--text-primary);
+  color: #f0f4fb;
 }
 
 .nota-badge {

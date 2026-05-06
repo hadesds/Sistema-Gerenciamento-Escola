@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, ProvaIndividual
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
@@ -233,10 +233,16 @@ def professor_registrar_avaliacao(request, aluno_id):
 
     aluno = get_object_or_404(Aluno, pk=aluno_id)
     try:
+        from decimal import Decimal
+
         materia_id = request.data.get('materia_id')
-        materia_obj = Materia.objects.filter(id=materia_id).first() if materia_id else None
+        if not materia_id:
+            return Response({'detail': 'A matéria é obrigatória.'}, status=400)
+        materia_obj = get_object_or_404(Materia, pk=materia_id)
+
         observacao = request.data.get('observacao', '')
-        notas_bimestrais = request.data.get('notas_bimestrais', {})
+        # provas_bimestrais: { '1B': [8.5, 7.0], '2B': [9.0], ... }
+        provas_bimestrais = request.data.get('provas_bimestrais', {})
 
         avaliacao = Avaliacao.objects.create(
             aluno=aluno,
@@ -249,18 +255,44 @@ def professor_registrar_avaliacao(request, aluno_id):
             observacao=observacao,
         )
 
-        # Lança notas bimestrais se fornecidas
-        materia_key = SIGLA_TO_NOTA_MATERIA.get(materia_obj.sigla) if materia_obj else None
-        for epoca, nota_val in notas_bimestrais.items():
-            if materia_key and nota_val is not None:
+        materia_key = SIGLA_TO_NOTA_MATERIA.get(materia_obj.sigla)
+        epocas_validas = {'1B', '2B', '3B', '4B'}
+
+        for epoca, notas_lista in provas_bimestrais.items():
+            if epoca not in epocas_validas or not isinstance(notas_lista, list):
+                continue
+
+            notas_validas = []
+            for nota_val in notas_lista:
                 try:
-                    from decimal import Decimal
-                    NotaMateria.objects.update_or_create(
-                        aluno=aluno, materia=materia_key, epoca=epoca,
-                        defaults={'professor': professor, 'nota': Decimal(str(nota_val))}
-                    )
-                except Exception:
+                    n = float(nota_val)
+                    if 0 <= n <= 10:
+                        notas_validas.append(n)
+                except (TypeError, ValueError):
                     pass
+
+            if not notas_validas:
+                continue
+
+            # Substitui as provas individuais deste bimestre para esta matéria/aluno
+            ProvaIndividual.objects.filter(aluno=aluno, materia=materia_obj, epoca=epoca).delete()
+            for i, nota_val in enumerate(notas_validas, 1):
+                ProvaIndividual.objects.create(
+                    aluno=aluno,
+                    professor=professor,
+                    materia=materia_obj,
+                    epoca=epoca,
+                    numero=i,
+                    nota=Decimal(str(round(nota_val, 2))),
+                )
+
+            # Salva a média no NotaMateria (retrocompatibilidade)
+            media = sum(notas_validas) / len(notas_validas)
+            if materia_key:
+                NotaMateria.objects.update_or_create(
+                    aluno=aluno, materia=materia_key, epoca=epoca,
+                    defaults={'professor': professor, 'nota': Decimal(str(round(media, 2)))}
+                )
 
         return Response({
             'message': f'Avaliação de {aluno.user.get_full_name()} registrada com sucesso!',
@@ -268,6 +300,30 @@ def professor_registrar_avaliacao(request, aluno_id):
         }, status=201)
     except Exception as e:
         return Response({'detail': str(e)}, status=400)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_provas_aluno(request, aluno_id):
+    """Retorna as provas individuais de um aluno por matéria e época."""
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    materia_id = request.query_params.get('materia_id')
+    if not materia_id:
+        return Response({'detail': 'materia_id é obrigatório.'}, status=400)
+
+    provas = ProvaIndividual.objects.filter(
+        aluno=aluno, materia_id=materia_id
+    ).order_by('epoca', 'numero')
+
+    result = {'1B': [], '2B': [], '3B': [], '4B': []}
+    for p in provas:
+        result[p.epoca].append(float(p.nota))
+
+    return Response(result)
 
 
 @api_view(['GET', 'POST'])
@@ -473,6 +529,27 @@ def professor_relatorio_aluno(request, aluno_id):
         if medias_materias else None
     )
 
+    # Provas individuais agrupadas por matéria e época
+    provas_qs = ProvaIndividual.objects.filter(aluno=aluno).select_related('materia').order_by('materia__nome', 'epoca', 'numero')
+    provas_por_materia: dict = {}
+    for p in provas_qs:
+        mat = p.materia.nome
+        if mat not in provas_por_materia:
+            provas_por_materia[mat] = {'1B': [], '2B': [], '3B': [], '4B': []}
+        provas_por_materia[mat][p.epoca].append(float(p.nota))
+
+    # Médias por matéria a partir das provas individuais
+    medias_provas: dict = {}
+    for mat, epocas in provas_por_materia.items():
+        todas = [n for lista in epocas.values() for n in lista]
+        if todas:
+            medias_provas[mat] = round(sum(todas) / len(todas), 2)
+
+    media_geral_provas = (
+        round(sum(medias_provas.values()) / len(medias_provas), 2)
+        if medias_provas else None
+    )
+
     return Response({
         'aluno': {
             'id': aluno.user.id,
@@ -494,10 +571,14 @@ def professor_relatorio_aluno(request, aluno_id):
         'media_geral': round(media_geral, 2),
         'total_avaliacoes': avaliacoes.count(),
         'avaliacoes': AvaliacaoSerializer(avaliacoes, many=True).data,
-        # notas por matéria
+        # notas por matéria (NotaMateria – retrocompatibilidade)
         'notas_por_epoca': notas_por_epoca,
         'medias_materias': medias_materias,
         'media_geral_materias': media_geral_materias,
+        # provas individuais agrupadas
+        'provas_por_materia': provas_por_materia,
+        'medias_provas': medias_provas,
+        'media_geral_provas': media_geral_provas,
     })
 
 

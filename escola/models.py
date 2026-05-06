@@ -176,6 +176,32 @@ class Materia(models.Model):
         return f"{self.nome} ({self.sigla})"
 
 
+class ProvaIndividual(models.Model):
+    EPOCAS = [
+        ('1B', '1° Bimestre'),
+        ('2B', '2° Bimestre'),
+        ('3B', '3° Bimestre'),
+        ('4B', '4° Bimestre'),
+    ]
+    aluno     = models.ForeignKey(Aluno,     on_delete=models.CASCADE,  related_name='provas_individuais')
+    professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name='provas_aplicadas')
+    materia   = models.ForeignKey('Materia', on_delete=models.CASCADE,  related_name='provas_individuais')
+    epoca     = models.CharField(max_length=2, choices=EPOCAS)
+    numero    = models.PositiveSmallIntegerField()
+    nota      = models.DecimalField(max_digits=4, decimal_places=2,
+                    validators=[MinValueValidator(0), MaxValueValidator(10)])
+    data      = models.DateField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('aluno', 'materia', 'epoca', 'numero')
+        ordering = ['epoca', 'numero']
+        verbose_name = 'Prova Individual'
+        verbose_name_plural = 'Provas Individuais'
+
+    def __str__(self):
+        return f"{self.aluno} – {self.materia} ({self.epoca}) Prova {self.numero}: {self.nota}"
+
+
 class Questao(models.Model):
     DIFICULDADE_CHOICES = [
         ('facil',   'Fácil'),

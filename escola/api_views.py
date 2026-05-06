@@ -6,10 +6,11 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
-    QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer
+    QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
+    MateriaSerializer
 )
 
 
@@ -247,11 +248,13 @@ def professor_banco_questoes(request):
     if request.method == 'POST':
         try:
             tipo = request.data.get('tipo', 'discursiva')
+            materia_id = request.data.get('materia')
+            materia = Materia.objects.filter(id=materia_id).first() if materia_id else None
             questao = Questao.objects.create(
                 autor=professor,
                 enunciado=request.data.get('enunciado', ''),
                 resposta=request.data.get('resposta', ''),
-                materia=request.data.get('materia', ''),
+                materia=materia,
                 dificuldade=request.data.get('dificuldade', 'medio'),
                 tipo=tipo,
                 exige_justificativa=bool(request.data.get('exige_justificativa', False)),
@@ -273,13 +276,11 @@ def professor_banco_questoes(request):
     materia_filtro = request.GET.get('materia', '')
     questoes = Questao.objects.filter(autor=professor).order_by('-id')
     if materia_filtro:
-        questoes = questoes.filter(materia__icontains=materia_filtro)
-
-    materias = list(Questao.objects.filter(autor=professor).values_list('materia', flat=True).distinct())
+        questoes = questoes.filter(materia__sigla=materia_filtro)
 
     return Response({
         'questoes': QuestaoSerializer(questoes, many=True).data,
-        'materias': materias,
+        'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
         'materia_filtro': materia_filtro
     })
 
@@ -295,7 +296,8 @@ def professor_criar_simulado_data(request):
     turmas = professor.turmas.all()
     return Response({
         'questoes': QuestaoSerializer(questoes, many=True).data,
-        'turmas': TurmaSerializer(turmas, many=True).data
+        'turmas': TurmaSerializer(turmas, many=True).data,
+        'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
     })
 
 
@@ -332,6 +334,16 @@ def professor_lista_simulados(request):
 
     simulados = Simulado.objects.filter(autor=professor).select_related('turma_alvo').order_by('-id')
     return Response(SimuladoSerializer(simulados, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_materias(request):
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+    materias = Materia.objects.all()
+    return Response(MateriaSerializer(materias, many=True).data)
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])

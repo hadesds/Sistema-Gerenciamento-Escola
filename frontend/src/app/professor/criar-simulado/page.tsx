@@ -8,10 +8,14 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Loading from '@/components/Loading';
 import Alert from '@/components/Alert';
 
+interface Materia { id: number; nome: string; sigla: string; }
+
 interface Questao {
   id: number;
   enunciado: string;
-  materia: string;
+  materia: number | null;
+  materia_nome: string;
+  materia_sigla: string;
   dificuldade: 'facil' | 'medio' | 'dificil';
   dificuldade_display: string;
   tipo: 'discursiva' | 'objetiva';
@@ -20,13 +24,13 @@ interface Questao {
 }
 
 interface Turma { id: number; nome: string; }
-interface SimuladoData { questoes: Questao[]; turmas: Turma[]; }
+interface SimuladoData { questoes: Questao[]; turmas: Turma[]; materias: Materia[]; }
 
 const AREAS_ENEM = [
-  { label: 'Ciências da Natureza', icon: 'science',    cor: '#27ae60', materias: ['Ciências', 'Química', 'Física', 'Biologia'] },
-  { label: 'Ciências Humanas',     icon: 'public',     cor: '#e67e22', materias: ['História', 'Geografia', 'Filosofia', 'Sociologia', 'Religião'] },
-  { label: 'Linguagens',           icon: 'menu_book',  cor: '#9b59b6', materias: ['Português', 'Literatura', 'Inglês', 'Artes', 'Educação Física'] },
-  { label: 'Matemática',           icon: 'calculate',  cor: '#2980b9', materias: ['Matemática'] },
+  { label: 'Ciências da Natureza', icon: 'science',    cor: '#27ae60', siglas: ['CNC'] },
+  { label: 'Ciências Humanas',     icon: 'public',     cor: '#e67e22', siglas: ['GGF', 'FIL'] },
+  { label: 'Linguagens',           icon: 'menu_book',  cor: '#9b59b6', siglas: ['PRT', 'ING', 'ART', 'EDF'] },
+  { label: 'Matemática',           icon: 'calculate',  cor: '#2980b9', siglas: ['MTM'] },
 ];
 
 function difBadge(d: string, label: string) {
@@ -57,16 +61,16 @@ export default function CriarSimuladoPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const materias = data ? Array.from(new Set(data.questoes.map(q => q.materia))).sort() : [];
+  const materias = data ? data.materias : [];
 
   const questoesFiltradas = !data ? [] : data.questoes.filter(q => {
-    if (materiaFiltro && q.materia !== materiaFiltro) return false;
+    if (materiaFiltro && q.materia_sigla !== materiaFiltro) return false;
     if (areaFiltro) {
       const area = AREAS_ENEM.find(a => a.label === areaFiltro);
-      if (area && !area.materias.some(m => q.materia.toLowerCase().includes(m.toLowerCase()))) return false;
+      if (area && !area.siglas.includes(q.materia_sigla)) return false;
     }
     if (dataFiltro && q.data_criacao.slice(0, 10) < dataFiltro) return false;
-    if (busca && !q.enunciado.toLowerCase().includes(busca.toLowerCase()) && !q.materia.toLowerCase().includes(busca.toLowerCase())) return false;
+    if (busca && !q.enunciado.toLowerCase().includes(busca.toLowerCase()) && !q.materia_nome.toLowerCase().includes(busca.toLowerCase())) return false;
     return true;
   });
 
@@ -305,13 +309,13 @@ export default function CriarSimuladoPage() {
                   </button>
                   {materias.map(m => (
                     <button
-                      key={m}
+                      key={m.id}
                       type="button"
-                      className={`btn${materiaFiltro === m ? ' btn-primary' : ' btn-secondary'}`}
+                      className={`btn${materiaFiltro === m.sigla ? ' btn-primary' : ' btn-secondary'}`}
                       style={{ fontSize: '1.3rem', padding: '0.6rem 1.2rem' }}
-                      onClick={() => setMateriaFiltro(m)}
+                      onClick={() => setMateriaFiltro(m.sigla)}
                     >
-                      {m}
+                      {m.nome}
                     </button>
                   ))}
                 </div>
@@ -411,7 +415,7 @@ export default function CriarSimuladoPage() {
                     />
                     <div style={{ minWidth: 0 }}>
                       <div className="questao-badges">
-                        <span className="badge">{q.materia}</span>
+                        <span className="badge">{q.materia_nome}</span>
                         {difBadge(q.dificuldade, q.dificuldade_display)}
                         <span className="badge" style={{ background: q.tipo === 'objetiva' ? '#1a73c7' : '#7c3aed', color: '#fff', fontSize: '1.2rem' }}>
                           {q.tipo_display}

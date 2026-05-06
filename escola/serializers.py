@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, AlternativaQuestao
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, AlternativaQuestao, Materia
 
 
 class TurmaSerializer(serializers.ModelSerializer):
@@ -66,6 +66,12 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
         return round(obj.calcular_media(), 2)
 
 
+class MateriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Materia
+        fields = ['id', 'nome', 'sigla']
+
+
 class AlternativaSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlternativaQuestao
@@ -76,17 +82,26 @@ class QuestaoSerializer(serializers.ModelSerializer):
     dificuldade_display = serializers.CharField(source='get_dificuldade_display', read_only=True)
     tipo_display        = serializers.CharField(source='get_tipo_display', read_only=True)
     alternativas        = AlternativaSerializer(many=True, read_only=True)
+    materia_nome        = serializers.SerializerMethodField()
+    materia_sigla       = serializers.SerializerMethodField()
 
     class Meta:
         model = Questao
         fields = [
             'id', 'enunciado', 'resposta', 'materia',
+            'materia_nome', 'materia_sigla',
             'dificuldade', 'dificuldade_display',
             'tipo', 'tipo_display',
             'exige_justificativa',
             'alternativas',
             'data_criacao',
         ]
+
+    def get_materia_nome(self, obj):
+        return obj.materia.nome if obj.materia else ''
+
+    def get_materia_sigla(self, obj):
+        return obj.materia.sigla if obj.materia else ''
 
 
 class SimuladoSerializer(serializers.ModelSerializer):

@@ -160,6 +160,19 @@ class PresencaAluno(models.Model):
         return f"{self.aluno} — {'Presente' if self.presente else 'Ausente'} em {self.registro.data}"
 
 
+class Materia(models.Model):
+    nome  = models.CharField(max_length=100)
+    sigla = models.CharField(max_length=3, unique=True)
+
+    class Meta:
+        ordering = ['nome']
+        verbose_name = 'Matéria'
+        verbose_name_plural = 'Matérias'
+
+    def __str__(self):
+        return f"{self.nome} ({self.sigla})"
+
+
 class Questao(models.Model):
     DIFICULDADE_CHOICES = [
         ('facil',   'Fácil'),
@@ -172,7 +185,10 @@ class Questao(models.Model):
     ]
     enunciado           = models.TextField()
     resposta            = models.TextField(blank=True, default='')
-    materia             = models.CharField(max_length=100)
+    materia             = models.ForeignKey(
+        'Materia', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='questoes'
+    )
     autor               = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
     dificuldade         = models.CharField(max_length=10, choices=DIFICULDADE_CHOICES, default='medio')
     tipo                = models.CharField(max_length=12, choices=TIPO_CHOICES, default='discursiva')
@@ -185,7 +201,7 @@ class Questao(models.Model):
         verbose_name_plural = 'Questões'
 
     def __str__(self):
-        return f"{self.materia} - {self.enunciado[:50]}..."
+        return f"{self.materia.nome if self.materia else 'Sem matéria'} - {self.enunciado[:50]}..."
 
 
 class AlternativaQuestao(models.Model):

@@ -16,11 +16,19 @@ interface Alternativa {
   ordem: number;
 }
 
+interface Materia {
+  id: number;
+  nome: string;
+  sigla: string;
+}
+
 interface Questao {
   id: number;
   enunciado: string;
   resposta: string;
-  materia: string;
+  materia: number | null;
+  materia_nome: string;
+  materia_sigla: string;
   dificuldade: 'facil' | 'medio' | 'dificil';
   dificuldade_display: string;
   tipo: 'discursiva' | 'objetiva';
@@ -32,7 +40,7 @@ interface Questao {
 
 interface BancoData {
   questoes: Questao[];
-  materias: string[];
+  materias: Materia[];
   materia_filtro: string;
 }
 
@@ -133,7 +141,7 @@ export default function BancoQuestoesPage() {
       const payload = {
         enunciado: form.enunciado,
         resposta: form.resposta,
-        materia: form.materia,
+        materia: form.materia ? Number(form.materia) : null,
         dificuldade: form.dificuldade,
         tipo: form.tipo,
         exige_justificativa: form.exige_justificativa,
@@ -395,13 +403,16 @@ export default function BancoQuestoesPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.6rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label>Matéria</label>
-                  <input
-                    type="text"
+                  <select
                     value={form.materia}
                     onChange={e => setForm(f => ({ ...f, materia: e.target.value }))}
-                    placeholder="Ex: Matemática, Português…"
                     required
-                  />
+                  >
+                    <option value="">Selecione uma matéria…</option>
+                    {data?.materias.map(m => (
+                      <option key={m.id} value={m.id}>{m.nome}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label>Dificuldade</label>
@@ -533,11 +544,11 @@ export default function BancoQuestoesPage() {
             </button>
             {data?.materias.map(m => (
               <button
-                key={m}
-                className={`btn ${materiaFiltro === m ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => { setMateriaFiltro(m); fetchData(m); }}
+                key={m.id}
+                className={`btn ${materiaFiltro === m.sigla ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => { setMateriaFiltro(m.sigla); fetchData(m.sigla); }}
               >
-                {m}
+                {m.nome}
               </button>
             ))}
           </div>
@@ -559,7 +570,7 @@ export default function BancoQuestoesPage() {
                 {/* Cabeçalho do card */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.6rem' }}>
                   <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span className="badge">{q.materia}</span>
+                    <span className="badge">{q.materia_nome}</span>
                     <span className="badge" style={{ background: difColor(q.dificuldade), color: '#fff' }}>
                       {q.dificuldade_display}
                     </span>

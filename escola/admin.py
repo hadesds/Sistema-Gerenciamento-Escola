@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, Administrador, AlternativaQuestao
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, Administrador, AlternativaQuestao, Materia
 
 # Inline para Professor
 class ProfessorInline(admin.StackedInline):
@@ -86,6 +86,12 @@ class AvaliacaoAdmin(admin.ModelAdmin):
         return round(obj.calcular_media(), 2)
     calcular_media.short_description = 'Média'
 
+# Matéria Admin
+@admin.register(Materia)
+class MateriaAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'sigla']
+
+
 # Questão Admin
 class AlternativaInline(admin.TabularInline):
     model = AlternativaQuestao
@@ -95,8 +101,8 @@ class AlternativaInline(admin.TabularInline):
 @admin.register(Questao)
 class QuestaoAdmin(admin.ModelAdmin):
     list_display = ['materia', 'tipo', 'get_enunciado_curto', 'exige_justificativa', 'autor', 'data_criacao']
-    list_filter = ['materia', 'tipo', 'dificuldade', 'exige_justificativa', 'data_criacao', 'autor']
-    search_fields = ['materia', 'enunciado', 'autor__user__first_name']
+    list_filter = ['materia__sigla', 'tipo', 'dificuldade', 'exige_justificativa', 'data_criacao', 'autor']
+    search_fields = ['materia__nome', 'enunciado', 'autor__user__first_name']
     date_hierarchy = 'data_criacao'
     inlines = [AlternativaInline]
 

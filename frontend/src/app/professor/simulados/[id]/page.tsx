@@ -17,7 +17,9 @@ interface Alternativa {
 interface Questao {
   id: number;
   enunciado: string;
-  materia: string;
+  materia: number | null;
+  materia_nome: string;
+  materia_sigla: string;
   dificuldade: string;
   dificuldade_display: string;
   tipo: string;
@@ -210,17 +212,22 @@ export default function DetalheSimuladoPage() {
         .del-btn { width:100%; padding:1.2rem; border:2px solid #e74c3c; border-radius:1.2rem; font-size:1.5rem; font-weight:700; cursor:pointer; background:transparent; color:#e74c3c; margin-top:1rem; transition:all 0.2s; }
         .del-btn:hover { background:#e74c3c; color:white; }
         .q-list { display:flex; flex-direction:column; gap:1rem; }
-        .q-item { background:white; border-radius:1.2rem; box-shadow:0 0.2rem 0.8rem rgba(0,0,0,0.05); overflow:hidden; }
-        .q-row { display:flex; align-items:center; gap:1rem; padding:1.4rem 1.6rem; cursor:pointer; }
+        .q-item { background:white; border-radius:1.2rem; box-shadow:0 0.2rem 0.8rem rgba(0,0,0,0.05); overflow:hidden; min-width:0; }
+        .q-row { display:flex; align-items:flex-start; gap:1rem; padding:1.4rem 1.6rem; cursor:pointer; min-width:0; }
         .q-row:hover { background:#f8f9fa; }
-        .q-num { width:3rem; height:3rem; border-radius:50%; background:var(--color-secondary); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.4rem; flex-shrink:0; }
-        .q-info { flex:1; min-width:0; }
-        .q-enunciado { font-size:1.45rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.3rem; }
+        .q-num { width:3rem; height:3rem; border-radius:50%; background:var(--color-secondary); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.4rem; flex-shrink:0; margin-top:0.2rem; }
+        .q-info { flex:1; min-width:0; overflow:hidden; }
+        .q-enunciado { font-size:1.45rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.4rem; }
         .q-meta { display:flex; gap:0.6rem; flex-wrap:wrap; }
-        .badge-sm { padding:0.3rem 0.8rem; border-radius:2rem; font-size:1.15rem; font-weight:600; color:white; }
-        .q-expand { padding:1.4rem 1.6rem; border-top:2px solid var(--border-light); background:#fafbfc; font-size:1.4rem; }
-        .q-alt { padding:0.5rem 0; border-bottom:1px solid var(--border-light); display:flex; align-items:center; gap:0.6rem; }
-        .q-alt:last-child { border-bottom:none; }
+        .badge-sm { padding:0.3rem 0.8rem; border-radius:2rem; font-size:1.15rem; font-weight:600; color:white; white-space:nowrap; }
+        .q-expand { padding:1.6rem; border-top:2px solid var(--border-light); background:#fafbfc; font-size:1.4rem; overflow:hidden; }
+        .q-enunciado-full { font-size:1.45rem; font-weight:600; word-break:break-word; overflow-wrap:anywhere; margin-bottom:1.4rem; line-height:1.5; padding-bottom:1.2rem; border-bottom:1px solid var(--border-light); }
+        .q-alt { padding:0.7rem 0.6rem; border-radius:0.8rem; display:flex; align-items:flex-start; gap:0.8rem; margin-bottom:0.3rem; }
+        .q-alt.correta { background:rgba(39,174,96,0.08); }
+        .q-alt-letter { width:2.6rem; height:2.6rem; border-radius:50%; border:2px solid #ccc; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.3rem; flex-shrink:0; color:#888; }
+        .q-alt.correta .q-alt-letter { border-color:#27ae60; background:#27ae60; color:white; }
+        .q-alt-text { flex:1; min-width:0; word-break:break-word; overflow-wrap:anywhere; line-height:1.5; padding-top:0.3rem; }
+        .gabarito-banner { display:flex; align-items:center; gap:0.8rem; background:rgba(39,174,96,0.1); border:1.5px solid #27ae60; border-radius:0.8rem; padding:0.8rem 1.2rem; margin-bottom:1.2rem; font-size:1.4rem; color:#1a7a47; font-weight:700; }
         .rm-btn { flex-shrink:0; background:none; border:2px solid #e74c3c; border-radius:0.8rem; color:#e74c3c; font-size:1.3rem; padding:0.5rem 1rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.3rem; }
         .rm-btn:hover { background:#e74c3c; color:white; }
         .rm-btn:disabled { opacity:0.4; cursor:not-allowed; }
@@ -333,12 +340,14 @@ export default function DetalheSimuladoPage() {
                       <div className="q-info">
                         <div className="q-enunciado">{q.enunciado}</div>
                         <div className="q-meta">
-                          <span className="badge-sm" style={{ background: 'var(--color-secondary)' }}>{q.materia}</span>
+                          {q.materia_nome && (
+                            <span className="badge-sm" style={{ background: 'var(--color-secondary)' }}>{q.materia_sigla || q.materia_nome}</span>
+                          )}
                           <span className="badge-sm" style={{ background: DIF_COLOR[q.dificuldade] ?? '#888' }}>{q.dificuldade_display}</span>
                           <span className="badge-sm" style={{ background: q.tipo === 'objetiva' ? '#8e44ad' : '#2980b9' }}>{q.tipo_display}</span>
                         </div>
                       </div>
-                      <span className="material-icons-outlined" style={{ color: 'var(--text-secondary)', fontSize: '2rem', flexShrink: 0, transition: 'transform 0.2s', transform: expandedId === q.id ? 'rotate(180deg)' : 'none' }}>
+                      <span className="material-icons-outlined" style={{ color: 'var(--text-secondary)', fontSize: '2rem', flexShrink: 0, transition: 'transform 0.2s', transform: expandedId === q.id ? 'rotate(180deg)' : 'none', marginTop: '0.2rem' }}>
                         expand_more
                       </span>
                       <button
@@ -353,12 +362,15 @@ export default function DetalheSimuladoPage() {
 
                     {expandedId === q.id && (
                       <div className="q-expand">
+                        {/* Enunciado completo */}
+                        <div className="q-enunciado-full">{q.enunciado}</div>
+
                         {q.tipo === 'discursiva' && (
                           <>
                             {q.resposta && (
-                              <div style={{ marginBottom: '0.8rem' }}>
-                                <strong>Resposta esperada:</strong>
-                                <p style={{ margin: '0.4rem 0 0', color: 'var(--text-secondary)' }}>{q.resposta}</p>
+                              <div style={{ marginBottom: '1rem' }}>
+                                <strong style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '1.3rem' }}>RESPOSTA ESPERADA</strong>
+                                <p style={{ margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.6 }}>{q.resposta}</p>
                               </div>
                             )}
                             {q.exige_justificativa && (
@@ -369,21 +381,37 @@ export default function DetalheSimuladoPage() {
                             )}
                           </>
                         )}
-                        {q.tipo === 'objetiva' && q.alternativas.length > 0 && (
-                          <div>
-                            <strong style={{ display: 'block', marginBottom: '0.6rem' }}>Alternativas:</strong>
-                            {q.alternativas.map((alt, i) => (
-                              <div key={alt.id} className="q-alt">
-                                <span style={{ width: '2.2rem', height: '2.2rem', border: `2px solid ${alt.correta ? '#27ae60' : '#ccc'}`, borderRadius: '50%', background: alt.correta ? '#27ae60' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  {alt.correta && <span className="material-icons-outlined" style={{ fontSize: '1.4rem', color: 'white' }}>check</span>}
-                                </span>
-                                <span style={{ color: alt.correta ? '#27ae60' : 'inherit', fontWeight: alt.correta ? 700 : 400 }}>
-                                  {String.fromCharCode(65 + i)}) {alt.texto}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+
+                        {q.tipo === 'objetiva' && (() => {
+                          const gabIdx = q.alternativas.findIndex(a => a.correta);
+                          const gabLetra = gabIdx >= 0 ? String.fromCharCode(65 + gabIdx) : null;
+                          return (
+                            <>
+                              {gabLetra && (
+                                <div className="gabarito-banner">
+                                  <span className="material-icons-outlined" style={{ fontSize: '2rem' }}>check_circle</span>
+                                  Gabarito: alternativa <strong style={{ fontSize: '1.6rem', marginLeft: '0.2rem' }}>{gabLetra}</strong>
+                                </div>
+                              )}
+                              {q.alternativas.length > 0 && (
+                                <div>
+                                  <strong style={{ display: 'block', marginBottom: '0.8rem', color: 'var(--text-secondary)', fontSize: '1.3rem' }}>ALTERNATIVAS</strong>
+                                  {q.alternativas.map((alt, i) => (
+                                    <div key={alt.id} className={`q-alt${alt.correta ? ' correta' : ''}`}>
+                                      <div className="q-alt-letter">{String.fromCharCode(65 + i)}</div>
+                                      <div className="q-alt-text" style={{ color: alt.correta ? '#1a7a47' : 'inherit', fontWeight: alt.correta ? 700 : 400 }}>
+                                        {alt.texto}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {q.alternativas.length === 0 && (
+                                <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Nenhuma alternativa cadastrada.</p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

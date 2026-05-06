@@ -7,6 +7,7 @@ from django.db import transaction
 from escola.models import (
     Aluno,
     Avaliacao,
+    Materia,
     NotaMateria,
     PerfilTurma,
     Professor,
@@ -106,24 +107,28 @@ class Command(BaseCommand):
                     defaults={"professor": professor, "nota": nota},
                 )
 
+        mat_mtm = Materia.objects.filter(sigla='MTM').first()
+        mat_prt = Materia.objects.filter(sigla='PRT').first()
+        mat_cnc = Materia.objects.filter(sigla='CNC').first()
+
         questoes = [
             self._upsert_questao(
                 professor=professor,
-                materia="Matematica",
+                materia=mat_mtm,
                 dificuldade="facil",
                 enunciado="Quanto e 12 x 8?",
                 resposta="96",
             ),
             self._upsert_questao(
                 professor=professor,
-                materia="Portugues",
+                materia=mat_prt,
                 dificuldade="medio",
                 enunciado="Identifique o sujeito da frase: A turma apresentou o trabalho.",
                 resposta="A turma",
             ),
             self._upsert_questao(
                 professor=professor,
-                materia="Ciencias",
+                materia=mat_cnc,
                 dificuldade="medio",
                 enunciado="Qual e a funcao principal das raizes em uma planta?",
                 resposta="Absorver agua e nutrientes e ajudar na fixacao da planta.",

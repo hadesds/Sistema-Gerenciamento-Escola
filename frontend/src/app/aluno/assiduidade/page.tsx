@@ -82,7 +82,7 @@ export default function AssiduidadePage() {
 
         {loading ? <Loading /> : !data ? (
           <div className="empty-state">
-            <div className="empty-icon">🔒</div>
+            <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>lock</span></div>
             <h2>Acesso restrito</h2>
             <p>Apenas o líder ou vice-líder da turma pode registrar assiduidade.</p>
           </div>
@@ -91,7 +91,7 @@ export default function AssiduidadePage() {
             <div style={{ marginBottom: '2rem' }}>
               <h1>Registro de Assiduidade</h1>
               <p style={{ color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
-                {data.turma} · <strong style={{ color: 'var(--color-primary)' }}>{data.papel === 'lider' ? '👑 Líder' : '⭐ Vice-Líder'}</strong>
+                {data.turma} · <strong style={{ color: 'var(--color-primary)' }}>{data.papel === 'lider' ? 'Líder' : 'Vice-Líder'}</strong>
               </p>
             </div>
 
@@ -111,7 +111,7 @@ export default function AssiduidadePage() {
                       data.alunos.forEach(a => { all[a.id] = true; });
                       setPresencas(all);
                     }}>
-                    ✅ Todos presentes
+                    <span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>check_circle</span>Todos presentes
                   </button>
                   <button type="button" className="btn btn-secondary" style={{ fontSize: '1.2rem' }}
                     onClick={() => {
@@ -119,7 +119,7 @@ export default function AssiduidadePage() {
                       data.alunos.forEach(a => { none[a.id] = false; });
                       setPresencas(none);
                     }}>
-                    ❌ Todos ausentes
+                    <span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>cancel</span>Todos ausentes
                   </button>
                 </div>
 
@@ -141,8 +141,8 @@ export default function AssiduidadePage() {
                         <div style={{ fontWeight: 600, fontSize: '1.5rem' }}>{aluno.nome}</div>
                         {aluno.matricula && <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>{aluno.matricula}</div>}
                       </div>
-                      <span style={{ marginLeft: 'auto', fontSize: '1.6rem' }}>
-                        {presencas[aluno.id] ? '✅' : '❌'}
+                      <span className="material-icons-outlined" style={{ marginLeft: 'auto', fontSize: '2rem', color: presencas[aluno.id] ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                        {presencas[aluno.id] ? 'check_circle' : 'cancel'}
                       </span>
                     </label>
                   ))}
@@ -184,8 +184,8 @@ export default function AssiduidadePage() {
                       <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>por {reg.registrado_por}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'var(--color-success)', fontWeight: 700, fontSize: '1.5rem' }}>✅ {reg.presentes}</div>
-                      <div style={{ color: 'var(--color-danger)', fontWeight: 700, fontSize: '1.5rem' }}>❌ {reg.ausentes}</div>
+                      <div style={{ color: 'var(--color-success)', fontWeight: 700, fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span className="material-icons-outlined" style={{ fontSize: '1.6rem' }}>check_circle</span>{reg.presentes}</div>
+                      <div style={{ color: 'var(--color-danger)', fontWeight: 700, fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span className="material-icons-outlined" style={{ fontSize: '1.6rem' }}>cancel</span>{reg.ausentes}</div>
                       <div style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>{reg.total} total</div>
                     </div>
                   </div>

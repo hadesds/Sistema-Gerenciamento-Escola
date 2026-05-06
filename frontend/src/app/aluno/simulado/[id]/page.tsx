@@ -192,7 +192,7 @@ export default function VisualizarSimuladoPage() {
       <Navbar />
       <main className="container fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '72vh' }}>
         <div style={{ maxWidth: '50rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '6rem', marginBottom: '1.5rem' }}>⏱️</div>
+          <span className="material-icons-outlined" style={{ fontSize: '6rem', color: 'var(--color-secondary)', marginBottom: '1.5rem', display: 'block' }}>timer</span>
           <h2 style={{ fontSize: '2.8rem', color: 'var(--color-danger)', marginBottom: '1rem' }}>Prova Cancelada</h2>
           <p style={{ fontSize: '1.6rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '3rem' }}>
             Você ficou fora da prova por mais de 3 minutos.<br />
@@ -242,10 +242,10 @@ export default function VisualizarSimuladoPage() {
             Prof. {simulado.autor_nome} · {simulado.turma_nome}
           </p>
           <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
-            <span className="sim-pill">❓ {simulado.total_questoes} questões</span>
-            <span className="sim-pill">⏱️ {simulado.tempo_limite ? `${simulado.tempo_limite} min` : 'Sem limite'}</span>
-            {simulado.area_conhecimento && <span className="sim-pill">📚 {simulado.area_conhecimento}</span>}
-            <span className="sim-pill">📅 {new Date(simulado.data_criacao).toLocaleDateString('pt-BR')}</span>
+            <span className="sim-pill"><span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>quiz</span> {simulado.total_questoes} questões</span>
+            <span className="sim-pill"><span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>timer</span> {simulado.tempo_limite ? `${simulado.tempo_limite} min` : 'Sem limite'}</span>
+            {simulado.area_conhecimento && <span className="sim-pill"><span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>menu_book</span> {simulado.area_conhecimento}</span>}
+            <span className="sim-pill"><span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>calendar_today</span> {new Date(simulado.data_criacao).toLocaleDateString('pt-BR')}</span>
           </div>
         </div>
 
@@ -294,10 +294,10 @@ export default function VisualizarSimuladoPage() {
             Leia antes de começar
           </h3>
           <ul style={{ margin: 0, padding: 0 }}>
-            <li><span>🚫</span><span>Não feche, minimize ou mude de aba durante a prova.</span></li>
-            <li><span>⏳</span><span>Se sair da prova, você terá <strong>3 minutos</strong> para retornar — caso contrário, a prova será cancelada automaticamente.</span></li>
-            {simulado.tempo_limite && <li><span>⏱️</span><span>O cronômetro de <strong>{simulado.tempo_limite} minutos</strong> começa ao confirmar o início.</span></li>}
-            <li><span>✅</span><span>Você pode navegar entre as questões livremente antes de finalizar.</span></li>
+            <li><span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>block</span><span>Não feche, minimize ou mude de aba durante a prova.</span></li>
+            <li><span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>hourglass_empty</span><span>Se sair da prova, você terá <strong>3 minutos</strong> para retornar — caso contrário, a prova será cancelada automaticamente.</span></li>
+            {simulado.tempo_limite && <li><span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>timer</span><span>O cronômetro de <strong>{simulado.tempo_limite} minutos</strong> começa ao confirmar o início.</span></li>}
+            <li><span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>check_circle</span><span>Você pode navegar entre as questões livremente antes de finalizar.</span></li>
           </ul>
         </div>
 
@@ -328,7 +328,7 @@ export default function VisualizarSimuladoPage() {
       <Navbar />
       <main className="container fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '72vh' }}>
         <div style={{ maxWidth: '52rem', width: '100%', textAlign: 'center' }}>
-          <div style={{ fontSize: '6rem', marginBottom: '1.2rem' }}>🎯</div>
+          <span className="material-icons-outlined" style={{ fontSize: '6rem', color: 'var(--color-primary)', marginBottom: '1.2rem', display: 'block' }}>sports_score</span>
           <h2 style={{ fontSize: '2.8rem', marginBottom: '0.8rem' }}>Tudo pronto?</h2>
           <p style={{ fontSize: '1.6rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2rem' }}>
             Você está prestes a iniciar <strong>{simulado.titulo || `Simulado — ${simulado.turma_nome}`}</strong>
@@ -340,16 +340,16 @@ export default function VisualizarSimuladoPage() {
 
           {/* Resumo */}
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
-            <div style={{ background: '#e8f4fd', borderRadius: '1rem', padding: '1rem 1.8rem', fontSize: '1.5rem', fontWeight: 700, color: '#1a4fa0' }}>
-              ❓ {simulado.total_questoes} questões
+            <div style={{ background: '#e8f4fd', borderRadius: '1rem', padding: '1rem 1.8rem', fontSize: '1.5rem', fontWeight: 700, color: '#1a4fa0', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>quiz</span> {simulado.total_questoes} questões
             </div>
-            <div style={{ background: '#fef3e2', borderRadius: '1rem', padding: '1rem 1.8rem', fontSize: '1.5rem', fontWeight: 700, color: '#e67e22' }}>
-              ⏱️ {simulado.tempo_limite ? `${simulado.tempo_limite} min` : 'Sem limite'}
+            <div style={{ background: '#fef3e2', borderRadius: '1rem', padding: '1rem 1.8rem', fontSize: '1.5rem', fontWeight: 700, color: '#e67e22', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>timer</span> {simulado.tempo_limite ? `${simulado.tempo_limite} min` : 'Sem limite'}
             </div>
           </div>
 
           <div style={{ background: '#ffebee', border: '1.5px solid #ef9a9a', borderRadius: '1.2rem', padding: '1.6rem 2rem', marginBottom: '2.8rem', textAlign: 'left', fontSize: '1.4rem', color: '#b71c1c', lineHeight: 1.7 }}>
-            <strong>⚠️ Atenção:</strong> Ao confirmar, não saia da aba. Mudar de aba ou minimizar o navegador ativará um contador de 3 minutos — se esse prazo for excedido, a prova será cancelada.
+            <strong><span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>warning</span> Atenção:</strong> Ao confirmar, não saia da aba. Mudar de aba ou minimizar o navegador ativará um contador de 3 minutos — se esse prazo for excedido, a prova será cancelada.
           </div>
 
           <div style={{ display: 'flex', gap: '1.2rem', justifyContent: 'center' }}>
@@ -396,7 +396,7 @@ export default function VisualizarSimuladoPage() {
                 </>
               ) : (
                 <>
-                  <span style={{ fontSize: '4rem' }}>✅</span>
+                  <span className="material-icons-outlined" style={{ fontSize: '4rem', color: 'white' }}>check_circle</span>
                   <span style={{ fontSize: '1.3rem', marginTop: '0.4rem' }}>Concluído!</span>
                 </>
               )}
@@ -419,21 +419,20 @@ export default function VisualizarSimuladoPage() {
           {simulado.questoes.map((q, i) => {
             const resp = respostas[q.id];
             let cls = 'vazia';
-            let statusIcon = '○';
             let gabaritoEl = null;
 
             if (q.tipo === 'objetiva') {
               const escolhida = q.alternativas.find(a => a.id === Number(resp));
               const correta   = q.alternativas.find(a => a.correta);
-              if (!resp) { cls = 'vazia'; statusIcon = '○'; }
-              else if (escolhida?.correta) { cls = 'certa'; statusIcon = '✅'; }
-              else { cls = 'errada'; statusIcon = '❌'; }
+              if (!resp) { cls = 'vazia'; }
+              else if (escolhida?.correta) { cls = 'certa'; }
+              else { cls = 'errada'; }
 
               gabaritoEl = (
                 <div style={{ marginTop: '0.8rem', fontSize: '1.3rem' }}>
                   {escolhida ? (
                     <p style={{ margin: '0.3rem 0', color: escolhida.correta ? '#1a7a47' : '#c0392b', fontWeight: 600 }}>
-                      {escolhida.correta ? '✓' : '✗'} Sua resposta:{' '}
+                      Sua resposta:{' '}
                       {String.fromCharCode(65 + q.alternativas.indexOf(escolhida))}) {escolhida.texto}
                     </p>
                   ) : (
@@ -441,14 +440,14 @@ export default function VisualizarSimuladoPage() {
                   )}
                   {!escolhida?.correta && correta && (
                     <p style={{ margin: '0.3rem 0', color: '#1a7a47', fontWeight: 700 }}>
-                      ✓ Gabarito: {String.fromCharCode(65 + q.alternativas.indexOf(correta))}) {correta.texto}
+                      Gabarito: {String.fromCharCode(65 + q.alternativas.indexOf(correta))}) {correta.texto}
                     </p>
                   )}
                 </div>
               );
             } else {
-              if (resp?.trim()) { cls = 'disc'; statusIcon = '📝'; }
-              else { cls = 'vazia'; statusIcon = '○'; }
+              if (resp?.trim()) { cls = 'disc'; }
+              else { cls = 'vazia'; }
               gabaritoEl = (
                 <div style={{ marginTop: '0.8rem', fontSize: '1.3rem' }}>
                   {resp?.trim() ? (
@@ -477,7 +476,9 @@ export default function VisualizarSimuladoPage() {
                     )}
                     <span style={{ color: 'var(--text-secondary)', fontSize: '1.25rem' }}>{q.tipo_display}</span>
                   </div>
-                  <span style={{ fontSize: '2rem', flexShrink: 0 }}>{statusIcon}</span>
+                  <span className="material-icons-outlined" style={{ fontSize: '2.2rem', flexShrink: 0, color: cls === 'certa' ? '#27ae60' : cls === 'errada' ? '#e74c3c' : cls === 'disc' ? '#3498db' : '#aaa' }}>
+                    {cls === 'certa' ? 'check_circle' : cls === 'errada' ? 'cancel' : cls === 'disc' ? 'edit_note' : 'radio_button_unchecked'}
+                  </span>
                 </div>
                 <p style={{ fontSize: '1.45rem', margin: '0 0 0.2rem', wordBreak: 'break-word', lineHeight: 1.5 }}>{q.enunciado}</p>
                 {gabaritoEl}
@@ -625,7 +626,7 @@ export default function VisualizarSimuladoPage() {
             ) : (
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: '1.35rem', color: 'var(--text-secondary)', marginBottom: '0.8rem', display: 'block' }}>
-                  {q.exige_justificativa ? '📝 Resposta com justificativa:' : '📝 Sua resposta:'}
+                  {q.exige_justificativa ? 'Resposta (com justificativa):' : 'Sua resposta:'}
                 </label>
                 <textarea
                   rows={6}
@@ -666,7 +667,7 @@ export default function VisualizarSimuladoPage() {
       {saindoAlerta && (
         <div className="away-overlay">
           <div className="away-box">
-            <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>⚠️</div>
+            <span className="material-icons-outlined" style={{ fontSize: '5rem', color: '#b71c1c', marginBottom: '1rem', display: 'block' }}>warning</span>
             <h2 style={{ fontSize: '2.4rem', color: '#b71c1c', marginBottom: '0.6rem' }}>Você saiu da prova!</h2>
             <p style={{ fontSize: '1.5rem', color: 'var(--text-secondary)', marginBottom: '1.6rem', lineHeight: 1.6 }}>
               Detectamos que você mudou de aba ou minimizou o navegador.<br />

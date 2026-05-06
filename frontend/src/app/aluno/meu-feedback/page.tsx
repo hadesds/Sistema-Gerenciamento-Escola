@@ -128,7 +128,7 @@ export default function MeuFeedbackPage() {
                   <h2 style={{ color: 'var(--color-primary)' }}>Histórico de Avaliações</h2>
                   {data.avaliacoes.length === 0 ? (
                     <div className="empty-state">
-                      <div className="empty-icon">📊</div>
+                      <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>bar_chart</span></div>
                       <p>Nenhuma avaliação registrada ainda.</p>
                     </div>
                   ) : (
@@ -139,10 +139,10 @@ export default function MeuFeedbackPage() {
                             <div style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '1.5rem' }}>{new Date(av.data).toLocaleDateString('pt-BR')}</div>
                           </div>
                           <div style={{ display: 'flex', gap: '1.5rem', fontSize: '1.3rem', flex: 1, flexWrap: 'wrap' }}>
-                            <span>📌 A: <strong>{av.assiduidade}</strong></span>
-                            <span>🙋 P: <strong>{av.participacao}</strong></span>
-                            <span>✅ R: <strong>{av.responsabilidade}</strong></span>
-                            <span>👥 S: <strong>{av.sociabilidade}</strong></span>
+                            <span>A: <strong>{av.assiduidade}</strong></span>
+                            <span>P: <strong>{av.participacao}</strong></span>
+                            <span>R: <strong>{av.responsabilidade}</strong></span>
+                            <span>S: <strong>{av.sociabilidade}</strong></span>
                           </div>
                           <NotaBadge nota={av.media} />
                         </div>
@@ -158,7 +158,7 @@ export default function MeuFeedbackPage() {
               <>
                 {Object.keys(data.notas_por_epoca).length === 0 ? (
                   <div className="empty-state">
-                    <div className="empty-icon">📚</div>
+                    <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>menu_book</span></div>
                     <h2>Nenhuma nota lançada ainda</h2>
                     <p>Aguarde seu professor lançar as notas por matéria.</p>
                   </div>

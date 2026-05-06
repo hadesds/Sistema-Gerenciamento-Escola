@@ -53,7 +53,7 @@ export default function MeusSimuladosPage() {
 
         {loading ? <Loading /> : simulados.length === 0 ? (
           <div className="empty-state card">
-            <div className="empty-icon">📚</div>
+            <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>menu_book</span></div>
             <h2>Nenhum simulado disponível</h2>
             <p>Aguarde os professores criarem simulados para a sua turma.</p>
           </div>

@@ -557,7 +557,7 @@ export default function BancoQuestoesPage() {
         {/* ── Lista de questões ── */}
         {loading ? <Loading /> : !data || data.questoes.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📚</div>
+            <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>menu_book</span></div>
             <h2>Nenhuma questão encontrada</h2>
             <p>Adicione questões ao seu banco para criar simulados.</p>
           </div>

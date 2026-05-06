@@ -114,7 +114,7 @@ body {
 .container {
   max-width: 160rem;
   margin: 0 auto;
-  padding: 2.4rem 2.4rem 2.4rem 7.2rem;
+  padding: 2.4rem;
 }
 
 .card {
@@ -503,7 +503,7 @@ p {
 
 @media (max-width: 768px) {
   html { font-size: 55%; }
-  .container { padding: 1.6rem 1.6rem 1.6rem 7.2rem; }
+  .container { padding: 1.6rem; }
   .navbar {
     flex-direction: column;
     gap: 1.5rem;

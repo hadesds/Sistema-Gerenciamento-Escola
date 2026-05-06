@@ -401,7 +401,7 @@ export default function CriarSimuladoPage() {
               {/* Lista de questões */}
               {questoesFiltradas.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">🔍</div>
+                  <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>search</span></div>
                   <p>Nenhuma questão para os filtros aplicados.</p>
                 </div>
               ) : (

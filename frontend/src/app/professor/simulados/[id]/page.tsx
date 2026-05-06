@@ -169,7 +169,7 @@ export default function DetalheSimuladoPage() {
       <Navbar />
       <main className="container fade-in">
         <div className="card empty-state" style={{ marginTop: '4rem' }}>
-          <div className="empty-icon">⚠️</div>
+          <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>warning</span></div>
           <h2>Simulado não encontrado</h2>
           <p>{error || 'Este simulado não existe ou você não tem permissão para acessá-lo.'}</p>
           <button className="btn btn-secondary" onClick={() => router.push('/professor/simulados')} style={{ marginTop: '1.5rem' }}>
@@ -328,7 +328,7 @@ export default function DetalheSimuladoPage() {
 
             {simulado.questoes.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">📝</div>
+                <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>edit_note</span></div>
                 <p>Este simulado não tem questões.</p>
               </div>
             ) : (

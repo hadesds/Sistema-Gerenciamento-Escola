@@ -243,7 +243,7 @@ export default function AlunoDashboardPage() {
                 </div>
                 {data.avaliacoes_recentes.length === 0 ? (
                   <div className="empty-state">
-                    <div className="empty-icon">📝</div>
+                    <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>edit_note</span></div>
                     <p>Nenhuma avaliação registrada ainda.</p>
                   </div>
                 ) : (
@@ -289,7 +289,7 @@ export default function AlunoDashboardPage() {
                 </div>
                 {data.simulados.length === 0 ? (
                   <div className="empty-state">
-                    <div className="empty-icon">📚</div>
+                    <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>menu_book</span></div>
                     <p>Nenhum simulado disponível para sua turma.</p>
                   </div>
                 ) : (

@@ -381,7 +381,7 @@ export default function CarometroPage() {
             <span className="badge mb-1">{data.alunos.length} aluno(s)</span>
 
             {data.alunos.length === 0 ? (
-              <div className="empty-state"><div className="empty-icon">🔍</div><h2>Nenhum aluno encontrado</h2></div>
+              <div className="empty-state"><div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>search</span></div><h2>Nenhum aluno encontrado</h2></div>
             ) : (
               <div className="carometro-grid">
                 {data.alunos.map(aluno => (
@@ -395,7 +395,8 @@ export default function CarometroPage() {
                     </div>
                     {aluno.papel && (
                       <span className="badge mb-1" style={{ background: aluno.papel === 'lider' ? 'var(--color-primary)' : 'var(--color-secondary)', color: '#fff' }}>
-                        {aluno.papel === 'lider' ? '👑 Líder' : '⭐ Vice-Líder'}
+                        <span className="material-icons-outlined" style={{ fontSize: '1.4rem', verticalAlign: 'middle', marginRight: '0.3rem' }}>{aluno.papel === 'lider' ? 'workspace_premium' : 'star'}</span>
+                        {aluno.papel === 'lider' ? 'Líder' : 'Vice-Líder'}
                       </span>
                     )}
                     <h3>{aluno.nome}</h3>
@@ -443,7 +444,8 @@ export default function CarometroPage() {
                             disabled={perfilSubmitting === aluno.id}
                             onClick={() => handleAtribuirPerfil(aluno, 'lider')}
                           >
-                            👑 Líder
+                            <span className="material-icons-outlined" style={{ fontSize: '1.4rem', verticalAlign: 'middle' }}>workspace_premium</span>
+                            Líder
                           </button>
                           <button
                             className="btn btn-secondary"
@@ -451,7 +453,8 @@ export default function CarometroPage() {
                             disabled={perfilSubmitting === aluno.id}
                             onClick={() => handleAtribuirPerfil(aluno, 'vice')}
                           >
-                            ⭐ Vice
+                            <span className="material-icons-outlined" style={{ fontSize: '1.4rem', verticalAlign: 'middle' }}>star</span>
+                            Vice
                           </button>
                         </>
                       )}

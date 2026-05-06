@@ -183,7 +183,7 @@ export default function ProfessorDashboardPage() {
             <div>
               <h1 style={{ color: 'white', marginBottom: '0.5rem' }}>Dashboard do Professor</h1>
               <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.6rem', margin: 0 }}>
-                Bem-vindo(a), <strong>{user?.nome_completo}</strong>! 👋
+                Bem-vindo(a), <strong>{user?.nome_completo}</strong>!
               </p>
             </div>
             <div className="dash-hero-time" style={{ textAlign: 'right' }}>
@@ -268,7 +268,7 @@ export default function ProfessorDashboardPage() {
                       Desempenho por Turma
                     </h2>
                     {data.desempenho_turmas.length === 0 ? (
-                      <div className="empty-state"><div className="empty-icon">📊</div><p>Nenhuma avaliação registrada ainda.</p></div>
+                      <div className="empty-state"><div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>bar_chart</span></div><p>Nenhuma avaliação registrada ainda.</p></div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         {data.desempenho_turmas.map(t => (
@@ -298,7 +298,7 @@ export default function ProfessorDashboardPage() {
                       Avaliações Recentes
                     </h2>
                     {data.avaliacoes_recentes.length === 0 ? (
-                      <div className="empty-state"><div className="empty-icon">📝</div><p>Nenhuma avaliação nos últimos 7 dias.</p></div>
+                      <div className="empty-state"><div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>edit_note</span></div><p>Nenhuma avaliação nos últimos 7 dias.</p></div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {data.avaliacoes_recentes.map(av => (
@@ -338,7 +338,7 @@ export default function ProfessorDashboardPage() {
                       Top 5 Alunos
                     </h2>
                     {data.top_alunos.length === 0 ? (
-                      <div className="empty-state"><div className="empty-icon">🏆</div><p>Nenhuma avaliação registrada ainda.</p></div>
+                      <div className="empty-state"><div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>emoji_events</span></div><p>Nenhuma avaliação registrada ainda.</p></div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {data.top_alunos.map((aluno, idx) => (
@@ -370,7 +370,7 @@ export default function ProfessorDashboardPage() {
                       Minhas Turmas
                     </h2>
                     {!data.turmas || data.turmas.length === 0 ? (
-                      <div className="empty-state"><div className="empty-icon">👥</div><p>Nenhuma turma associada.</p></div>
+                      <div className="empty-state"><div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>groups</span></div><p>Nenhuma turma associada.</p></div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {data.turmas.map(t => (

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from urllib.parse import urlsplit
 
 
@@ -17,13 +17,11 @@ def _frontend_url(request):
 
 
 def root_redirect(request):
-    """/ → landing page do frontend, ou resposta JSON informativa como fallback."""
+    """/ → landing page do frontend, ou /admin/login/ como fallback."""
     frontend = _frontend_url(request)
     if frontend:
         return HttpResponseRedirect(frontend + '/')
-    return JsonResponse({
-        'detail': 'API do Sistema CARA. Use /api/ para os endpoints REST ou /admin/ para o painel administrativo.'
-    })
+    return HttpResponseRedirect('/admin/login/')
 
 
 def frontend_login_redirect(request):

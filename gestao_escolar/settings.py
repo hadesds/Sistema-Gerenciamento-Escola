@@ -232,4 +232,4 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', '').rstrip('/')
 # que redireciona para o frontend se FRONTEND_URL estiver configurado.
 LOGIN_URL           = '/admin/login/'
 LOGIN_REDIRECT_URL  = '/admin/'
-LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = os.environ.get('FRONTEND_URL', '/admin/login/')

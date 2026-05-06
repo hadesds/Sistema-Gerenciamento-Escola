@@ -41,13 +41,14 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
     aluno_turma = serializers.SerializerMethodField()
     aluno_foto_url = serializers.SerializerMethodField()
     media = serializers.SerializerMethodField()
+    materia_nome = serializers.SerializerMethodField()
 
     class Meta:
         model = Avaliacao
         fields = [
             'id', 'aluno', 'aluno_nome', 'aluno_turma', 'aluno_foto_url',
             'assiduidade', 'participacao', 'responsabilidade', 'sociabilidade',
-            'data', 'media'
+            'data', 'media', 'materia_nome', 'observacao'
         ]
 
     def get_aluno_nome(self, obj):
@@ -64,6 +65,9 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
 
     def get_media(self, obj):
         return round(obj.calcular_media(), 2)
+
+    def get_materia_nome(self, obj):
+        return obj.materia.nome if obj.materia else ''
 
 
 class MateriaSerializer(serializers.ModelSerializer):

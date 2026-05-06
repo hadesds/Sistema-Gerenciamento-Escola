@@ -38,6 +38,8 @@ interface RelatorioData {
     sociabilidade: number;
     media: number;
     data: string;
+    materia_nome: string;
+    observacao: string;
   }>;
   notas_por_epoca: Record<string, Record<string, number>>;
   medias_materias: Record<string, number>;
@@ -122,6 +124,23 @@ export default function RelatorioAlunoPage() {
           @media (max-width: 480px) {
             .perfil-header { flex-direction: column; align-items: flex-start; }
           }
+
+          @media screen {
+            .no-print { display: inline-flex; }
+          }
+          @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; font-size: 12pt; }
+            .container { max-width: 100% !important; padding: 0 !important; }
+            nav, footer { display: none !important; }
+            .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 1rem !important; }
+            .feedback-table { font-size: 10pt; }
+            .feedback-table th, .feedback-table td { padding: 4pt 6pt; }
+            .progress-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .progress-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            h1 { font-size: 16pt; }
+            h2 { font-size: 13pt; }
+          }
         `}</style>
 
         {loading ? <Loading /> : !data ? (
@@ -130,7 +149,13 @@ export default function RelatorioAlunoPage() {
           <>
             <div className="relatorio-page-header">
               <h1>Relatório do Aluno</h1>
-              <Link href="/professor/turmas" className="btn btn-secondary">← Voltar</Link>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button className="btn btn-primary no-print" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className="material-icons-outlined">picture_as_pdf</span>
+                  Exportar PDF
+                </button>
+                <Link href="/professor/turmas" className="btn btn-secondary no-print">← Voltar</Link>
+              </div>
             </div>
 
             {/* Perfil */}
@@ -270,23 +295,22 @@ export default function RelatorioAlunoPage() {
                   <table className="feedback-table">
                     <thead>
                       <tr>
-                        <th>Data</th>
-                        <th>Assid.</th>
-                        <th>Part.</th>
-                        <th>Resp.</th>
-                        <th>Soc.</th>
-                        <th>Média</th>
+                        <th>Data</th><th>Matéria</th><th>Assid.</th><th>Part.</th><th>Resp.</th><th>Soc.</th><th>Média</th><th>Observação</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.avaliacoes.map(av => (
                         <tr key={av.id}>
                           <td style={{ whiteSpace: 'nowrap' }}>{new Date(av.data).toLocaleDateString('pt-BR')}</td>
+                          <td style={{ whiteSpace: 'nowrap' }}>{av.materia_nome || '–'}</td>
                           <td>{av.assiduidade}/5</td>
                           <td>{av.participacao}/5</td>
                           <td>{av.responsabilidade}/5</td>
                           <td>{av.sociabilidade}/5</td>
                           <td><NotaBadge nota={av.media} /></td>
+                          <td style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '20rem' }}>
+                            {av.observacao ? av.observacao.slice(0, 60) + (av.observacao.length > 60 ? '…' : '') : '–'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

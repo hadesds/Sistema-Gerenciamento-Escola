@@ -13,6 +13,17 @@ from .serializers import (
     MateriaSerializer
 )
 
+SIGLA_TO_NOTA_MATERIA = {
+    'PRT': 'portugues',
+    'MTM': 'matematica',
+    'CNC': 'ciencias',
+    'GGF': 'geografia',
+    'ART': 'artes',
+    'ING': 'ingles',
+    'EDF': 'educacao_fisica',
+    'FIL': 'filosofia',
+}
+
 
 # ==========================================
 # AUTH
@@ -222,14 +233,35 @@ def professor_registrar_avaliacao(request, aluno_id):
 
     aluno = get_object_or_404(Aluno, pk=aluno_id)
     try:
+        materia_id = request.data.get('materia_id')
+        materia_obj = Materia.objects.filter(id=materia_id).first() if materia_id else None
+        observacao = request.data.get('observacao', '')
+        notas_bimestrais = request.data.get('notas_bimestrais', {})
+
         avaliacao = Avaliacao.objects.create(
             aluno=aluno,
             professor=professor,
             assiduidade=int(request.data.get('assiduidade', 3)),
             participacao=int(request.data.get('participacao', 3)),
             responsabilidade=int(request.data.get('responsabilidade', 3)),
-            sociabilidade=int(request.data.get('sociabilidade', 3))
+            sociabilidade=int(request.data.get('sociabilidade', 3)),
+            materia=materia_obj,
+            observacao=observacao,
         )
+
+        # Lança notas bimestrais se fornecidas
+        materia_key = SIGLA_TO_NOTA_MATERIA.get(materia_obj.sigla) if materia_obj else None
+        for epoca, nota_val in notas_bimestrais.items():
+            if materia_key and nota_val is not None:
+                try:
+                    from decimal import Decimal
+                    NotaMateria.objects.update_or_create(
+                        aluno=aluno, materia=materia_key, epoca=epoca,
+                        defaults={'professor': professor, 'nota': Decimal(str(nota_val))}
+                    )
+                except Exception:
+                    pass
+
         return Response({
             'message': f'Avaliação de {aluno.user.get_full_name()} registrada com sucesso!',
             'avaliacao': AvaliacaoSerializer(avaliacao).data

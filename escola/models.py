@@ -60,7 +60,10 @@ class Avaliacao(models.Model):
         default=3,
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
-    
+
+    materia    = models.ForeignKey('Materia', on_delete=models.SET_NULL, null=True, blank=True, related_name='avaliacoes')
+    observacao = models.TextField(blank=True, default='')
+
     data = models.DateField(auto_now_add=True)
     
     class Meta:

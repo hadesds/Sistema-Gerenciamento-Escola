@@ -27,14 +27,26 @@ interface CarometroData {
   busca: string;
 }
 
+interface Materia { id: number; nome: string; sigla: string; }
+
 interface AvaliacaoForm {
+  materia_id: string;
+  notas_bimestrais: Record<string, string>;
   assiduidade: number;
   participacao: number;
   responsabilidade: number;
   sociabilidade: number;
+  observacao: string;
 }
 
-const MATERIAS = [
+const FORM_INIT: AvaliacaoForm = {
+  materia_id: '',
+  notas_bimestrais: { '1B': '', '2B': '', '3B': '', '4B': '' },
+  assiduidade: 3, participacao: 3, responsabilidade: 3, sociabilidade: 3,
+  observacao: '',
+};
+
+const MATERIAS_NOTAS = [
   { key: 'portugues',       label: 'Português' },
   { key: 'matematica',      label: 'Matemática' },
   { key: 'ciencias',        label: 'Ciências' },
@@ -63,10 +75,11 @@ export default function CarometroPage() {
   const [data, setData] = useState<CarometroData | null>(null);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
+  const [materias, setMaterias] = useState<Materia[]>([]);
 
-  // Modal comportamento
+  // Modal comportamento (unified)
   const [alunoAvaliando, setAlunoAvaliando] = useState<AlunoInfo | null>(null);
-  const [form, setForm] = useState<AvaliacaoForm>({ assiduidade: 3, participacao: 3, responsabilidade: 3, sociabilidade: 3 });
+  const [form, setForm] = useState<AvaliacaoForm>(FORM_INIT);
 
   // Modal notas
   const [alunoNotas, setAlunoNotas] = useState<AlunoInfo | null>(null);
@@ -85,7 +98,10 @@ export default function CarometroPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { fetchData(); }, [turmaId]);
+  useEffect(() => {
+    fetchData();
+    apiFetch<Materia[]>('/professor/materias/').then(setMaterias).catch(() => {});
+  }, [turmaId]);
 
   function handleBusca(e: React.FormEvent) {
     e.preventDefault();
@@ -97,9 +113,22 @@ export default function CarometroPage() {
     if (!alunoAvaliando) return;
     setSubmitting(true);
     try {
+      const notas: Record<string, number> = {};
+      Object.entries(form.notas_bimestrais).forEach(([ep, val]) => {
+        const n = parseFloat(val);
+        if (!isNaN(n) && n >= 0 && n <= 10) notas[ep] = n;
+      });
       await apiFetch(`/professor/avaliar/${alunoAvaliando.id}/`, {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          materia_id: form.materia_id ? Number(form.materia_id) : null,
+          assiduidade: form.assiduidade,
+          participacao: form.participacao,
+          responsabilidade: form.responsabilidade,
+          sociabilidade: form.sociabilidade,
+          observacao: form.observacao,
+          notas_bimestrais: notas,
+        }),
       });
       setAlert({ type: 'success', message: `Avaliação de ${alunoAvaliando.nome} registrada!` });
       setAlunoAvaliando(null);
@@ -114,7 +143,6 @@ export default function CarometroPage() {
   async function abrirNotas(aluno: AlunoInfo) {
     setAlunoNotas(aluno);
     setEpocaSelecionada('1B');
-    // carrega notas existentes
     try {
       const notas = await apiFetch<Array<{ materia: string; nota: number; epoca: string }>>(
         `/professor/notas/${aluno.id}/`
@@ -125,9 +153,8 @@ export default function CarometroPage() {
         por_epoca[n.epoca][n.materia] = n.nota;
       });
       setNotasExistentes(por_epoca);
-      // pré-preenche o form com 1° bimestre se houver
       const init: NotasForm = {};
-      MATERIAS.forEach(m => {
+      MATERIAS_NOTAS.forEach(m => {
         init[m.key] = String(por_epoca['1B']?.[m.key] ?? '');
       });
       setNotasForm(init);
@@ -140,7 +167,7 @@ export default function CarometroPage() {
   function trocarEpoca(epoca: string) {
     setEpocaSelecionada(epoca);
     const init: NotasForm = {};
-    MATERIAS.forEach(m => {
+    MATERIAS_NOTAS.forEach(m => {
       init[m.key] = String(notasExistentes[epoca]?.[m.key] ?? '');
     });
     setNotasForm(init);
@@ -181,7 +208,7 @@ export default function CarometroPage() {
     setSubmitting(true);
     try {
       const notas: Record<string, number> = {};
-      MATERIAS.forEach(m => {
+      MATERIAS_NOTAS.forEach(m => {
         const v = parseFloat(notasForm[m.key]);
         if (!isNaN(v)) notas[m.key] = v;
       });
@@ -190,7 +217,6 @@ export default function CarometroPage() {
         body: JSON.stringify({ epoca: epocaSelecionada, notas }),
       });
       setAlert({ type: 'success', message: `Notas de ${alunoNotas.nome} salvas!` });
-      // atualiza cache local
       setNotasExistentes(prev => ({
         ...prev,
         [epocaSelecionada]: notas,
@@ -203,7 +229,7 @@ export default function CarometroPage() {
     }
   }
 
-  const RatingInput = ({ name, label, value }: { name: keyof AvaliacaoForm; label: string; value: number }) => (
+  const RatingInput = ({ name, label, value }: { name: keyof Pick<AvaliacaoForm, 'assiduidade'|'participacao'|'responsabilidade'|'sociabilidade'>; label: string; value: number }) => (
     <div className="form-group">
       <label>{label}: <strong>{value}/5</strong></label>
       <input
@@ -220,6 +246,11 @@ export default function CarometroPage() {
   return (
     <ProtectedRoute tipo="professor">
       <Navbar />
+      <style>{`
+        .av-section-title { font-size:1.5rem; font-weight:700; color:var(--color-primary); margin:1.6rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--border-light); display:flex; align-items:center; gap:0.5rem; }
+        .bim-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        .bim-grid .form-group { margin:0; }
+      `}</style>
       <main className="container fade-in">
         {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
 
@@ -279,7 +310,7 @@ export default function CarometroPage() {
                     <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                       <button className="btn btn-primary" onClick={() => {
                         setAlunoAvaliando(aluno);
-                        setForm({ assiduidade: 3, participacao: 3, responsabilidade: 3, sociabilidade: 3 });
+                        setForm(FORM_INIT);
                       }}>
                         <span className="material-icons-outlined">rate_review</span>
                         Avaliar
@@ -333,20 +364,82 @@ export default function CarometroPage() {
           </>
         )}
 
-        {/* ── Modal Avaliação Comportamental ── */}
+        {/* ── Modal Avaliação Unificada ── */}
         {alunoAvaliando && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-            <div className="card" style={{ width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div className="card" style={{ width: '90%', maxWidth: '560px', maxHeight: '92vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.6rem' }}>
                 <h2>Avaliar: {alunoAvaliando.nome}</h2>
                 <button onClick={() => setAlunoAvaliando(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '2.5rem' }}>&times;</button>
               </div>
               <form onSubmit={handleAvaliar}>
+
+                {/* Seção Matéria */}
+                <div className="av-section-title">
+                  <span className="material-icons-outlined">menu_book</span>
+                  Matéria
+                </div>
+                <div className="form-group">
+                  <label>Matéria (opcional)</label>
+                  <select
+                    value={form.materia_id}
+                    onChange={e => setForm(f => ({ ...f, materia_id: e.target.value }))}
+                  >
+                    <option value="">— Sem matéria específica —</option>
+                    {materias.map(m => (
+                      <option key={m.id} value={m.id}>{m.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Seção Notas Bimestrais */}
+                <div className="av-section-title">
+                  <span className="material-icons-outlined">grade</span>
+                  Notas Bimestrais
+                </div>
+                <div className="bim-grid">
+                  {(['1B', '2B', '3B', '4B'] as const).map(ep => (
+                    <div className="form-group" key={ep}>
+                      <label>{EPOCAS.find(e => e.key === ep)?.label}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        placeholder="0 – 10"
+                        value={form.notas_bimestrais[ep]}
+                        onChange={e => setForm(f => ({ ...f, notas_bimestrais: { ...f.notas_bimestrais, [ep]: e.target.value } }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Seção Comportamento */}
+                <div className="av-section-title">
+                  <span className="material-icons-outlined">psychology</span>
+                  Comportamento
+                </div>
                 <RatingInput name="assiduidade" label="Assiduidade" value={form.assiduidade} />
                 <RatingInput name="participacao" label="Participação" value={form.participacao} />
                 <RatingInput name="responsabilidade" label="Responsabilidade" value={form.responsabilidade} />
                 <RatingInput name="sociabilidade" label="Sociabilidade" value={form.sociabilidade} />
-                <button type="submit" className="btn btn-submit" style={{ width: '100%' }} disabled={submitting}>
+
+                {/* Seção Observação */}
+                <div className="av-section-title">
+                  <span className="material-icons-outlined">comment</span>
+                  Observação
+                </div>
+                <div className="form-group">
+                  <textarea
+                    rows={3}
+                    placeholder="Observações opcionais sobre o aluno..."
+                    value={form.observacao}
+                    onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))}
+                    style={{ width: '100%', resize: 'vertical' }}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-submit" style={{ width: '100%', marginTop: '0.8rem' }} disabled={submitting}>
                   {submitting ? 'Salvando...' : 'Salvar Avaliação'}
                 </button>
               </form>
@@ -379,7 +472,7 @@ export default function CarometroPage() {
 
               <form onSubmit={handleSalvarNotas}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
-                  {MATERIAS.map(m => (
+                  {MATERIAS_NOTAS.map(m => (
                     <div className="form-group" key={m.key} style={{ marginBottom: 0 }}>
                       <label>{m.label}</label>
                       <input

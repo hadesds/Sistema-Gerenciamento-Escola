@@ -44,4 +44,7 @@ urlpatterns = [
     
     # Visualizar simulado
     path('simulado/<int:simulado_id>/', views.visualizar_simulado, name='visualizar_simulado'),
+
+    # Redirecionamento para o frontend (landing page)
+    path('ir-para-o-site/', views.ir_para_o_site, name='ir_para_o_site'),
 ]

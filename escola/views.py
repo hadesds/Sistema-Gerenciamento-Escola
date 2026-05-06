@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.db.models import Avg, Count
 from datetime import datetime, timedelta
+from django.conf import settings
 
 
 def professor_required(view_func):
@@ -517,3 +518,10 @@ def visualizar_simulado(request, simulado_id):
         'simulado': simulado,
         'questoes': questoes
     })
+
+def ir_para_o_site(request):
+    """Redireciona para o frontend Next.js (landing page). Usa FRONTEND_URL se configurado."""
+    frontend_url = getattr(settings, 'FRONTEND_URL', '').strip()
+    if not frontend_url:
+        frontend_url = 'http://localhost:3000'
+    return redirect(frontend_url)

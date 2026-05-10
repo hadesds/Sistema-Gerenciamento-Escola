@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.conf import settings
 from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, Administrador, AlternativaQuestao, Materia
 
 # Inline para Professor
@@ -149,3 +150,16 @@ admin.site.register(User, CustomUserAdmin)
 admin.site.site_header = 'CARA - Administração'
 admin.site.site_title = 'CARA Admin'
 admin.site.index_title = 'Painel de Administração'
+
+# "Ver site" → landing page do frontend
+# Usa FRONTEND_URL se definido, senão deriva do primeiro CORS_ALLOWED_ORIGINS
+def _resolve_frontend_url():
+    url = getattr(settings, 'FRONTEND_URL', '').strip().rstrip('/')
+    if url:
+        return url
+    cors = getattr(settings, 'CORS_ALLOWED_ORIGINS', [])
+    if isinstance(cors, (list, tuple)) and cors:
+        return cors[0].rstrip('/')
+    return '/'
+
+admin.site.site_url = _resolve_frontend_url()

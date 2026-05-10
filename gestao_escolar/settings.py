@@ -232,4 +232,8 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', '').rstrip('/')
 # que redireciona para o frontend se FRONTEND_URL estiver configurado.
 LOGIN_URL           = '/admin/login/'
 LOGIN_REDIRECT_URL  = '/admin/'
-LOGOUT_REDIRECT_URL = os.environ.get('FRONTEND_URL', '/admin/login/')
+_frontend_url = os.environ.get('FRONTEND_URL', '').strip().rstrip('/')
+if not _frontend_url:
+    _cors = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+    _frontend_url = next((u.strip().rstrip('/') for u in _cors if u.strip().startswith('http')), '')
+LOGOUT_REDIRECT_URL = _frontend_url or '/admin/login/'

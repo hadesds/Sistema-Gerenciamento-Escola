@@ -224,16 +224,16 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
-# URL base do frontend (ex: https://projetocara.vercel.app).
-# Usada em frontend_login_redirect (urls.py) para redirecionar após logout do admin.
-FRONTEND_URL = os.environ.get('FRONTEND_URL', '').rstrip('/')
+# URL base do frontend. Usa FRONTEND_URL se definida, senão deriva do
+# primeiro CORS_ALLOWED_ORIGINS (que já aponta para o domínio do frontend).
+FRONTEND_URL = os.environ.get('FRONTEND_URL', '').strip().rstrip('/')
+if not FRONTEND_URL:
+    _cors_list = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+    FRONTEND_URL = next(
+        (u.strip().rstrip('/') for u in _cors_list if u.strip().startswith('http')),
+        ''
+    )
 
-# O admin usa seu próprio login. Após logout vai para /login/ (urls.py),
-# que redireciona para o frontend se FRONTEND_URL estiver configurado.
 LOGIN_URL           = '/admin/login/'
 LOGIN_REDIRECT_URL  = '/admin/'
-_frontend_url = os.environ.get('FRONTEND_URL', '').strip().rstrip('/')
-if not _frontend_url:
-    _cors = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
-    _frontend_url = next((u.strip().rstrip('/') for u in _cors if u.strip().startswith('http')), '')
-LOGOUT_REDIRECT_URL = _frontend_url or '/admin/login/'
+LOGOUT_REDIRECT_URL = FRONTEND_URL or '/admin/login/'

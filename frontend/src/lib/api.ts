@@ -1,6 +1,20 @@
 import Cookies from 'js-cookie';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433';
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433').replace(/\/$/, '');
+
+// Em produção (HTTPS), cookies cross-origin precisam de SameSite=None; Secure
+const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+const COOKIE_OPTS_ACCESS:  Cookies.CookieAttributes = {
+  expires: 1,
+  sameSite: isSecure ? 'None' : 'Lax',
+  secure:   isSecure,
+};
+const COOKIE_OPTS_REFRESH: Cookies.CookieAttributes = {
+  expires: 7,
+  sameSite: isSecure ? 'None' : 'Lax',
+  secure:   isSecure,
+};
 
 export async function apiFetch<T>(
   path: string,
@@ -14,13 +28,9 @@ export async function apiFetch<T>(
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  const res = await fetch(`${API_URL}/api${path}`, {
-    ...options,
-    headers,
-  });
+  const res = await fetch(`${API_URL}/api${path}`, { ...options, headers });
 
   if (res.status === 401) {
-    // Token expirado: tenta refresh
     const refreshed = await tryRefreshToken();
     if (refreshed) {
       const newToken = Cookies.get('access_token');
@@ -29,10 +39,7 @@ export async function apiFetch<T>(
         Authorization: `Bearer ${newToken}`,
         ...((options.headers as Record<string, string>) || {}),
       };
-      const retryRes = await fetch(`${API_URL}/api${path}`, {
-        ...options,
-        headers: retryHeaders,
-      });
+      const retryRes = await fetch(`${API_URL}/api${path}`, { ...options, headers: retryHeaders });
       if (!retryRes.ok) throw new Error(await retryRes.text());
       return retryRes.json();
     } else {
@@ -42,11 +49,7 @@ export async function apiFetch<T>(
     }
   }
 
-  if (!res.ok) {
-    const errData = await res.text();
-    throw new Error(errData);
-  }
-
+  if (!res.ok) throw new Error(await res.text());
   if (res.status === 204) return {} as T;
   return res.json();
 }
@@ -62,7 +65,7 @@ async function tryRefreshToken(): Promise<boolean> {
     });
     if (!res.ok) return false;
     const data = await res.json();
-    Cookies.set('access_token', data.access, { expires: 1 });
+    Cookies.set('access_token', data.access, COOKIE_OPTS_ACCESS);
     return true;
   } catch {
     return false;
@@ -75,12 +78,10 @@ export async function login(username: string, password: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
-  if (!res.ok) {
-    throw new Error('Credenciais inválidas');
-  }
+  if (!res.ok) throw new Error('Credenciais inválidas');
   const data = await res.json();
-  Cookies.set('access_token', data.access, { expires: 1 });
-  Cookies.set('refresh_token', data.refresh, { expires: 7 });
+  Cookies.set('access_token',  data.access,  COOKIE_OPTS_ACCESS);
+  Cookies.set('refresh_token', data.refresh, COOKIE_OPTS_REFRESH);
   return data;
 }
 

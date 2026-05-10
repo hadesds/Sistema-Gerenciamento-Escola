@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, AlternativaQuestao, Materia
 
 
 class TurmaSerializer(serializers.ModelSerializer):
@@ -39,14 +39,16 @@ class AlunoBasicSerializer(serializers.ModelSerializer):
 class AvaliacaoSerializer(serializers.ModelSerializer):
     aluno_nome = serializers.SerializerMethodField()
     aluno_turma = serializers.SerializerMethodField()
+    aluno_foto_url = serializers.SerializerMethodField()
     media = serializers.SerializerMethodField()
+    materia_nome = serializers.SerializerMethodField()
 
     class Meta:
         model = Avaliacao
         fields = [
-            'id', 'aluno', 'aluno_nome', 'aluno_turma',
+            'id', 'aluno', 'aluno_nome', 'aluno_turma', 'aluno_foto_url',
             'assiduidade', 'participacao', 'responsabilidade', 'sociabilidade',
-            'data', 'media'
+            'data', 'media', 'materia_nome', 'observacao'
         ]
 
     def get_aluno_nome(self, obj):
@@ -55,16 +57,55 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
     def get_aluno_turma(self, obj):
         return obj.aluno.turma.nome if obj.aluno.turma else ''
 
+    def get_aluno_foto_url(self, obj):
+        request = self.context.get('request')
+        if obj.aluno.foto and request:
+            return request.build_absolute_uri(obj.aluno.foto.url)
+        return None
+
     def get_media(self, obj):
         return round(obj.calcular_media(), 2)
+
+    def get_materia_nome(self, obj):
+        return obj.materia.nome if obj.materia else ''
+
+
+class MateriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Materia
+        fields = ['id', 'nome', 'sigla']
+
+
+class AlternativaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlternativaQuestao
+        fields = ['id', 'texto', 'correta', 'ordem']
 
 
 class QuestaoSerializer(serializers.ModelSerializer):
     dificuldade_display = serializers.CharField(source='get_dificuldade_display', read_only=True)
+    tipo_display        = serializers.CharField(source='get_tipo_display', read_only=True)
+    alternativas        = AlternativaSerializer(many=True, read_only=True)
+    materia_nome        = serializers.SerializerMethodField()
+    materia_sigla       = serializers.SerializerMethodField()
 
     class Meta:
         model = Questao
-        fields = ['id', 'enunciado', 'resposta', 'materia', 'dificuldade', 'dificuldade_display', 'data_criacao']
+        fields = [
+            'id', 'enunciado', 'resposta', 'materia',
+            'materia_nome', 'materia_sigla',
+            'dificuldade', 'dificuldade_display',
+            'tipo', 'tipo_display',
+            'exige_justificativa',
+            'alternativas',
+            'data_criacao',
+        ]
+
+    def get_materia_nome(self, obj):
+        return obj.materia.nome if obj.materia else ''
+
+    def get_materia_sigla(self, obj):
+        return obj.materia.sigla if obj.materia else ''
 
 
 class SimuladoSerializer(serializers.ModelSerializer):
@@ -75,7 +116,7 @@ class SimuladoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Simulado
-        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'total_questoes', 'questoes']
+        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'total_questoes', 'questoes']
 
     def get_turma_nome(self, obj):
         return obj.turma_alvo.nome if obj.turma_alvo else ''

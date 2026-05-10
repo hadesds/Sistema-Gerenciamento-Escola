@@ -60,7 +60,10 @@ class Avaliacao(models.Model):
         default=3,
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
-    
+
+    materia    = models.ForeignKey('Materia', on_delete=models.SET_NULL, null=True, blank=True, related_name='avaliacoes')
+    observacao = models.TextField(blank=True, default='')
+
     data = models.DateField(auto_now_add=True)
     
     class Meta:
@@ -160,32 +163,98 @@ class PresencaAluno(models.Model):
         return f"{self.aluno} — {'Presente' if self.presente else 'Ausente'} em {self.registro.data}"
 
 
+class Materia(models.Model):
+    nome  = models.CharField(max_length=100)
+    sigla = models.CharField(max_length=3, unique=True)
+
+    class Meta:
+        ordering = ['nome']
+        verbose_name = 'Matéria'
+        verbose_name_plural = 'Matérias'
+
+    def __str__(self):
+        return f"{self.nome} ({self.sigla})"
+
+
+class ProvaIndividual(models.Model):
+    EPOCAS = [
+        ('1B', '1° Bimestre'),
+        ('2B', '2° Bimestre'),
+        ('3B', '3° Bimestre'),
+        ('4B', '4° Bimestre'),
+    ]
+    aluno     = models.ForeignKey(Aluno,     on_delete=models.CASCADE,  related_name='provas_individuais')
+    professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name='provas_aplicadas')
+    materia   = models.ForeignKey('Materia', on_delete=models.CASCADE,  related_name='provas_individuais')
+    epoca     = models.CharField(max_length=2, choices=EPOCAS)
+    numero    = models.PositiveSmallIntegerField()
+    nota      = models.DecimalField(max_digits=4, decimal_places=2,
+                    validators=[MinValueValidator(0), MaxValueValidator(10)])
+    data      = models.DateField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('aluno', 'materia', 'epoca', 'numero')
+        ordering = ['epoca', 'numero']
+        verbose_name = 'Prova Individual'
+        verbose_name_plural = 'Provas Individuais'
+
+    def __str__(self):
+        return f"{self.aluno} – {self.materia} ({self.epoca}) Prova {self.numero}: {self.nota}"
+
+
 class Questao(models.Model):
     DIFICULDADE_CHOICES = [
         ('facil',   'Fácil'),
         ('medio',   'Médio'),
         ('dificil', 'Difícil'),
     ]
-    enunciado    = models.TextField()
-    resposta     = models.TextField()
-    materia      = models.CharField(max_length=100)
-    autor        = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
-    dificuldade  = models.CharField(max_length=10, choices=DIFICULDADE_CHOICES, default='medio')
-    data_criacao = models.DateTimeField(auto_now_add=True)
-    
+    TIPO_CHOICES = [
+        ('discursiva', 'Discursiva'),
+        ('objetiva',   'Objetiva'),
+    ]
+    enunciado           = models.TextField()
+    resposta            = models.TextField(blank=True, default='')
+    materia             = models.ForeignKey(
+        'Materia', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='questoes'
+    )
+    autor               = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="questoes_criadas")
+    dificuldade         = models.CharField(max_length=10, choices=DIFICULDADE_CHOICES, default='medio')
+    tipo                = models.CharField(max_length=12, choices=TIPO_CHOICES, default='discursiva')
+    exige_justificativa = models.BooleanField(default=False)
+    data_criacao        = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ['-data_criacao']
         verbose_name = 'Questão'
         verbose_name_plural = 'Questões'
 
     def __str__(self):
-        return f"{self.materia} - {self.enunciado[:50]}..."
+        return f"{self.materia.nome if self.materia else 'Sem matéria'} - {self.enunciado[:50]}..."
+
+
+class AlternativaQuestao(models.Model):
+    questao = models.ForeignKey(Questao, on_delete=models.CASCADE, related_name='alternativas')
+    texto   = models.CharField(max_length=500)
+    correta = models.BooleanField(default=False)
+    ordem   = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['ordem']
+        verbose_name = 'Alternativa'
+        verbose_name_plural = 'Alternativas'
+
+    def __str__(self):
+        return f"{'✓' if self.correta else '○'} {self.texto[:60]}"
 
 class Simulado(models.Model):
     questoes = models.ManyToManyField(Questao, related_name="simulados")
     autor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="simulados_criados")
     turma_alvo = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, related_name="simulados")
     data_criacao = models.DateTimeField(auto_now_add=True)
+    titulo            = models.CharField(max_length=200, blank=True, default='')
+    tempo_limite      = models.PositiveIntegerField(null=True, blank=True, help_text='Tempo limite em minutos')
+    area_conhecimento = models.CharField(max_length=100, blank=True, default='')
     
     class Meta:
         ordering = ['-data_criacao']

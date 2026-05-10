@@ -6,11 +6,23 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, ProvaIndividual
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
-    QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer
+    QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
+    MateriaSerializer
 )
+
+SIGLA_TO_NOTA_MATERIA = {
+    'PRT': 'portugues',
+    'MTM': 'matematica',
+    'CNC': 'ciencias',
+    'GGF': 'geografia',
+    'ART': 'artes',
+    'ING': 'ingles',
+    'EDF': 'educacao_fisica',
+    'FIL': 'filosofia',
+}
 
 
 # ==========================================
@@ -221,20 +233,97 @@ def professor_registrar_avaliacao(request, aluno_id):
 
     aluno = get_object_or_404(Aluno, pk=aluno_id)
     try:
+        from decimal import Decimal
+
+        materia_id = request.data.get('materia_id')
+        if not materia_id:
+            return Response({'detail': 'A matéria é obrigatória.'}, status=400)
+        materia_obj = get_object_or_404(Materia, pk=materia_id)
+
+        observacao = request.data.get('observacao', '')
+        # provas_bimestrais: { '1B': [8.5, 7.0], '2B': [9.0], ... }
+        provas_bimestrais = request.data.get('provas_bimestrais', {})
+
         avaliacao = Avaliacao.objects.create(
             aluno=aluno,
             professor=professor,
             assiduidade=int(request.data.get('assiduidade', 3)),
             participacao=int(request.data.get('participacao', 3)),
             responsabilidade=int(request.data.get('responsabilidade', 3)),
-            sociabilidade=int(request.data.get('sociabilidade', 3))
+            sociabilidade=int(request.data.get('sociabilidade', 3)),
+            materia=materia_obj,
+            observacao=observacao,
         )
+
+        materia_key = SIGLA_TO_NOTA_MATERIA.get(materia_obj.sigla)
+        epocas_validas = {'1B', '2B', '3B', '4B'}
+
+        for epoca, notas_lista in provas_bimestrais.items():
+            if epoca not in epocas_validas or not isinstance(notas_lista, list):
+                continue
+
+            notas_validas = []
+            for nota_val in notas_lista:
+                try:
+                    n = float(nota_val)
+                    if 0 <= n <= 10:
+                        notas_validas.append(n)
+                except (TypeError, ValueError):
+                    pass
+
+            if not notas_validas:
+                continue
+
+            # Substitui as provas individuais deste bimestre para esta matéria/aluno
+            ProvaIndividual.objects.filter(aluno=aluno, materia=materia_obj, epoca=epoca).delete()
+            for i, nota_val in enumerate(notas_validas, 1):
+                ProvaIndividual.objects.create(
+                    aluno=aluno,
+                    professor=professor,
+                    materia=materia_obj,
+                    epoca=epoca,
+                    numero=i,
+                    nota=Decimal(str(round(nota_val, 2))),
+                )
+
+            # Salva a média no NotaMateria (retrocompatibilidade)
+            media = sum(notas_validas) / len(notas_validas)
+            if materia_key:
+                NotaMateria.objects.update_or_create(
+                    aluno=aluno, materia=materia_key, epoca=epoca,
+                    defaults={'professor': professor, 'nota': Decimal(str(round(media, 2)))}
+                )
+
         return Response({
             'message': f'Avaliação de {aluno.user.get_full_name()} registrada com sucesso!',
             'avaliacao': AvaliacaoSerializer(avaliacao).data
         }, status=201)
     except Exception as e:
         return Response({'detail': str(e)}, status=400)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_provas_aluno(request, aluno_id):
+    """Retorna as provas individuais de um aluno por matéria e época."""
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    materia_id = request.query_params.get('materia_id')
+    if not materia_id:
+        return Response({'detail': 'materia_id é obrigatório.'}, status=400)
+
+    provas = ProvaIndividual.objects.filter(
+        aluno=aluno, materia_id=materia_id
+    ).order_by('epoca', 'numero')
+
+    result = {'1B': [], '2B': [], '3B': [], '4B': []}
+    for p in provas:
+        result[p.epoca].append(float(p.nota))
+
+    return Response(result)
 
 
 @api_view(['GET', 'POST'])
@@ -246,13 +335,28 @@ def professor_banco_questoes(request):
 
     if request.method == 'POST':
         try:
+            tipo = request.data.get('tipo', 'discursiva')
+            materia_id = request.data.get('materia')
+            materia = Materia.objects.filter(id=materia_id).first() if materia_id else None
             questao = Questao.objects.create(
                 autor=professor,
-                enunciado=request.data.get('enunciado'),
-                resposta=request.data.get('resposta'),
-                materia=request.data.get('materia'),
+                enunciado=request.data.get('enunciado', ''),
+                resposta=request.data.get('resposta', ''),
+                materia=materia,
                 dificuldade=request.data.get('dificuldade', 'medio'),
+                tipo=tipo,
+                exige_justificativa=bool(request.data.get('exige_justificativa', False)),
             )
+            if tipo == 'objetiva':
+                for i, alt in enumerate(request.data.get('alternativas', [])):
+                    texto = str(alt.get('texto', '')).strip()
+                    if texto:
+                        AlternativaQuestao.objects.create(
+                            questao=questao,
+                            texto=texto,
+                            correta=bool(alt.get('correta', False)),
+                            ordem=i,
+                        )
             return Response(QuestaoSerializer(questao).data, status=201)
         except Exception as e:
             return Response({'detail': str(e)}, status=400)
@@ -260,13 +364,11 @@ def professor_banco_questoes(request):
     materia_filtro = request.GET.get('materia', '')
     questoes = Questao.objects.filter(autor=professor).order_by('-id')
     if materia_filtro:
-        questoes = questoes.filter(materia__icontains=materia_filtro)
-
-    materias = list(Questao.objects.filter(autor=professor).values_list('materia', flat=True).distinct())
+        questoes = questoes.filter(materia__sigla=materia_filtro)
 
     return Response({
         'questoes': QuestaoSerializer(questoes, many=True).data,
-        'materias': materias,
+        'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
         'materia_filtro': materia_filtro
     })
 
@@ -282,7 +384,8 @@ def professor_criar_simulado_data(request):
     turmas = professor.turmas.all()
     return Response({
         'questoes': QuestaoSerializer(questoes, many=True).data,
-        'turmas': TurmaSerializer(turmas, many=True).data
+        'turmas': TurmaSerializer(turmas, many=True).data,
+        'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
     })
 
 
@@ -302,6 +405,10 @@ def professor_criar_simulado(request):
     turma = get_object_or_404(Turma, id=turma_id)
     simulado = Simulado.objects.create(autor=professor, turma_alvo=turma)
     simulado.questoes.set(questoes_ids)
+    simulado.titulo = request.data.get('titulo', '')
+    simulado.tempo_limite = request.data.get('tempo_limite') or None
+    simulado.area_conhecimento = request.data.get('area_conhecimento', '')
+    simulado.save()
 
     return Response(SimuladoSerializer(simulado).data, status=201)
 
@@ -315,6 +422,59 @@ def professor_lista_simulados(request):
 
     simulados = Simulado.objects.filter(autor=professor).select_related('turma_alvo').order_by('-id')
     return Response(SimuladoSerializer(simulados, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_materias(request):
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+    materias = Materia.objects.all()
+    return Response(MateriaSerializer(materias, many=True).data)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def professor_detalhe_simulado(request, simulado_id):
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
+
+    if request.method == 'GET':
+        return Response(SimuladoSerializer(simulado).data)
+
+    if request.method == 'PATCH':
+        if 'titulo' in request.data:
+            simulado.titulo = request.data['titulo']
+        if 'tempo_limite' in request.data:
+            simulado.tempo_limite = request.data['tempo_limite'] or None
+        if 'area_conhecimento' in request.data:
+            simulado.area_conhecimento = request.data['area_conhecimento']
+        if 'turma' in request.data:
+            turma = get_object_or_404(Turma, id=request.data['turma'])
+            simulado.turma_alvo = turma
+        simulado.save()
+        return Response(SimuladoSerializer(simulado).data)
+
+    if request.method == 'DELETE':
+        simulado.delete()
+        return Response(status=204)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def professor_remover_questao_simulado(request, simulado_id, questao_id):
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
+    questao = get_object_or_404(Questao, id=questao_id)
+    simulado.questoes.remove(questao)
+    return Response(SimuladoSerializer(simulado).data)
 
 
 @api_view(['GET'])
@@ -369,6 +529,27 @@ def professor_relatorio_aluno(request, aluno_id):
         if medias_materias else None
     )
 
+    # Provas individuais agrupadas por matéria e época
+    provas_qs = ProvaIndividual.objects.filter(aluno=aluno).select_related('materia').order_by('materia__nome', 'epoca', 'numero')
+    provas_por_materia: dict = {}
+    for p in provas_qs:
+        mat = p.materia.nome
+        if mat not in provas_por_materia:
+            provas_por_materia[mat] = {'1B': [], '2B': [], '3B': [], '4B': []}
+        provas_por_materia[mat][p.epoca].append(float(p.nota))
+
+    # Médias por matéria a partir das provas individuais
+    medias_provas: dict = {}
+    for mat, epocas in provas_por_materia.items():
+        todas = [n for lista in epocas.values() for n in lista]
+        if todas:
+            medias_provas[mat] = round(sum(todas) / len(todas), 2)
+
+    media_geral_provas = (
+        round(sum(medias_provas.values()) / len(medias_provas), 2)
+        if medias_provas else None
+    )
+
     return Response({
         'aluno': {
             'id': aluno.user.id,
@@ -390,10 +571,14 @@ def professor_relatorio_aluno(request, aluno_id):
         'media_geral': round(media_geral, 2),
         'total_avaliacoes': avaliacoes.count(),
         'avaliacoes': AvaliacaoSerializer(avaliacoes, many=True).data,
-        # notas por matéria
+        # notas por matéria (NotaMateria – retrocompatibilidade)
         'notas_por_epoca': notas_por_epoca,
         'medias_materias': medias_materias,
         'media_geral_materias': media_geral_materias,
+        # provas individuais agrupadas
+        'provas_por_materia': provas_por_materia,
+        'medias_provas': medias_provas,
+        'media_geral_provas': media_geral_provas,
     })
 
 

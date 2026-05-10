@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block branding %}
+<div id="site-name" style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;">
+  <a href="{% url 'admin:index' %}" style="color:white; font-size:1.8rem; font-weight:700; text-decoration:none;">
+    CEM Viriato Correa &mdash; Admin
+  </a>
+  <a href="/ir-para-o-site/"
+     title="Voltar à landing page do sistema"
+     style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 1rem;
+            background:rgba(255,255,255,0.15); color:white; border-radius:2rem;
+            font-size:1.3rem; font-weight:600; text-decoration:none;
+            border:1px solid rgba(255,255,255,0.3); transition:background 0.2s;"
+     onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+     onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+    &#8592; Voltar ao Site
+  </a>
+</div>
+{% endblock %}

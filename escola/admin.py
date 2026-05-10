@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, Administrador
+from django.conf import settings
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, Administrador, AlternativaQuestao, Materia
 
 # Inline para Professor
 class ProfessorInline(admin.StackedInline):
@@ -86,14 +87,26 @@ class AvaliacaoAdmin(admin.ModelAdmin):
         return round(obj.calcular_media(), 2)
     calcular_media.short_description = 'Média'
 
+# Matéria Admin
+@admin.register(Materia)
+class MateriaAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'sigla']
+
+
 # Questão Admin
+class AlternativaInline(admin.TabularInline):
+    model = AlternativaQuestao
+    extra = 2
+    fields = ['ordem', 'texto', 'correta']
+
 @admin.register(Questao)
 class QuestaoAdmin(admin.ModelAdmin):
-    list_display = ['materia', 'get_enunciado_curto', 'autor', 'data_criacao']
-    list_filter = ['materia', 'data_criacao', 'autor']
-    search_fields = ['materia', 'enunciado', 'autor__user__first_name']
+    list_display = ['materia', 'tipo', 'get_enunciado_curto', 'exige_justificativa', 'autor', 'data_criacao']
+    list_filter = ['materia__sigla', 'tipo', 'dificuldade', 'exige_justificativa', 'data_criacao', 'autor']
+    search_fields = ['materia__nome', 'enunciado', 'autor__user__first_name']
     date_hierarchy = 'data_criacao'
-    
+    inlines = [AlternativaInline]
+
     def get_enunciado_curto(self, obj):
         return obj.enunciado[:50] + '...' if len(obj.enunciado) > 50 else obj.enunciado
     get_enunciado_curto.short_description = 'Enunciado'
@@ -137,3 +150,16 @@ admin.site.register(User, CustomUserAdmin)
 admin.site.site_header = 'CARA - Administração'
 admin.site.site_title = 'CARA Admin'
 admin.site.index_title = 'Painel de Administração'
+
+# "Ver site" → landing page do frontend
+# Usa FRONTEND_URL se definido, senão deriva do primeiro CORS_ALLOWED_ORIGINS
+def _resolve_frontend_url():
+    url = getattr(settings, 'FRONTEND_URL', '').strip().rstrip('/')
+    if url:
+        return url
+    cors = getattr(settings, 'CORS_ALLOWED_ORIGINS', [])
+    if isinstance(cors, (list, tuple)) and cors:
+        return cors[0].rstrip('/')
+    return '/'
+
+admin.site.site_url = _resolve_frontend_url()

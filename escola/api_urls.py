@@ -14,11 +14,15 @@ urlpatterns = [
     path('professor/turma/<int:turma_id>/', api_views.professor_turma_carometro, name='api_professor_carometro'),
     path('professor/avaliar/<int:aluno_id>/', api_views.professor_registrar_avaliacao, name='api_professor_avaliar'),
     path('professor/banco-questoes/', api_views.professor_banco_questoes, name='api_banco_questoes'),
+    path('professor/materias/', api_views.professor_materias, name='api_professor_materias'),
     path('professor/criar-simulado/data/', api_views.professor_criar_simulado_data, name='api_criar_simulado_data'),
     path('professor/criar-simulado/', api_views.professor_criar_simulado, name='api_criar_simulado'),
     path('professor/simulados/', api_views.professor_lista_simulados, name='api_lista_simulados'),
+    path('professor/simulado/<int:simulado_id>/', api_views.professor_detalhe_simulado, name='api_detalhe_simulado'),
+    path('professor/simulado/<int:simulado_id>/questao/<int:questao_id>/', api_views.professor_remover_questao_simulado, name='api_remover_questao_simulado'),
     path('professor/relatorio/<int:aluno_id>/', api_views.professor_relatorio_aluno, name='api_relatorio_aluno'),
     path('professor/notas/<int:aluno_id>/', api_views.professor_notas_aluno, name='api_professor_notas'),
+    path('professor/provas/<int:aluno_id>/', api_views.professor_provas_aluno, name='api_professor_provas'),
     path('professor/perfil/<int:aluno_id>/', api_views.professor_perfil_turma, name='api_professor_perfil'),
 
     # Aluno

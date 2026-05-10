@@ -55,7 +55,7 @@ export default function ListaTurmasPage() {
 
         {loading ? <Loading /> : turmas.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📚</div>
+            <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>menu_book</span></div>
             <h2>Nenhuma turma associada</h2>
             <p>Você ainda não está associado a nenhuma turma. Contate o administrador.</p>
           </div>
@@ -107,7 +107,6 @@ export default function ListaTurmasPage() {
                 {/* Action */}
                 <div style={{ marginTop: 'auto' }}>
                   <Link href={`/professor/turma/${turma.id}`} className="btn btn-primary" style={{ display: 'block', textAlign: 'center' }}>
-                    <span className="material-icons-outlined">people</span>
                     Ver Carômetro e Avaliar
                   </Link>
                 </div>

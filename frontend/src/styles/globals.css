@@ -46,6 +46,7 @@ body {
   font-size: 1.6rem;
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .navbar {
@@ -330,7 +331,7 @@ p {
   font-size: 1.3rem;
   font-weight: 600;
   background-color: var(--color-stat-circle);
-  color: var(--text-primary);
+  color: #f0f4fb;
 }
 
 .nota-badge {
@@ -545,4 +546,9 @@ p {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.material-icons-outlined {
+  height: 21px;
+  width: 21px;
 }

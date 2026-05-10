@@ -46,7 +46,7 @@ export default function ListaSimuladosPage() {
 
         {loading ? <Loading /> : simulados.length === 0 ? (
           <div className="card empty-state">
-            <div className="empty-icon">📝</div>
+            <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>edit_note</span></div>
             <h2>Nenhum simulado criado</h2>
             <p>Você ainda não criou nenhum simulado. Crie seu primeiro simulado agora!</p>
             <Link href="/professor/criar-simulado" className="btn btn-primary mt-2">
@@ -94,8 +94,9 @@ export default function ListaSimuladosPage() {
 
                   {/* Action */}
                   <div style={{ marginTop: 'auto', paddingTop: '0.75rem', borderTop: '1px solid var(--border-light)' }}>
-                    <Link href={`/professor/simulados`} className="btn btn-secondary" style={{ fontSize: '1.4rem', padding: '0.8rem 1.5rem' }}>
-                      Ver Detalhes
+                    <Link href={`/professor/simulados/${s.id}`} className="btn btn-secondary" style={{ fontSize: '1.4rem', padding: '0.8rem 1.5rem' }}>
+                      <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.4rem', fontSize: '1.7rem' }}>edit</span>
+                      Ver / Editar
                     </Link>
                   </div>
                 </div>

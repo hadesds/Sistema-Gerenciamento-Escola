@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiFetch, login as apiLogin, logout as apiLogout, isAuthenticated } from '@/lib/api';
+import { API_URL, apiFetch, login as apiLogin, logout as apiLogout, isAuthenticated } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -45,8 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userData = await apiFetch<User>('/me/');
     setUser(userData);
     if (userData.tipo === 'admin') {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433';
-      window.location.href = `${apiUrl}/admin/`;
+      window.location.href = `${API_URL}/admin/`;
     } else if (userData.tipo === 'professor') {
       router.push('/professor/dashboard');
     } else if (userData.tipo === 'aluno') {
@@ -59,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function logout() {
     apiLogout();
     setUser(null);
-    router.push('/login');
+    window.location.replace('/');
   }
 
   return (

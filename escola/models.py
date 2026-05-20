@@ -247,15 +247,30 @@ class AlternativaQuestao(models.Model):
     def __str__(self):
         return f"{'✓' if self.correta else '○'} {self.texto[:60]}"
 
+class SimuladoQuestao(models.Model):
+    """Tabela intermediária — permite guardar o valor de cada questão dentro do simulado."""
+    simulado = models.ForeignKey('Simulado', on_delete=models.CASCADE, related_name='simulado_questoes')
+    questao  = models.ForeignKey(Questao,   on_delete=models.CASCADE, related_name='simulado_questoes')
+    valor    = models.DecimalField(max_digits=5, decimal_places=2, default=1.00)
+
+    class Meta:
+        unique_together = ('simulado', 'questao')
+        verbose_name = 'Questão do Simulado'
+        verbose_name_plural = 'Questões do Simulado'
+
+    def __str__(self):
+        return f"Simulado {self.simulado_id} → Q{self.questao_id} ({self.valor}pts)"
+
+
 class Simulado(models.Model):
-    questoes = models.ManyToManyField(Questao, related_name="simulados")
-    autor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name="simulados_criados")
-    turma_alvo = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, related_name="simulados")
-    data_criacao = models.DateTimeField(auto_now_add=True)
+    questoes          = models.ManyToManyField(Questao, through='SimuladoQuestao', related_name='simulados')
+    autor             = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name='simulados_criados')
+    turma_alvo        = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, related_name='simulados')
+    data_criacao      = models.DateTimeField(auto_now_add=True)
     titulo            = models.CharField(max_length=200, blank=True, default='')
     tempo_limite      = models.PositiveIntegerField(null=True, blank=True, help_text='Tempo limite em minutos')
     area_conhecimento = models.CharField(max_length=100, blank=True, default='')
-    
+
     class Meta:
         ordering = ['-data_criacao']
         verbose_name = 'Simulado'

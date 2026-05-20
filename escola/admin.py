@@ -117,7 +117,6 @@ class SimuladoAdmin(admin.ModelAdmin):
     list_display = ['get_titulo', 'autor', 'turma_alvo', 'total_questoes', 'data_criacao']
     list_filter = ['data_criacao', 'autor', 'turma_alvo']
     search_fields = ['autor__user__first_name', 'turma_alvo__nome']
-    filter_horizontal = ('questoes',)
     date_hierarchy = 'data_criacao'
     
     def get_titulo(self, obj):

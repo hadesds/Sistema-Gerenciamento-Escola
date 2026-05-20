@@ -13,9 +13,8 @@ services:
     build: .
     container_name: cara_app
     command: >
-      sh -c "python manage.py collectstatic --noinput &&
-             python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:5433"
+        sh -c "python manage.py migrate &&
+          python manage.py runserver 0.0.0.0:5433"
     ports:
       - "5433:5433"
     volumes:

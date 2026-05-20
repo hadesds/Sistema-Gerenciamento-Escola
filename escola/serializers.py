@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, AlternativaQuestao, Materia
-
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, SimuladoQuestao, NotaMateria, PerfilTurma, AlternativaQuestao, Materia
 
 class TurmaSerializer(serializers.ModelSerializer):
     turno_display = serializers.CharField(source='get_turno_display', read_only=True)
@@ -107,16 +106,22 @@ class QuestaoSerializer(serializers.ModelSerializer):
     def get_materia_sigla(self, obj):
         return obj.materia.sigla if obj.materia else ''
 
+class SimuladoQuestaoSerializer(serializers.ModelSerializer):
+    questao = QuestaoSerializer(read_only=True)
+
+    class Meta:
+        model = SimuladoQuestao
+        fields = ['questao', 'valor']
 
 class SimuladoSerializer(serializers.ModelSerializer):
     turma_nome = serializers.SerializerMethodField()
     autor_nome = serializers.SerializerMethodField()
     total_questoes = serializers.SerializerMethodField()
-    questoes = QuestaoSerializer(many=True, read_only=True)
+    simulado_questoes = SimuladoQuestaoSerializer(many=True, read_only=True)
 
     class Meta:
         model = Simulado
-        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'total_questoes', 'questoes']
+        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'total_questoes', 'simulado_questoes']
 
     def get_turma_nome(self, obj):
         return obj.turma_alvo.nome if obj.turma_alvo else ''

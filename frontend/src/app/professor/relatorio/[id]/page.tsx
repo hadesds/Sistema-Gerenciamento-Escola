@@ -78,6 +78,10 @@ function avg(arr: number[]): number | null {
   return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
+function escalaComportamento(nota: number): number {
+  return parseFloat(((nota - 1) * (2.5 / 4)).toFixed(1));
+}
+
 export default function RelatorioAlunoPage() {
   const params = useParams();
   const alunoId = params.id as string;
@@ -205,7 +209,7 @@ export default function RelatorioAlunoPage() {
                 <div className="stat-icon" style={{ background: 'linear-gradient(135deg,#0d2d6b,#1a4fa0)' }}>
                   <span className="material-icons-outlined">psychology</span>
                 </div>
-                <div className="stat-info"><h3>{data.media_geral.toFixed(2)}</h3><p>Média Comportamental</p></div>
+                <div className="stat-info"><h3>{escalaComportamento(data.media_geral).toFixed(1)} / 2.5</h3><p>Média Comportamental</p></div>
               </div>
               {data.media_geral_provas !== null && (
                 <div className="stat-card">
@@ -235,7 +239,7 @@ export default function RelatorioAlunoPage() {
                 <div key={c.key} style={{ marginBottom: '2rem' }}>
                   <div className="comportamento-row">
                     <strong>{c.label}</strong>
-                    <span>{data.medias[c.key].toFixed(2)} / 5.00 &nbsp;({data.medias[c.pct]}%)</span>
+                    <span>{escalaComportamento(data.medias[c.key]).toFixed(1)} / 2.5 &nbsp;({data.medias[c.pct]}%)</span>
                   </div>
                   <div className="progress-bar" style={{ height: '1.8rem' }}>
                     <div className="progress-fill" style={{
@@ -457,10 +461,10 @@ export default function RelatorioAlunoPage() {
                         <tr key={av.id}>
                           <td style={{ whiteSpace: 'nowrap' }}>{new Date(av.data).toLocaleDateString('pt-BR')}</td>
                           <td style={{ whiteSpace: 'nowrap' }}>{av.materia_nome || '–'}</td>
-                          <td>{av.assiduidade}/5</td>
-                          <td>{av.participacao}/5</td>
-                          <td>{av.responsabilidade}/5</td>
-                          <td>{av.sociabilidade}/5</td>
+                          <td>{escalaComportamento(av.assiduidade)}</td>
+                          <td>{escalaComportamento(av.participacao)}</td>
+                          <td>{escalaComportamento(av.responsabilidade)}</td>
+                          <td>{escalaComportamento(av.sociabilidade)}</td>
                           <td><NotaBadge nota={av.media} /></td>
                           <td style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '20rem' }}>
                             {av.observacao ? av.observacao.slice(0, 60) + (av.observacao.length > 60 ? '…' : '') : '–'}

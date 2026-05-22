@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, ProvaIndividual
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, ProvaIndividual, SimuladoQuestao
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
@@ -397,14 +397,19 @@ def professor_criar_simulado(request):
         return Response({'detail': 'Acesso negado.'}, status=403)
 
     turma_id = request.data.get('turma')
-    questoes_ids = request.data.get('questoes', [])
+    questoes_payload = request.data.get('questoes', [])
 
-    if not turma_id or not questoes_ids:
+    if not turma_id or not questoes_payload:            
         return Response({'detail': 'Selecione uma turma e pelo menos uma questão.'}, status=400)
 
     turma = get_object_or_404(Turma, id=turma_id)
     simulado = Simulado.objects.create(autor=professor, turma_alvo=turma)
-    simulado.questoes.set(questoes_ids)
+    for item in questoes_payload:                      
+        SimuladoQuestao.objects.create(
+            simulado=simulado,
+            questao_id=item['id'],
+            valor=item.get('valor', 1.0),
+    )
     simulado.titulo = request.data.get('titulo', '')
     simulado.tempo_limite = request.data.get('tempo_limite') or None
     simulado.area_conhecimento = request.data.get('area_conhecimento', '')

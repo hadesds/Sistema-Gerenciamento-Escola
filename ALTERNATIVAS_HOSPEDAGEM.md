@@ -336,14 +336,14 @@ Pode servir para piloto interno, homologacao ou demonstracao. Nao e a melhor bas
 
 ## 6. Tabela comparativa consolidada
 
-| Alternativa | Custo mensal estimado | Complexidade tecnica | Risco operacional | Observacao principal |
-| --- | --- | --- | --- | --- |
-| A. PaaS atual | US$ 42 | Baixa | Baixo | Mais simples, porem mais caro |
-| B. VPS + Docker + Neon + Cloudinary | US$ 22 a 27 | Media | Baixo a medio | Melhor equilibrio entre custo e seguranca |
-| C. VPS + Coolify + Neon + Cloudinary | US$ 22 a 35 | Media | Baixo a medio | Boa experiencia operacional com custo menor |
-| D. VPS + Docker + Postgres local + Cloudinary | US$ 7 a 15 | Media a alta | Medio a alto | Economia forte, mas banco passa a ser responsabilidade da equipe |
-| E. VPS + Docker + Postgres local + arquivos locais | US$ 7 a 15 | Alta | Alto | Mais barato, porem com maior ponto unico de falha |
-| F. Tiers gratuitos atuais | muito variavel | Baixa | Medio a alto | Bom para piloto, fraco para entrega comercial |
+| Alternativa                                        | Custo mensal estimado | Complexidade tecnica | Risco operacional | Observacao principal                                             |
+| -------------------------------------------------- | --------------------- | -------------------- | ----------------- | ---------------------------------------------------------------- |
+| A. PaaS atual                                      | US$ 42                | Baixa                | Baixo             | Mais simples, porem mais caro                                    |
+| B. VPS + Docker + Neon + Cloudinary                | US$ 22 a 27           | Media                | Baixo a medio     | Melhor equilibrio entre custo e seguranca                        |
+| C. VPS + Coolify + Neon + Cloudinary               | US$ 22 a 35           | Media                | Baixo a medio     | Boa experiencia operacional com custo menor                      |
+| D. VPS + Docker + Postgres local + Cloudinary      | US$ 7 a 15            | Media a alta         | Medio a alto      | Economia forte, mas banco passa a ser responsabilidade da equipe |
+| E. VPS + Docker + Postgres local + arquivos locais | US$ 7 a 15            | Alta                 | Alto              | Mais barato, porem com maior ponto unico de falha                |
+| F. Tiers gratuitos atuais                          | muito variavel        | Baixa                | Medio a alto      | Bom para piloto, fraco para entrega comercial                    |
 
 ## 7. Comparacao por criterio
 

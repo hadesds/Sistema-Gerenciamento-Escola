@@ -1,481 +1,235 @@
-# Guia de Producao e Entrega ao Cliente
+# Guia de Produto e Servicos Contratados do CARA
 
-Este documento descreve como entregar o Sistema CARA em producao para um cliente, quais contas o cliente deve possuir, quais custos ele deve assumir, como fica a arquitetura, quais cuidados operacionais existem e como resolver a integracao GitHub App da Vercel com o repositorio original.
+Este documento foi escrito para apresentacao ao cliente. Ele explica o que o Sistema CARA entrega hoje, quais servicos de terceiros sustentam a operacao e quais custos de plataforma devem ser considerados.
 
-## Estado Atual
+## 1. O que e o CARA
 
-Existem dois repositorios envolvidos na conversa:
+O CARA e um sistema de gerenciamento escolar voltado para acompanhamento academico e comportamental. Ele foi estruturado para concentrar em um unico ambiente:
 
-- Repositorio original recomendado: `hadesds/Sistema-Gerenciamento-Escola`
-- Repositorio criado/importado na Vercel: `davilslv/sistemacara`
+- cadastro de turmas e alunos;
+- lancamento de notas por materia e bimestre;
+- acompanhamento comportamental por criterios pedagogicos;
+- banco de questoes e simulados;
+- registro de presenca e visualizacao de relatorios;
+- acesso separado para administracao, professores e alunos.
 
-Eles nao estao iguais. Na ultima verificacao:
+## 2. Modulos entregues nesta fase
 
-```text
-hadesds/Sistema-Gerenciamento-Escola main = 6a30758
-davilslv/sistemacara main = 5512597
-```
+### Modulos operacionais disponiveis
 
-O deploy manual feito na Vercel usou o codigo local atualizado, entao o site publicado esta correto naquele momento. Porem, para manutencao e deploy automatico, isso nao basta. O projeto Vercel precisa estar conectado ao repositorio oficial que recebera os commits futuros.
+| Modulo                    | O que permite hoje                                                       |
+| ------------------------- | ------------------------------------------------------------------------ |
+| Gestao de turmas e alunos | Cadastro de turmas, alunos, matriculas, fotos e vinculacao por professor |
+| Avaliacao comportamental  | Registro de assiduidade, participacao, responsabilidade e sociabilidade  |
+| Notas por materia         | Lancamento de notas por materia e por bimestre                           |
+| Provas individuais        | Registro de notas de provas por aluno, materia e epoca                   |
+| Banco de questoes         | Cadastro e organizacao de questoes por materia e dificuldade             |
+| Simulados                 | Criacao e disponibilizacao de simulados para turmas                      |
+| Frequencia                | Registro de presenca e ausencia                                          |
+| Relatorios                | Dashboards para professor e historico visivel ao aluno                   |
 
-Recomendacao:
+### Perfis de usuario
 
-```text
-Usar hadesds/Sistema-Gerenciamento-Escola como repositorio oficial.
-```
+| Perfil        | Uso principal                                                      |
+| ------------- | ------------------------------------------------------------------ |
+| Administrador | Gerencia o sistema e acessa o painel administrativo                |
+| Professor     | Lanca avaliacoes, notas, questoes, simulados e consulta relatorios |
+| Aluno         | Consulta simulados, feedback e informacoes pessoais                |
 
-Se o cliente assumir o projeto, o ideal e transferir esse repositorio para uma organizacao GitHub do cliente, ou criar um novo repositorio oficial na organizacao dele e migrar o historico para la.
+## 3. Limites atuais do produto
 
-## Arquitetura Recomendada
+Para manter a documentacao honesta com o estado do sistema, este escopo precisa ser entendido pelo cliente:
 
-Arquitetura atual de producao:
+1. O sistema ja cria simulados e os exibe aos alunos, mas ainda nao possui um fluxo completo de correcao automatica com historico detalhado de respostas por questao.
+2. Os relatorios atuais sao operacionais e pedagogicos, nao um modulo completo de BI ou analytics avancado.
+3. O sistema depende de servicos externos para banco, hospedagem e imagens. Esses servicos fazem parte da operacao normal do produto.
+4. Backup, monitoramento avancado e suporte continuado podem ser contratados a parte como servico da equipe desenvolvedora.
 
-```text
-Usuario
-  -> Vercel: frontend Next.js
-  -> Render: backend Django/DRF
-  -> Neon: banco PostgreSQL
-  -> Cloudinary: fotos/uploads
-```
+## 4. Servicos externos que sustentam o sistema
 
-Responsabilidades:
+O CARA nao depende apenas do codigo. Para ficar online de forma segura e estavel, ele precisa de servicos de infraestrutura terceirizados.
 
-- Vercel hospeda o frontend.
-- Render hospeda a API Django e o admin Django.
-- Neon armazena os dados relacionais.
-- Cloudinary armazena fotos de alunos e outros uploads.
-- GitHub guarda o codigo e dispara deploys automaticos.
+| Servico         | Funcao no CARA                                       | Plano minimo indicado | Plano recomendado hoje                                                   |
+| --------------- | ---------------------------------------------------- | --------------------- | ------------------------------------------------------------------------ |
+| GitHub          | Guarda o codigo e historico de versoes               | Free                  | Team, se o cliente quiser organizacao com mais de um responsavel tecnico |
+| Vercel          | Hospeda o frontend acessado por professores e alunos | Pro                   | Pro                                                                      |
+| Render          | Hospeda backend, API e admin Django                  | Starter               | Starter                                                                  |
+| Neon            | Banco PostgreSQL gerenciado                          | Launch                | Launch                                                                   |
+| Cloudinary      | Guarda fotos e uploads                               | Free                  | Free inicialmente; Plus apenas se o volume de imagens crescer bastante   |
+| Dominio proprio | Endereco publico do sistema                          | 1 dominio anual       | 1 dominio anual                                                          |
 
-Docker fica apenas para desenvolvimento local ou demonstracao offline. Ele nao deve ser usado para guardar fotos de producao.
+## 5. Premissas de valores
 
-## Por Que Nao Guardar Fotos no Docker
+As estimativas abaixo usam como referencia:
 
-Containers sao descartaveis. Em redeploy, reinicio ou troca de instancia, arquivos salvos dentro do container podem sumir. Volumes resolvem parcialmente em maquina local, mas criam dependencia da plataforma e complicam backup/migracao.
+- data-base: 22/05/2026;
+- cambio de referencia: `US$ 1 ~= R$ 5,60`;
+- valores sujeitos a alteracao pelas plataformas;
+- dominio tratado a parte porque normalmente e cobrado por ano;
+- custos de suporte, treinamento e manutencao nao estao incluidos nos custos de plataforma.
 
-Por isso:
+## 6. Tabela de custos estimados
 
-- Banco: Neon.
-- Fotos: Cloudinary.
-- Codigo: GitHub.
-- Aplicacao: Vercel + Render.
+| Servico           | Plano minimo indicado | Custo estimado             | Estimativa em BRL              | Observacao comercial                                                      |
+| ----------------- | --------------------- | -------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
+| GitHub            | Free                  | US$ 0/mes                  | R$ 0/mes                       | Pode ser suficiente se a equipe tecnica for pequena                       |
+| GitHub            | Team                  | US$ 4 por usuario/mes      | R$ 22,40 por usuario/mes       | Recomendado se o cliente quiser organizacao propria com governanca melhor |
+| Vercel            | Pro                   | US$ 20/mes                 | R$ 112,00/mes                  | Plano indicado para frontend em producao                                  |
+| Render            | Starter               | US$ 7/mes                  | R$ 39,20/mes                   | Evita limitacoes do plano gratuito                                        |
+| Neon              | Launch                | US$ 15/mes                 | R$ 84,00/mes                   | Banco gerenciado recomendado para uso real                                |
+| Cloudinary        | Free                  | US$ 0/mes                  | R$ 0/mes                       | Atende a fase inicial do projeto                                          |
+| Cloudinary        | Plus                  | US$ 99/mes                 | R$ 554,40/mes                  | Necessario apenas se o volume de imagens crescer muito                    |
+| Dominio `.com.br` | Registro anual        | cerca de R$ 40 a R$ 70/ano | cerca de R$ 3,33 a R$ 5,83/mes | Valor varia conforme registrador e extensao                               |
 
-## Contas Que o Cliente Deve Ter
+## 7. Cenarios sugeridos para contratacao
 
-O cliente deve assumir a propriedade das contas e formas de pagamento:
+### Cenario A: entrega deste mes com operacao minima viavel
 
-- GitHub: repositorio oficial do sistema.
-- Vercel: frontend.
-- Render: backend.
-- Neon: banco PostgreSQL.
-- Cloudinary: armazenamento de imagens.
-- Registro de dominio: por exemplo Registro.br, Cloudflare, GoDaddy ou similar.
+Indicado para colocar o sistema em producao com baixo risco e sem contratar recursos acima do necessario para uma escola de pequeno porte.
 
-Boa pratica:
+| Item       | Plano   |
+| ---------- | ------- |
+| GitHub     | Free    |
+| Vercel     | Pro     |
+| Render     | Starter |
+| Neon       | Launch  |
+| Cloudinary | Free    |
 
-- Criar uma organizacao no GitHub do cliente.
-- Criar um time/projeto Vercel do cliente.
-- Criar uma conta Render do cliente.
-- Criar uma conta Neon do cliente.
-- Criar uma conta Cloudinary do cliente.
-- Usar e-mail institucional do cliente, nao e-mail pessoal do desenvolvedor.
-
-## Custos Estimados
-
-Precos podem mudar. Consulte sempre as paginas oficiais antes de fechar contrato:
-
-- Vercel: https://vercel.com/pricing
-- Render: https://render.com/pricing
-- Neon: https://neon.com/pricing
-- Cloudinary: https://cloudinary.com/pricing
-
-### Cenario MVP / Baixo Trafego
-
-Adequado para piloto, escola pequena ou validacao inicial.
-
-```text
-Vercel Pro:       US$ 20/mes por developer seat
-Render Starter:  US$ 7/mes
-Neon Launch:     ~US$ 15/mes, variavel por uso
-Cloudinary Free: US$ 0/mes inicialmente
-Dominio:         varia, normalmente pago anual
-Total estimado:  ~US$ 42/mes + dominio
-```
-
-Observacao: Vercel Hobby e Render Free podem funcionar tecnicamente, mas nao sao recomendados para uso comercial/cliente real. Vercel Hobby e voltado a uso pessoal, e Render Free pode hibernar/ter limitacoes.
-
-### Cenario Producao Basica
-
-Mais adequado para cliente real, com mais previsibilidade e conta em nome do cliente.
+Total mensal estimado de plataforma:
 
 ```text
-Vercel Pro:              US$ 20/mes por developer seat
-Render Pro Workspace:    US$ 25/mes
-Render Starter Service:  US$ 7/mes
-Neon Launch:             ~US$ 15/mes, variavel por uso
-Cloudinary Free:         US$ 0/mes inicialmente
-Dominio:                 varia
-Total estimado:          ~US$ 67/mes + dominio
+US$ 42/mes
+R$ 235,20/mes
 ```
 
-### Cenario Com Mais Fotos/Arquivos
+Acrescimos possiveis:
 
-Se o uso de fotos crescer e passar do plano gratuito da Cloudinary:
+- dominio anual;
+- eventual custo de assentos no GitHub Team, se o cliente optar por governanca propria;
+- crescimento futuro do Cloudinary.
+
+### Cenario B: operacao recomendada para cliente com titularidade das contas
+
+Indicado quando a escola quer assumir a propriedade dos servicos e manter pelo menos dois responsaveis tecnicos com acesso ao repositorio.
+
+| Item       | Plano                |
+| ---------- | -------------------- |
+| GitHub     | Team para 2 usuarios |
+| Vercel     | Pro                  |
+| Render     | Starter              |
+| Neon       | Launch               |
+| Cloudinary | Free                 |
+
+Total mensal estimado de plataforma:
 
 ```text
-Cloudinary Plus: US$ 99/mes
-Total estimado com Cloudinary Plus: ~US$ 141 a US$ 166/mes + dominio
+US$ 50/mes
+R$ 280,00/mes
 ```
 
-### Custos Variaveis
+Esse cenario melhora governanca e titularidade sem elevar demais o custo mensal.
 
-Podem aumentar com:
+### Cenario C: crescimento com maior volume de imagens
 
-- Muitos acessos ao frontend.
-- Muitas requisicoes ao backend.
-- Fotos grandes ou muitas visualizacoes de imagens.
-- Crescimento do banco.
-- Muitas pessoas com acesso de desenvolvedor na Vercel.
-- Uso de logs/observabilidade pagos.
+Se o uso de fotos e uploads subir muito ao longo do tempo, o principal salto de custo tende a acontecer no Cloudinary.
 
-## Responsabilidades do Cliente
+| Item       | Plano                |
+| ---------- | -------------------- |
+| GitHub     | Team para 2 usuarios |
+| Vercel     | Pro                  |
+| Render     | Starter              |
+| Neon       | Launch               |
+| Cloudinary | Plus                 |
 
-O cliente deve assumir:
-
-- Pagamento das plataformas.
-- Titularidade do dominio.
-- Titularidade das contas.
-- Definicao de usuarios administrativos.
-- Politica de uso de dados dos alunos.
-- Responsabilidade legal sobre dados pessoais.
-- Backup e retencao conforme necessidade institucional.
-
-O fornecedor/desenvolvedor pode assumir por contrato:
-
-- Implantacao inicial.
-- Manutencao corretiva.
-- Evolucao funcional.
-- Monitoramento.
-- Suporte mensal.
-- Treinamento de administradores.
-
-## LGPD e Dados Escolares
-
-O sistema pode armazenar dados de alunos, possivelmente menores de idade. Antes de producao real, tratar como dado sensivel do ponto de vista operacional.
-
-Recomendacoes minimas:
-
-- Usar HTTPS em todos os dominios.
-- Senhas fortes para administradores.
-- Acesso admin restrito.
-- Principio do menor privilegio.
-- Politica de privacidade.
-- Registro de quem tem acesso administrativo.
-- Processo para remover/exportar dados quando necessario.
-- Backups e plano de restauracao.
-- Evitar expor dados em logs.
-- Nao compartilhar credenciais por WhatsApp ou documentos soltos.
-
-## Variaveis de Ambiente de Producao
-
-### Backend Render
-
-Obrigatorias:
-
-```env
-DEBUG=False
-SECRET_KEY=uma-chave-secreta-forte
-DATABASE_URL=postgresql://...
-CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-ALLOWED_HOSTS=.onrender.com,api.dominio-do-cliente.com.br
-CORS_ALLOWED_ORIGINS=https://app.dominio-do-cliente.com.br
-CORS_ALLOWED_ORIGIN_REGEXES=https://.*\.vercel\.app
-CSRF_TRUSTED_ORIGINS=https://api.dominio-do-cliente.com.br,https://app.dominio-do-cliente.com.br
-```
-
-Enquanto nao houver dominio proprio:
-
-```env
-ALLOWED_HOSTS=.onrender.com,localhost,127.0.0.1
-CORS_ALLOWED_ORIGINS=https://sistemacara.vercel.app
-CSRF_TRUSTED_ORIGINS=https://*.onrender.com,https://*.vercel.app
-```
-
-### Frontend Vercel
-
-Obrigatoria:
-
-```env
-NEXT_PUBLIC_API_URL=https://api.dominio-do-cliente.com.br
-```
-
-Enquanto nao houver dominio proprio:
-
-```env
-NEXT_PUBLIC_API_URL=https://url-do-backend.onrender.com
-```
-
-## Guia de Implementacao Para Cliente
-
-### 1. Preparar o Repositorio Oficial
-
-Escolher uma das opcoes:
-
-1. Manter `hadesds/Sistema-Gerenciamento-Escola`.
-2. Transferir esse repo para a organizacao GitHub do cliente.
-3. Criar um novo repo oficial do cliente e migrar o historico.
-
-Evitar manter dois repositorios ativos com conteudo divergente.
-
-### 2. Criar Banco na Neon
-
-1. Criar projeto Neon.
-2. Criar banco de producao.
-3. Copiar connection string pooled.
-4. Configurar `DATABASE_URL` na Render.
-5. Manter credencial fora do Git.
-
-### 3. Configurar Cloudinary
-
-1. Criar conta Cloudinary do cliente.
-2. Copiar `CLOUDINARY_URL`.
-3. Configurar na Render.
-4. Testar upload de foto no admin.
-
-### 4. Configurar Backend na Render
-
-1. Criar Web Service ou Blueprint apontando para o repo oficial.
-2. Root Directory: raiz do repositorio.
-3. Build Command:
-
-```bash
-bash build.sh
-```
-
-4. Start Command:
-
-```bash
-gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
-```
-
-5. Configurar env vars.
-6. Deploy.
-7. Verificar:
+Total mensal estimado de plataforma:
 
 ```text
-https://api.../
-https://api.../admin/
+US$ 149/mes
+R$ 834,40/mes
 ```
 
-### 5. Configurar Frontend na Vercel
+## 8. O que o cliente contrata de fato
 
-1. Criar/importar projeto Vercel apontando para o repo oficial.
-2. Configurar:
+Ao contratar o CARA em producao, o cliente passa a contratar dois grupos de itens diferentes:
 
-```text
-Root Directory: frontend
-Framework Preset: Next.js
-Install Command: npm ci
-Build Command: npm run build
-```
+### 8.1. Infraestrutura de terceiros
 
-3. Configurar:
+Sao os servicos mensais que mantem o sistema online:
 
-```env
-NEXT_PUBLIC_API_URL=https://api...
-```
+- hospedagem do frontend;
+- hospedagem do backend;
+- banco de dados gerenciado;
+- armazenamento de imagens;
+- repositorio e historico tecnico do sistema;
+- dominio, quando houver.
 
-4. Fazer deploy.
-5. Testar login e navegacao.
+Esses custos pertencem as plataformas e nao a equipe desenvolvedora.
 
-### 6. Configurar Dominio
+### 8.2. Servico profissional da equipe desenvolvedora
 
-Sugestao:
+Sao itens que podem ser cobrados separadamente por voces:
 
-```text
-app.dominio.com.br -> Vercel
-api.dominio.com.br -> Render
-```
+- implantacao inicial;
+- configuracao das contas e deploy;
+- treinamento de uso;
+- manutencao corretiva;
+- evolucao funcional;
+- suporte mensal;
+- monitoramento e revisao operacional.
 
-Depois atualizar env vars:
+Em contrato, o ideal e separar claramente `custo de plataforma` de `custo de servico`.
 
-- Vercel: `NEXT_PUBLIC_API_URL`
-- Render: `ALLOWED_HOSTS`
-- Render: `CORS_ALLOWED_ORIGINS`
-- Render: `CSRF_TRUSTED_ORIGINS`
+## 9. Responsabilidades recomendadas
 
-### 7. Criar Superusuario
+### Cliente
 
-No shell da Render:
+- pagar as plataformas contratadas;
+- ser titular das contas e do dominio;
+- definir quem tera acesso administrativo;
+- definir politica interna de uso dos dados;
+- aprovar as regras de acesso e responsabilidade institucional.
 
-```bash
-python manage.py createsuperuser
-```
+### Equipe desenvolvedora
 
-### 8. Checklist de Aceite
+- implantar o sistema pela primeira vez;
+- configurar integracoes tecnicas;
+- realizar ajustes corretivos acordados;
+- orientar o uso da plataforma;
+- apoiar em futuras evolucoes, se contratadas.
 
-- [ ] Frontend abre no dominio correto.
-- [ ] Backend responde no dominio correto.
-- [ ] Admin Django abre.
-- [ ] Superusuario entra no admin.
-- [ ] Professor entra no sistema.
-- [ ] Aluno entra no sistema.
-- [ ] Fotos aparecem.
-- [ ] Upload de foto funciona.
-- [ ] Banco persiste apos redeploy.
-- [ ] Deploy automatico funciona com push no GitHub.
-- [ ] Cliente tem acesso e billing das plataformas.
+## 10. Seguranca, LGPD e operacao
 
-## Como Resolver a Questao do GitHub App da Vercel
+Como o sistema lida com dados escolares, as seguintes medidas sao recomendadas desde o inicio:
 
-Problema observado:
+1. HTTPS ativo em todos os acessos.
+2. Senhas fortes para administradores.
+3. Menor numero possivel de usuarios com acesso administrativo.
+4. Credenciais guardadas fora de conversas informais e arquivos soltos.
+5. Processo minimo de backup e restauracao.
+6. Politica clara para desligamento de usuarios e troca de senhas.
 
-```text
-Failed to connect hadesds/Sistema-Gerenciamento-Escola to project.
-Make sure there aren't any typos and that you have access to the repository if it's private.
-```
+## 11. Recomendacao comercial para este projeto
 
-Isso significa que a Vercel nao tem permissao para acessar o repositorio `hadesds/Sistema-Gerenciamento-Escola` pelo GitHub App.
+Para o porte atual do CARA e para uma entrega ainda neste mes, a recomendacao mais equilibrada e:
 
-### Caminho Pela Vercel
+1. Vercel Pro para o frontend.
+2. Render Starter para o backend.
+3. Neon Launch para o banco.
+4. Cloudinary Free inicialmente.
+5. Dominio proprio do cliente assim que possivel.
+6. Contas em nome do cliente, com acesso tecnico delegado a equipe.
 
-1. Acesse a Vercel com a conta que e dona do projeto.
-2. Va em:
+Esse conjunto atende o momento atual do sistema com custo controlado, boa separacao de responsabilidades e menor risco operacional do que depender de planos gratuitos em producao.
 
-```text
-Account Settings > Git Integrations
-```
+## 12. Checklist de aceite para entrega ao cliente
 
-3. Em GitHub, clique em `Configure`.
-4. O GitHub vai abrir a pagina do app da Vercel.
-5. Escolha a conta/organizacao correta.
-6. Em `Repository access`, selecione uma das opcoes:
+- [ ] Cliente entende quais servicos serao cobrados mensalmente.
+- [ ] Cliente sabe que dominio e plataforma sao custos separados do servico dos desenvolvedores.
+- [ ] Cliente recebeu a lista de contas que deve possuir.
+- [ ] Cliente aprovou o cenario de custo escolhido.
+- [ ] Cliente sabe quem sera responsavel por billing e acessos.
+- [ ] Cliente recebeu treinamento basico de uso e administracao.
 
-```text
-All repositories
-```
+## 13. Observacao final sobre valores
 
-ou:
-
-```text
-Only select repositories
-```
-
-7. Se escolher repositorios especificos, adicione:
-
-```text
-hadesds/Sistema-Gerenciamento-Escola
-```
-
-8. Salve a instalacao.
-9. Volte para a Vercel.
-10. Reconecte o projeto ao repo original.
-
-### Caminho Pelo GitHub
-
-1. Acesse GitHub.
-2. Va em:
-
-```text
-Settings > Applications > Installed GitHub Apps
-```
-
-3. Encontre `Vercel`.
-4. Clique em `Configure`.
-5. Em `Repository access`, libere:
-
-```text
-hadesds/Sistema-Gerenciamento-Escola
-```
-
-6. Salve.
-7. Volte para Vercel e tente conectar/importar novamente.
-
-### Depois de Liberar Permissao
-
-Na maquina local, dentro da raiz do repositorio, rode:
-
-```bash
-npx vercel link --yes --project sistemacara
-npx vercel git connect https://github.com/hadesds/Sistema-Gerenciamento-Escola
-```
-
-Ou faca pelo painel:
-
-```text
-Vercel > Project > Settings > Git > Connected Git Repository
-```
-
-Conecte:
-
-```text
-hadesds/Sistema-Gerenciamento-Escola
-```
-
-Confira:
-
-```text
-Root Directory: frontend
-Framework Preset: Next.js
-Install Command: npm ci
-Build Command: npm run build
-```
-
-### Se o Repo Original Nao Aparecer
-
-Possiveis causas:
-
-- A conta Vercel nao tem acesso ao repo.
-- O GitHub App da Vercel nao foi instalado na organizacao certa.
-- O repo e privado e nao foi selecionado na lista de repositorios permitidos.
-- Voce esta logado na Vercel com outro usuario/time.
-- O repo pertence a uma organizacao que exige permissao de administrador para instalar apps.
-
-Solucao:
-
-- Pedir para o dono/admin do repo ou organizacao GitHub liberar o app da Vercel.
-- Ou transferir o repo para uma organizacao controlada pelo cliente.
-
-## O Que Fazer Com `davilslv/sistemacara`
-
-Esse repo pode ser:
-
-1. Removido, se foi criado apenas por engano/import inicial.
-2. Mantido como backup temporario.
-3. Transformado no repo oficial, mas so se ele for atualizado com todo o conteudo do original.
-
-Recomendacao:
-
-```text
-Nao usar dois repositorios oficiais.
-```
-
-Se ficar usando `davilslv/sistemacara`, qualquer correcao feita em `hadesds/Sistema-Gerenciamento-Escola` nao chegara automaticamente na Vercel.
-
-## Operacao Mensal
-
-Rotina recomendada:
-
-- Verificar deploys da Vercel.
-- Verificar deploys da Render.
-- Verificar erros de login/API.
-- Verificar consumo Neon.
-- Verificar consumo Cloudinary.
-- Fazer backup/export periodico quando necessario.
-- Atualizar dependencias com cuidado.
-- Testar fluxo principal apos cada deploy.
-
-## Plano de Manutencao Sugerido
-
-Para cliente real, vender manutencao mensal separada da infraestrutura.
-
-Itens possiveis:
-
-- Suporte tecnico.
-- Pequenas correcoes.
-- Monitoramento de deploy.
-- Ajuste de usuarios.
-- Atualizacoes de seguranca.
-- Backup e verificacao mensal.
-- Relatorio mensal simples de saude do sistema.
-
-O custo da infraestrutura deve ser pago diretamente pelo cliente nas plataformas. O custo de manutencao e servico profissional deve ser contratado separadamente.
+Antes da assinatura final ou da emissao de proposta comercial, revisem os precos nas paginas oficiais de Vercel, Render, Neon, Cloudinary e do registrador de dominio escolhido. O documento acima deve ser tratado como base tecnica e comercial, nao como tabela congelada de faturamento.

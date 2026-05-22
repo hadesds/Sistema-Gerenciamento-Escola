@@ -1,83 +1,124 @@
-# Deploy do Projeto CARA
+# Guia Tecnico de Deploy do CARA
 
-Este documento explica o que foi preparado no projeto, o que ainda precisa ser feito nos paineis da Neon, Cloudinary, Render e Vercel, e como voltar a usar Docker localmente caso seja necessario.
+Este documento e a referencia tecnica para publicar, operar e repassar o Sistema CARA em producao. O foco aqui e a equipe de desenvolvimento.
 
-## Visao Geral
+## 1. Objetivo e escopo
 
-A arquitetura recomendada ficou assim:
+O CARA hoje esta preparado para operar com a seguinte arquitetura:
 
-- Frontend: Next.js hospedado na Vercel.
-- Backend: Django/DRF hospedado na Render.
-- Banco: PostgreSQL gerenciado na Neon.
-- Fotos/uploads: Cloudinary.
-- Docker: mantido apenas como ambiente local/opcional.
+```text
+Usuario
+  -> Frontend Next.js na Vercel
+  -> Backend Django/DRF na Render
+  -> Banco PostgreSQL na Neon
+  -> Imagens e uploads na Cloudinary
+```
 
-O motivo da separacao e simples: container nao e um bom lugar para guardar fotos em producao, porque redeploys e reinicios podem trocar ou apagar o filesystem local. Por isso o banco fica na Neon e os arquivos ficam na Cloudinary.
+Docker continua util para desenvolvimento local e demonstracoes internas, mas nao deve ser tratado como camada de persistencia de producao.
 
-## O Que Foi Alterado
+## 2. Stack confirmado
 
-Arquivos principais:
+| Camada    | Tecnologia                            | Hospedagem recomendada | Observacao                                          |
+| --------- | ------------------------------------- | ---------------------- | --------------------------------------------------- |
+| Frontend  | Next.js 15 + React 19 + TypeScript    | Vercel                 | Projeto configurado com `Root Directory = frontend` |
+| Backend   | Django 5 + DRF + SimpleJWT + Gunicorn | Render                 | Admin Django e API ficam no mesmo servico           |
+| Banco     | PostgreSQL                            | Neon                   | Consumido via `DATABASE_URL`                        |
+| Arquivos  | Cloudinary                            | Cloudinary             | Ativado por `CLOUDINARY_URL`                        |
+| Estaticos | WhiteNoise                            | Mesmo backend          | `build.sh` faz `collectstatic` antes do start       |
+| Codigo    | GitHub                                | Repositorio oficial    | Dispara deploy automatizado                         |
 
-- `gestao_escolar/settings.py`
-  - Passou a ler `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, CORS/CSRF e banco via variaveis de ambiente.
-  - Passou a aceitar `DATABASE_URL` para usar Neon.
-  - Adicionou WhiteNoise para servir arquivos estaticos.
-  - Adicionou suporte opcional a Cloudinary quando `CLOUDINARY_URL` existir.
-  - Manteve armazenamento local em `media/` quando `CLOUDINARY_URL` nao existir, util para desenvolvimento.
+## 3. Principios de implantacao
 
-- `requirements.txt`
-  - Adicionou `dj-database-url`, `gunicorn`, `whitenoise`, `cloudinary` e `django-cloudinary-storage`.
+1. Dados de producao nao ficam dentro do container.
+2. Banco e arquivos precisam ser externos ao runtime da aplicacao.
+3. O repositorio oficial deve ser unico. Evite manter dois repositorios divergentes em paralelo.
+4. A equipe deve diferenciar ambiente local, homologacao e producao, mesmo que hoje a homologacao ainda seja opcional.
+5. As contas e o billing devem preferencialmente ficar em nome do cliente na entrega.
 
-- `render.yaml`
-  - Blueprint para criar o Web Service da Render.
-  - Define build, start command e variaveis esperadas.
+## 4. Requisitos minimos e recomendados
 
-- `build.sh`
-  - Instala dependencias.
-  - Roda `collectstatic`.
-  - Roda migrations.
+### Requisitos minimos para entrar em producao
 
-- `Procfile`
-  - Define start command generico para plataformas que leem Procfile.
+- Repositorio oficial atualizado no GitHub.
+- Conta Neon com banco PostgreSQL disponivel e `DATABASE_URL` pooled com SSL.
+- Conta Cloudinary com `CLOUDINARY_URL` configurada.
+- Backend Django publicado na Render com `bash build.sh` e `gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT`.
+- Frontend Next.js publicado na Vercel com `Root Directory = frontend`.
+- `NEXT_PUBLIC_API_URL` apontando para a URL publica do backend.
+- Pelo menos uma conta administrativa valida.
+- Smoke tests executados apos o deploy.
 
-- `frontend/src/lib/api.ts`
-  - Centraliza `NEXT_PUBLIC_API_URL`.
-  - Remove barra final da URL para evitar endpoints quebrados.
+### Requisitos recomendados para entrega ao cliente
 
-- `frontend/src/context/AuthContext.tsx` e `frontend/src/app/page.tsx`
-  - Redirecionamento para `/admin/` agora usa a URL configurada da API.
+- Plano pago de producao no backend. O `render.yaml` pode servir de base, mas a entrega deve usar pelo menos `Starter` na Render.
+- Banco em plano gerenciado da Neon para uso real, evitando depender de tier gratuito em producao.
+- Dominio proprio para `app.` e `api.`.
+- Contas e faturamento em nome do cliente.
+- Checklist de backup/restore antes de migrations estruturais.
+- Registro de quem possui acesso administrativo a Vercel, Render, Neon, Cloudinary e GitHub.
+- Ambiente de homologacao quando houver risco de mudancas frequentes antes do fim do periodo letivo.
 
-- `frontend/next.config.js`
-  - Permite imagens vindas do dominio configurado em `NEXT_PUBLIC_API_URL`.
-  - Mantem `localhost` e `cara_app` para desenvolvimento local/Docker.
+## 5. Ordem correta de provisionamento
 
-- `frontend/vercel.json`
-  - Define comandos de install/build para a Vercel.
+Use sempre esta sequencia para deploy inicial:
 
-- `.env.example` e `frontend/.env.example`
-  - Exemplos das variaveis necessarias.
+1. Confirmar repositorio oficial e branch principal.
+2. Criar ou revisar o banco na Neon.
+3. Criar ou revisar a conta Cloudinary.
+4. Publicar o backend na Render.
+5. Criar admin ou seed demo no backend.
+6. Publicar o frontend na Vercel.
+7. Configurar dominios customizados, se houver.
+8. Executar smoke tests de ponta a ponta.
 
-- `.gitignore`
-  - Impede commit de `.env`, `media/`, `staticfiles/`, caches e builds locais.
+Essa ordem evita configurar o frontend antes da URL real do backend e evita iniciar o backend sem banco e storage corretos.
 
-## Neon
+## 6. Matriz de variaveis de ambiente
 
-Projeto criado:
+### Backend na Render
 
-- Nome: `projetocara`
-- Project ID: `floral-sunset-47934317`
-- Branch: `main`
-- Branch ID: `br-soft-star-akmxr6fv`
-- Database: `neondb`
+| Variavel                      | Obrigatoria     | Exemplo                                                         | Uso                                           |
+| ----------------------------- | --------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `DEBUG`                       | Sim             | `False`                                                         | Deve ficar desativado em producao             |
+| `SECRET_KEY`                  | Sim             | gerada pela plataforma                                          | Chave secreta do Django                       |
+| `DATABASE_URL`                | Sim             | `postgresql://USER:PASSWORD@HOST/neondb?sslmode=require`        | Conexao com Neon                              |
+| `ALLOWED_HOSTS`               | Sim             | `.onrender.com,api.cara.escola.com.br`                          | Hosts aceitos pelo Django                     |
+| `CORS_ALLOWED_ORIGINS`        | Sim             | `https://app.cara.escola.com.br`                                | Origem do frontend                            |
+| `CORS_ALLOWED_ORIGIN_REGEXES` | Nao             | `https://.*\.vercel\.app`                                       | Ajuda em previews da Vercel                   |
+| `CSRF_TRUSTED_ORIGINS`        | Sim             | `https://api.cara.escola.com.br,https://app.cara.escola.com.br` | Protecao CSRF no admin                        |
+| `CLOUDINARY_URL`              | Sim em producao | `cloudinary://API_KEY:API_SECRET@CLOUD_NAME`                    | Ativa storage remoto de uploads               |
+| `FRONTEND_URL`                | Recomendado     | `https://app.cara.escola.com.br`                                | Redirecionamentos do admin                    |
+| `SEED_DEMO`                   | Opcional        | `true`                                                          | Roda `seed_demo` no build                     |
+| `DEMO_PASSWORD`               | Opcional        | `SenhaForteAqui`                                                | Senha das contas demo quando `SEED_DEMO=true` |
 
-O que fazer agora:
+Observacoes:
 
-1. Entrar no painel da Neon.
-2. Abrir o projeto `projetocara`.
-3. Copiar a connection string pooled do banco.
-4. Usar essa connection string como `DATABASE_URL` na Render.
+- O `build.sh` ja instala dependencias, roda `collectstatic` e aplica migrations.
+- O `build.sh` forca `STATICFILES_STORAGE=django.contrib.staticfiles.storage.StaticFilesStorage` apenas durante o collectstatic para evitar falha conhecida com WhiteNoise e arquivos do pacote Cloudinary.
+- Sem `CLOUDINARY_URL`, o Django volta a salvar em `media/` local. Isso e aceitavel somente fora da producao.
 
-Importante: nao coloque a connection string real no Git. Ela contem usuario e senha.
+### Frontend na Vercel
+
+| Variavel              | Obrigatoria | Exemplo                                | Uso                              |
+| --------------------- | ----------- | -------------------------------------- | -------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Sim         | `https://projetocara-api.onrender.com` | Base URL consumida pelo frontend |
+
+Observacao: use a origem sem barra final.
+
+## 7. Deploy inicial passo a passo
+
+### 7.1. Repositorio oficial
+
+1. Defina um unico repositorio como fonte da verdade.
+2. Garanta que a branch principal esteja atualizada e versionada.
+3. Se o cliente for assumir o projeto, prefira uma organizacao GitHub do cliente.
+
+### 7.2. Banco na Neon
+
+1. Criar projeto e banco de producao.
+2. Copiar a connection string pooled.
+3. Guardar a URL fora do Git.
+4. Usar esta URL em `DATABASE_URL` na Render.
 
 Formato esperado:
 
@@ -85,13 +126,12 @@ Formato esperado:
 DATABASE_URL=postgresql://USUARIO:SENHA@HOST/neondb?sslmode=require
 ```
 
-## Cloudinary
+### 7.3. Storage na Cloudinary
 
-O que fazer agora:
-
-1. Entrar no painel da Cloudinary.
+1. Criar a conta do projeto ou do cliente.
 2. Copiar a `CLOUDINARY_URL`.
-3. Configurar essa URL na Render como variavel de ambiente.
+3. Configurar a variavel na Render.
+4. Validar upload de foto depois do deploy.
 
 Formato esperado:
 
@@ -99,187 +139,152 @@ Formato esperado:
 CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
 ```
 
-Com isso, novas fotos enviadas pelo Django passam a ser salvas na Cloudinary. Sem essa variavel, o Django salva em `media/` local, o que serve para desenvolvimento, mas nao para producao.
+### 7.4. Backend na Render
 
-## Render
-
-Use a Render para publicar o backend Django.
-
-### Caminho Recomendado
-
-1. No painel da Render, criar um novo Blueprint ou Web Service a partir do repo:
-
-```text
-https://github.com/hadesds/Sistema-Gerenciamento-Escola
-```
-
-2. Se usar Blueprint, a Render deve detectar `render.yaml`.
-
-3. Confirmar as configuracoes:
+Configuracao base do servico:
 
 ```text
 Service name: projetocara-api
 Runtime: Python
-Build command: bash build.sh
-Start command: gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
+Build Command: bash build.sh
+Start Command: gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
 Python version: 3.11.9
+Root Directory: raiz do repositorio
 ```
 
-4. Configurar as variaveis:
+Notas importantes:
+
+- O `render.yaml` atualmente usa `plan: free` como bootstrap. Para cliente real, altere o plano no painel para `Starter` ou superior antes do go-live.
+- Se a Render criar start command padrao incorreto, substitua manualmente pelo comando acima.
+
+Variaveis minimas no painel da Render:
 
 ```env
 DEBUG=False
-DATABASE_URL=connection-string-da-neon
-CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-CORS_ALLOWED_ORIGINS=https://projetocara.vercel.app
-```
-
-O `render.yaml` ja define:
-
-```env
-PYTHON_VERSION=3.11.9
+DATABASE_URL=postgresql://...
+CLOUDINARY_URL=cloudinary://...
 ALLOWED_HOSTS=.onrender.com,localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=https://projetocara.vercel.app
 CORS_ALLOWED_ORIGIN_REGEXES=https://.*\.vercel\.app
 CSRF_TRUSTED_ORIGINS=https://*.onrender.com,https://*.vercel.app
+FRONTEND_URL=https://projetocara.vercel.app
 ```
 
-5. Fazer deploy.
-
-6. Aguardar a Render rodar:
-
-```text
-pip install -r requirements.txt
-python manage.py collectstatic --noinput --clear
-python manage.py migrate
-gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
-```
-
-7. Copiar a URL publica do backend, algo como:
-
-```text
-https://projetocara-api.onrender.com
-```
-
-8. Testar no navegador:
+Depois do deploy, teste:
 
 ```text
 https://projetocara-api.onrender.com/
 https://projetocara-api.onrender.com/admin/
 ```
 
-Se `/` retornar a mensagem da API, o backend subiu.
+### 7.5. Criar superusuario ou seed demo
 
-## Vercel
-
-Use a Vercel para publicar o frontend Next.js.
-
-Voce comentou que ja criou um projeto chamado `projetocara`. Configure ele assim:
-
-```text
-Root Directory: frontend
-Framework Preset: Next.js
-Install Command: npm ci
-Build Command: npm run build
-Output Directory: deixar padrao
-```
-
-Variavel obrigatoria:
-
-```env
-NEXT_PUBLIC_API_URL=https://URL-DO-BACKEND-RENDER
-```
-
-Exemplo:
-
-```env
-NEXT_PUBLIC_API_URL=https://projetocara-api.onrender.com
-```
-
-Depois de configurar a variavel:
-
-1. Rodar redeploy na Vercel.
-2. Abrir a URL da Vercel.
-3. Testar login.
-4. Testar redirecionamento de admin para `/admin/` no backend.
-5. Testar exibicao de fotos.
-
-## Ordem Correta Para Tudo Rodar
-
-1. Confirmar que a branch `main` esta atualizada no GitHub.
-2. No Cloudinary, copiar `CLOUDINARY_URL`.
-3. No Neon, copiar `DATABASE_URL`.
-4. Na Render, criar o backend usando `render.yaml`.
-5. Na Render, preencher `DATABASE_URL`, `CLOUDINARY_URL` e `CORS_ALLOWED_ORIGINS`.
-6. Esperar deploy do backend terminar.
-7. Abrir a URL do backend e testar `/`.
-8. Na Vercel, configurar `Root Directory = frontend`.
-9. Na Vercel, configurar `NEXT_PUBLIC_API_URL` com a URL da Render.
-10. Redeploy da Vercel.
-11. Testar o sistema completo.
-
-## Criar Superusuario Em Producao
-
-Depois que o backend estiver publicado e conectado na Neon, crie um superusuario pelo shell da Render.
-
-No shell/console da Render, rode:
+Opcao 1, recomendada para cliente real:
 
 ```bash
 python manage.py createsuperuser
 ```
 
-Depois acesse:
-
-```text
-https://URL-DO-BACKEND-RENDER/admin/
-```
-
-Se estiver usando instancia Free da Render, o Shell pode nao estar disponivel. Para prototipo, use o comando de seed automatico:
+Opcao 2, util para demo controlada:
 
 ```env
 SEED_DEMO=true
 DEMO_PASSWORD=UmaSenhaForteAqui
 ```
 
-Depois faca um novo deploy. O build executara `python manage.py seed_demo` apos as migrations e criara contas demo, incluindo um admin.
-
-Para producao real, remova ou desative:
+O seed cria contas demonstrativas previsiveis. Remova ou desative isso antes da operacao normal:
 
 ```env
 SEED_DEMO=false
 ```
 
-## Variaveis De Ambiente
+### 7.6. Frontend na Vercel
 
-### Backend
+Configuracao base do projeto:
 
-Obrigatorias em producao:
-
-```env
-DEBUG=False
-SECRET_KEY=gerada-pela-render-ou-manual
-DATABASE_URL=postgresql://...
-ALLOWED_HOSTS=.onrender.com,localhost,127.0.0.1
-CORS_ALLOWED_ORIGINS=https://projetocara.vercel.app
-CORS_ALLOWED_ORIGIN_REGEXES=https://.*\.vercel\.app
-CSRF_TRUSTED_ORIGINS=https://*.onrender.com,https://*.vercel.app
-CLOUDINARY_URL=cloudinary://...
+```text
+Root Directory: frontend
+Framework Preset: Next.js
+Install Command: npm ci
+Build Command: npm run build
 ```
 
-### Frontend
-
-Obrigatoria em producao:
+Variavel obrigatoria:
 
 ```env
-NEXT_PUBLIC_API_URL=https://URL-DO-BACKEND-RENDER
+NEXT_PUBLIC_API_URL=https://projetocara-api.onrender.com
 ```
 
-## Como Usar Docker Se Necessario
+Depois do deploy:
 
-Docker continua funcionando como ambiente local. Ele nao deve ser usado para guardar fotos em producao, mas pode ser usado para desenvolver, testar ou apresentar o projeto localmente.
+1. Abrir a URL da Vercel.
+2. Testar login.
+3. Testar redirecionamento para o admin Django.
+4. Testar exibicao de fotos.
 
-### Criar `.env` Local
+### 7.7. Dominios customizados
 
-Crie um arquivo `.env` na raiz do projeto com valores locais:
+Padrao sugerido:
+
+```text
+app.dominio-do-cliente.com.br -> Vercel
+api.dominio-do-cliente.com.br -> Render
+```
+
+Quando o dominio entrar, atualize:
+
+- `NEXT_PUBLIC_API_URL`
+- `ALLOWED_HOSTS`
+- `CORS_ALLOWED_ORIGINS`
+- `CSRF_TRUSTED_ORIGINS`
+- `FRONTEND_URL`
+
+## 8. Smoke tests obrigatorios apos o deploy
+
+Execute pelo menos estes testes antes de declarar a entrega pronta:
+
+1. Backend responde na raiz.
+2. Admin Django abre e autentica.
+3. Login de professor funciona.
+4. Login de aluno funciona.
+5. Tela principal do frontend carrega sem erro de CORS.
+6. Upload de foto funciona e a imagem reaparece apos refresh.
+7. Dado salvo continua disponivel apos redeploy.
+8. Push no repositorio oficial dispara novo deploy.
+
+## 9. Operacao recorrente
+
+### Deploy recorrente
+
+1. Subir mudancas para a branch principal.
+2. Conferir se Vercel e Render detectaram o commit correto.
+3. Validar migrations antes de mexer em estruturas de dados sensiveis.
+4. Reexecutar smoke tests do item 8.
+
+### Backup antes de mudancas estruturais
+
+Antes de migrations que alterem dados ou tabelas de forma irreversivel:
+
+1. Exportar backup do Neon pelo painel ou por `pg_dump`.
+2. Registrar o commit do deploy.
+3. Somente depois aplicar migrations em producao.
+
+### Rollback
+
+Frontend:
+
+- Na Vercel, reimplantar o deployment anterior estavel.
+
+Backend:
+
+- Na Render, voltar ao commit anterior ou disparar novo deploy com a revisao estavel.
+- Se uma migration ja tiver alterado dados, o rollback da aplicacao sozinho pode nao bastar. Nessa situacao, restaure o backup do banco ou aplique a migracao reversa compativel.
+
+## 10. Docker local e demonstracao interna
+
+Docker continua valido para desenvolvimento local.
+
+Exemplo de `.env` local na raiz:
 
 ```env
 DEBUG=True
@@ -290,194 +295,69 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 ```
 
-Nao coloque `DATABASE_URL` nesse `.env` local se quiser usar o Postgres do Docker. Sem `DATABASE_URL`, o Django usa as variaveis `POSTGRES_*`.
-
-### Subir Tudo Com Docker
-
-Na raiz do projeto:
+Subida local:
 
 ```bash
 docker compose up --build
 ```
 
-Servicos locais:
+URLs locais esperadas:
 
 ```text
 Frontend: http://localhost:3000
 Backend/API: http://localhost:5433
 Admin Django: http://localhost:5433/admin/
-Postgres Docker: db:5432 dentro da rede Docker
 ```
 
-### Onde As Fotos Ficam No Docker
+Importante:
 
-No `docker-compose.yml`, o backend monta:
+- Sem `DATABASE_URL`, o backend usa as variaveis `POSTGRES_*`.
+- Sem `CLOUDINARY_URL`, os arquivos vao para `media/` local.
+- `docker compose down -v` remove banco e uploads locais. Use com cuidado.
 
-```yaml
-volumes:
-  - media_root:/app/media
-```
+## 11. Troubleshooting rapido
 
-Isso cria um volume Docker chamado `media_root`. Ele persiste enquanto o volume existir na maquina local.
+### Frontend nao faz login
 
-Para listar volumes:
-
-```bash
-docker volume ls
-```
-
-Para apagar tudo do Docker local, incluindo fotos e banco local, use com cuidado:
-
-```bash
-docker compose down -v
-```
-
-Esse comando remove os volumes `postgres_data` e `media_root`.
-
-### Quando Usar Docker
-
-Use Docker para:
-
-- Desenvolvimento local.
-- Testes rapidos com Postgres local.
-- Apresentacao local sem depender da internet.
-- Reproduzir o ambiente antigo.
-
-Nao use Docker local para:
-
-- Guardar fotos de producao.
-- Substituir Cloudinary.
-- Substituir Neon.
-- Fazer deploy na Vercel.
-
-## Troubleshooting
-
-### Frontend nao consegue fazer login
-
-Verifique na Vercel:
+Conferir:
 
 ```env
-NEXT_PUBLIC_API_URL=https://URL-DO-BACKEND-RENDER
+NEXT_PUBLIC_API_URL=https://URL-DO-BACKEND
+CORS_ALLOWED_ORIGINS=https://URL-DO-FRONTEND
 ```
 
-Verifique na Render:
+Use origem sem barra final.
 
-```env
-CORS_ALLOWED_ORIGINS=https://URL-DA-VERCEL
-```
+### Backend falha ao subir por banco
 
-Depois faca redeploy do frontend.
-
-Importante: em `CORS_ALLOWED_ORIGINS`, use a origem sem barra final:
-
-```env
-CORS_ALLOWED_ORIGINS=https://sistemacara.vercel.app
-```
-
-Evite:
-
-```env
-CORS_ALLOWED_ORIGINS=https://sistemacara.vercel.app/
-```
-
-### Erro de banco no backend
-
-Verifique:
-
-```env
-DATABASE_URL=postgresql://...
-```
-
-A URL da Neon precisa ter SSL habilitado, normalmente com:
-
-```text
-sslmode=require
-```
+Conferir `DATABASE_URL` com SSL habilitado, normalmente com `sslmode=require`.
 
 ### Fotos nao aparecem
 
-Verifique:
+Conferir `CLOUDINARY_URL`. Fotos antigas salvas apenas em `media/` local nao migram automaticamente para a Cloudinary.
+
+### Admin retorna erro de host ou CSRF
+
+Conferir:
 
 ```env
-CLOUDINARY_URL=cloudinary://...
+ALLOWED_HOSTS=...
+CSRF_TRUSTED_ORIGINS=...
+FRONTEND_URL=...
 ```
-
-Novas fotos devem ir para a Cloudinary. Fotos antigas que estavam em `media/` local nao vao aparecer automaticamente na producao, a menos que sejam reenviadas ou migradas para a Cloudinary.
-
-### Admin nao abre
-
-Verifique:
-
-```env
-ALLOWED_HOSTS=.onrender.com,localhost,127.0.0.1
-CSRF_TRUSTED_ORIGINS=https://*.onrender.com,https://*.vercel.app
-```
-
-Depois rode novo deploy na Render.
 
 ### Render tenta rodar `gunicorn app:app`
 
-Esse erro indica que a Render criou o servico com o comando padrao errado, geralmente de Flask:
-
-```text
-ModuleNotFoundError: No module named 'app'
-```
-
-Corrija no painel da Render:
+Corrigir manualmente no painel:
 
 ```text
 Build Command: bash build.sh
 Start Command: gunicorn gestao_escolar.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
-Tambem confira:
+### Vercel tenta publicar a raiz Django
 
-```text
-Root Directory: vazio / raiz do repositorio
-PYTHON_VERSION: 3.11.9
-```
-
-Depois clique em `Manual Deploy` e use `Clear build cache & deploy`.
-
-### `collectstatic` falha em arquivo do Cloudinary/WhiteNoise
-
-Erro parecido:
-
-```text
-FileNotFoundError: staticfiles/cloudinary/js/jquery.ui.widget.js
-```
-
-O projeto foi ajustado para usar `StaticFilesStorage` no build da Render e evitar a etapa de compressao/manifest que falhava nesse arquivo do pacote Cloudinary. O `build.sh` tambem usa:
-
-```bash
-python manage.py collectstatic --noinput --clear
-```
-
-Depois de atualizar a branch `main`, rode na Render:
-
-```text
-Manual Deploy > Clear build cache & deploy
-```
-
-### Build do frontend falha por versao local
-
-O `package.json` e o `package-lock.json` apontam para Next 15. Na Vercel, o comando correto e:
-
-```bash
-npm ci
-```
-
-Isso ignora `node_modules` local e instala exatamente pelo lockfile.
-
-### Vercel tenta publicar Django em vez do frontend
-
-Erro parecido:
-
-```text
-Error: No django entrypoint found.
-```
-
-Isso acontece quando a Vercel esta usando a raiz do repositorio como projeto. Como este repo tem Django na raiz e Next.js dentro de `frontend`, a Vercel precisa estar configurada assim:
+Corrigir projeto para:
 
 ```text
 Root Directory: frontend
@@ -486,29 +366,15 @@ Install Command: npm ci
 Build Command: npm run build
 ```
 
-Tambem confira se o projeto da Vercel esta conectado ao repositorio correto. Se ela mostrar algo como:
+## 12. Checklist final de handoff tecnico
 
-```text
-Cloning github.com/davilslv/sistemacara
-```
-
-mas o deploy deve vir de:
-
-```text
-github.com/hadesds/Sistema-Gerenciamento-Escola
-```
-
-entao remova esse projeto da Vercel ou reconecte o projeto ao repositorio correto. Se voce quiser continuar usando `davilslv/sistemacara`, garanta que esse repo tambem tenha a pasta `frontend` e configure `Root Directory: frontend`.
-
-## Checklist Final
-
-- [ ] Neon criado e `DATABASE_URL` copiada.
-- [ ] Cloudinary criado e `CLOUDINARY_URL` copiada.
-- [ ] Backend Render publicado.
-- [ ] Migrations rodaram no build da Render.
-- [ ] Superusuario criado.
-- [ ] Frontend Vercel com `Root Directory = frontend`.
-- [ ] Vercel com `NEXT_PUBLIC_API_URL` apontando para Render.
-- [ ] Login testado.
-- [ ] Admin testado.
-- [ ] Fotos testadas.
+- [ ] Repositorio oficial definido.
+- [ ] Billing e acessos das plataformas revisados.
+- [ ] `DATABASE_URL` configurada e testada.
+- [ ] `CLOUDINARY_URL` configurada e testada.
+- [ ] Backend publicado com sucesso.
+- [ ] Frontend publicado com sucesso.
+- [ ] Conta admin criada.
+- [ ] Smoke tests executados.
+- [ ] Procedimento de rollback combinado.
+- [ ] Responsaveis por operacao mensal identificados.

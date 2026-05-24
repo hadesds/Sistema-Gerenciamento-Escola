@@ -10,9 +10,9 @@ from .models import (
 )
 
 
-def _escala_comportamento(valor_1_5: float) -> float:
-    """Converte nota 1–5 para escala 0–2.5."""
-    return round((valor_1_5 - 1) * (2.5 / 4), 2)
+def _escala_comportamento(valor_0_5: float) -> float:
+    """Converte nota 0–5 (step 0.5) para pontuação 0–2.5."""
+    return round(float(valor_0_5) / 2, 2)
 
 
 # ─── Inlines User ───────────────────────────────────────────────────────────
@@ -143,8 +143,8 @@ class AvaliacaoAdmin(admin.ModelAdmin):
         ('Identificação', {
             'fields': ['aluno', 'professor', 'materia', 'data'],
         }),
-        ('Comportamento (escala 0 – 2.5 pts)', {
-            'description': 'Cada critério é registrado de 1 a 5 e exibido na escala 0–2.5.',
+        ('Comportamento (0 a 5, step 0.5 → exibido como 0–2.5 pts)', {
+            'description': 'Cada critério aceita valores de 0 a 5 em passos de 0.5. A pontuação exibida é valor ÷ 2 (escala 0–2.5 pts).',
             'fields': ['assiduidade', 'participacao', 'responsabilidade', 'sociabilidade',
                        'get_media_comportamento'],
         }),
@@ -308,7 +308,7 @@ class AlternativaInline(admin.TabularInline):
 
 @admin.register(Questao)
 class QuestaoAdmin(admin.ModelAdmin):
-    list_display = ['materia', 'tipo', 'dificuldade', 'get_enunciado_curto', 'exige_justificativa', 'autor', 'data_criacao']
+    list_display = ['materia', 'tipo', 'dificuldade', 'get_enunciado_curto', 'tem_imagem', 'exige_justificativa', 'autor', 'data_criacao']
     list_filter = ['materia', 'tipo', 'dificuldade', 'exige_justificativa', 'data_criacao', 'autor']
     search_fields = ['materia__nome', 'enunciado', 'autor__user__first_name']
     date_hierarchy = 'data_criacao'
@@ -317,6 +317,10 @@ class QuestaoAdmin(admin.ModelAdmin):
     def get_enunciado_curto(self, obj):
         return obj.enunciado[:60] + '...' if len(obj.enunciado) > 60 else obj.enunciado
     get_enunciado_curto.short_description = 'Enunciado'
+
+    def tem_imagem(self, obj):
+        return format_html('<span style="color:#27ae60">Sim</span>') if obj.imagem else '—'
+    tem_imagem.short_description = 'Imagem'
 
 
 # ─── Simulado ────────────────────────────────────────────────────────────────

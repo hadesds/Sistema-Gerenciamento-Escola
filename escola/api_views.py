@@ -244,13 +244,20 @@ def professor_registrar_avaliacao(request, aluno_id):
         # provas_bimestrais: { '1B': [8.5, 7.0], '2B': [9.0], ... }
         provas_bimestrais = request.data.get('provas_bimestrais', {})
 
+        def _comportamento(key):
+            try:
+                v = round(float(request.data.get(key, 3.0)) * 2) / 2  # arredonda ao 0.5 mais próximo
+                return max(0.0, min(5.0, v))
+            except (TypeError, ValueError):
+                return 3.0
+
         avaliacao = Avaliacao.objects.create(
             aluno=aluno,
             professor=professor,
-            assiduidade=int(request.data.get('assiduidade', 3)),
-            participacao=int(request.data.get('participacao', 3)),
-            responsabilidade=int(request.data.get('responsabilidade', 3)),
-            sociabilidade=int(request.data.get('sociabilidade', 3)),
+            assiduidade=_comportamento('assiduidade'),
+            participacao=_comportamento('participacao'),
+            responsabilidade=_comportamento('responsabilidade'),
+            sociabilidade=_comportamento('sociabilidade'),
             materia=materia_obj,
             observacao=observacao,
         )
@@ -342,13 +349,21 @@ def professor_banco_questoes(request):
                 autor=professor,
                 enunciado=request.data.get('enunciado', ''),
                 resposta=request.data.get('resposta', ''),
+                imagem=request.FILES.get('imagem') or None,
                 materia=materia,
                 dificuldade=request.data.get('dificuldade', 'medio'),
                 tipo=tipo,
                 exige_justificativa=bool(request.data.get('exige_justificativa', False)),
             )
             if tipo == 'objetiva':
-                for i, alt in enumerate(request.data.get('alternativas', [])):
+                import json as _json
+                alternativas_raw = request.data.get('alternativas', [])
+                if isinstance(alternativas_raw, str):
+                    try:
+                        alternativas_raw = _json.loads(alternativas_raw)
+                    except Exception:
+                        alternativas_raw = []
+                for i, alt in enumerate(alternativas_raw):
                     texto = str(alt.get('texto', '')).strip()
                     if texto:
                         AlternativaQuestao.objects.create(
@@ -357,7 +372,7 @@ def professor_banco_questoes(request):
                             correta=bool(alt.get('correta', False)),
                             ordem=i,
                         )
-            return Response(QuestaoSerializer(questao).data, status=201)
+            return Response(QuestaoSerializer(questao, context={'request': request}).data, status=201)
         except Exception as e:
             return Response({'detail': str(e)}, status=400)
 
@@ -366,8 +381,9 @@ def professor_banco_questoes(request):
     if materia_filtro:
         questoes = questoes.filter(materia__sigla=materia_filtro)
 
+    ctx = {'request': request}
     return Response({
-        'questoes': QuestaoSerializer(questoes, many=True).data,
+        'questoes': QuestaoSerializer(questoes, many=True, context=ctx).data,
         'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
         'materia_filtro': materia_filtro
     })
@@ -382,8 +398,9 @@ def professor_criar_simulado_data(request):
 
     questoes = Questao.objects.filter(autor=professor)
     turmas = professor.turmas.all()
+    ctx = {'request': request}
     return Response({
-        'questoes': QuestaoSerializer(questoes, many=True).data,
+        'questoes': QuestaoSerializer(questoes, many=True, context=ctx).data,
         'turmas': TurmaSerializer(turmas, many=True).data,
         'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
     })

@@ -87,6 +87,7 @@ class QuestaoSerializer(serializers.ModelSerializer):
     alternativas        = AlternativaSerializer(many=True, read_only=True)
     materia_nome        = serializers.SerializerMethodField()
     materia_sigla       = serializers.SerializerMethodField()
+    imagem_url          = serializers.SerializerMethodField()
 
     class Meta:
         model = Questao
@@ -97,6 +98,7 @@ class QuestaoSerializer(serializers.ModelSerializer):
             'tipo', 'tipo_display',
             'exige_justificativa',
             'alternativas',
+            'imagem_url',
             'data_criacao',
         ]
 
@@ -105,6 +107,14 @@ class QuestaoSerializer(serializers.ModelSerializer):
 
     def get_materia_sigla(self, obj):
         return obj.materia.sigla if obj.materia else ''
+
+    def get_imagem_url(self, obj):
+        if not obj.imagem:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.imagem.url)
+        return obj.imagem.url
 
 class SimuladoQuestaoSerializer(serializers.ModelSerializer):
     questao = QuestaoSerializer(read_only=True)

@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/api';
+import { useEffect, useRef, useState } from 'react';
+import { apiFetch, API_URL } from '@/lib/api';
+import Cookies from 'js-cookie';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Loading from '@/components/Loading';
@@ -35,6 +37,7 @@ interface Questao {
   tipo_display: string;
   exige_justificativa: boolean;
   alternativas: Alternativa[];
+  imagem_url: string | null;
   data_criacao: string;
 }
 
@@ -81,6 +84,9 @@ export default function BancoQuestoesPage() {
   const [materiaFiltro, setMateriaFiltro] = useState('');
   const [showForm, setShowForm]       = useState(false);
   const [form, setForm]               = useState<FormState>(FORM_INIT);
+  const [imagemFile, setImagemFile]   = useState<File | null>(null);
+  const [imagemPreview, setImagemPreview] = useState<string | null>(null);
+  const imagemInputRef                = useRef<HTMLInputElement>(null);
   const [alert, setAlert]             = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting]   = useState(false);
 
@@ -138,20 +144,30 @@ export default function BancoQuestoesPage() {
 
     setSubmitting(true);
     try {
-      const payload = {
-        enunciado: form.enunciado,
-        resposta: form.resposta,
-        materia: form.materia ? Number(form.materia) : null,
-        dificuldade: form.dificuldade,
-        tipo: form.tipo,
-        exige_justificativa: form.exige_justificativa,
-        alternativas: form.tipo === 'objetiva'
-          ? form.alternativas.filter(a => a.texto.trim())
-          : [],
-      };
-      await apiFetch('/professor/banco-questoes/', { method: 'POST', body: JSON.stringify(payload) });
+      const fd = new FormData();
+      fd.append('enunciado', form.enunciado);
+      fd.append('resposta', form.resposta);
+      if (form.materia) fd.append('materia', form.materia);
+      fd.append('dificuldade', form.dificuldade);
+      fd.append('tipo', form.tipo);
+      fd.append('exige_justificativa', String(form.exige_justificativa));
+      if (imagemFile) fd.append('imagem', imagemFile);
+      const alts = form.tipo === 'objetiva' ? form.alternativas.filter(a => a.texto.trim()) : [];
+      fd.append('alternativas', JSON.stringify(alts));
+
+      const token = Cookies.get('access_token');
+      const res = await fetch(`${API_URL}/api/professor/banco-questoes/`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (!res.ok) throw new Error(await res.text());
+
       setAlert({ type: 'success', message: 'Questão cadastrada com sucesso!' });
       setForm(FORM_INIT);
+      setImagemFile(null);
+      setImagemPreview(null);
+      if (imagemInputRef.current) imagemInputRef.current.value = '';
       setShowForm(false);
       fetchData(materiaFiltro);
     } catch {
@@ -436,6 +452,34 @@ export default function BancoQuestoesPage() {
                 />
               </div>
 
+              {/* Imagem (opcional) */}
+              <div className="form-group">
+                <label>Imagem da Questão <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: '1.3rem' }}>(opcional)</span></label>
+                <input
+                  ref={imagemInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'block', marginBottom: '0.8rem' }}
+                  onChange={e => {
+                    const file = e.target.files?.[0] ?? null;
+                    setImagemFile(file);
+                    setImagemPreview(file ? URL.createObjectURL(file) : null);
+                  }}
+                />
+                {imagemPreview && (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <Image src={imagemPreview} alt="Prévia" width={320} height={200}
+                      style={{ maxWidth: '100%', borderRadius: '1rem', objectFit: 'contain', border: '2px solid var(--border-light)' }}
+                      unoptimized
+                    />
+                    <button type="button" onClick={() => { setImagemFile(null); setImagemPreview(null); if (imagemInputRef.current) imagemInputRef.current.value = ''; }}
+                      style={{ position: 'absolute', top: '0.4rem', right: '0.4rem', background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', color: '#fff', cursor: 'pointer', width: '2.8rem', height: '2.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>close</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* ── OBJETIVA: alternativas ── */}
               {form.tipo === 'objetiva' && (
                 <div style={{ marginBottom: '2rem' }}>
@@ -592,10 +636,20 @@ export default function BancoQuestoesPage() {
                   </span>
                 </div>
 
-                {/* Enunciado */}
-                <p style={{ fontSize: '1.5rem', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'pre-wrap', marginBottom: '1rem' }}>
-                  {q.enunciado}
-                </p>
+                {/* Enunciado + imagem */}
+                <div style={{ display: 'flex', gap: '1.6rem', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                  <p style={{ flex: 1, minWidth: '60%', fontSize: '1.5rem', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'pre-wrap', margin: 0 }}>
+                    {q.enunciado}
+                  </p>
+                  {q.imagem_url && (
+                    <div style={{ flex: '0 0 auto', maxWidth: '34%' }}>
+                      <Image src={q.imagem_url} alt="Imagem da questão" width={280} height={180}
+                        style={{ width: '100%', height: 'auto', borderRadius: '0.8rem', objectFit: 'contain', border: '1px solid var(--border-light)' }}
+                        unoptimized
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {/* Alternativas (objetiva) */}
                 {q.tipo === 'objetiva' && q.alternativas.length > 0 && (

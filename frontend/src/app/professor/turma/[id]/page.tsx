@@ -52,7 +52,7 @@ const EMPTY_PROVAS = { '1B': [], '2B': [], '3B': [], '4B': [] } as Record<string
 const FORM_INIT: AvaliacaoForm = {
   materia_id: '',
   provas_bimestrais: { '1B': [], '2B': [], '3B': [], '4B': [] },
-  assiduidade: 3, participacao: 3, responsabilidade: 3, sociabilidade: 3,
+  assiduidade: 3.0, participacao: 3.0, responsabilidade: 3.0, sociabilidade: 3.0,
   observacao: '',
 };
 
@@ -296,19 +296,27 @@ export default function CarometroPage() {
   const RatingInput = ({ name, label, value }: {
     name: keyof Pick<AvaliacaoForm, 'assiduidade' | 'participacao' | 'responsabilidade' | 'sociabilidade'>;
     label: string; value: number;
-  }) => (
-    <div className="form-group">
-      <label>{label}: <strong>{value}/5</strong></label>
-      <input
-        type="range" min="1" max="5" value={value}
-        onChange={e => setForm(f => ({ ...f, [name]: Number(e.target.value) }))}
-        style={{ width: '100%', accentColor: 'var(--color-primary)' }}
-      />
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
-        <span>1</span><span>3</span><span>5</span>
+  }) => {
+    const pts = (value / 2).toFixed(1);
+    const pct = (value / 5) * 100;
+    const color = pct >= 75 ? 'var(--color-success)' : pct >= 50 ? 'var(--color-warning)' : 'var(--color-danger)';
+    return (
+      <div className="form-group">
+        <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>{label}</span>
+          <strong style={{ color }}>{value.toFixed(1)} / 5 &nbsp;·&nbsp; {pts} pts</strong>
+        </label>
+        <input
+          type="range" min="0" max="5" step="0.5" value={value}
+          onChange={e => setForm(f => ({ ...f, [name]: Number(e.target.value) }))}
+          style={{ width: '100%', accentColor: 'var(--color-primary)' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
+          <span>0</span><span>1.5</span><span>2.5</span><span>3.5</span><span>5</span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <ProtectedRoute tipo="professor">

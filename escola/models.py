@@ -44,21 +44,21 @@ class Avaliacao(models.Model):
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name="avaliacoes")
     professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name="avaliacoes_dadas")
     
-    assiduidade = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    assiduidade = models.DecimalField(
+        max_digits=3, decimal_places=1, default=3.0,
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
     )
-    participacao = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    participacao = models.DecimalField(
+        max_digits=3, decimal_places=1, default=3.0,
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
     )
-    responsabilidade = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    responsabilidade = models.DecimalField(
+        max_digits=3, decimal_places=1, default=3.0,
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
     )
-    sociabilidade = models.IntegerField(
-        default=3,
-        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    sociabilidade = models.DecimalField(
+        max_digits=3, decimal_places=1, default=3.0,
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
     )
 
     materia    = models.ForeignKey('Materia', on_delete=models.SET_NULL, null=True, blank=True, related_name='avaliacoes')
@@ -214,6 +214,7 @@ class Questao(models.Model):
     ]
     enunciado           = models.TextField()
     resposta            = models.TextField(blank=True, default='')
+    imagem              = models.ImageField(upload_to='questoes_imagens/', blank=True, null=True)
     materia             = models.ForeignKey(
         'Materia', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='questoes'

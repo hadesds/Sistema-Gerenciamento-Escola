@@ -78,8 +78,9 @@ function avg(arr: number[]): number | null {
   return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
+// Converte 0–5 (step 0.5) para pontuação 0–2.5 pts (÷ 2)
 function escalaComportamento(nota: number): number {
-  return parseFloat(((nota - 1) * (2.5 / 4)).toFixed(1));
+  return parseFloat((nota / 2).toFixed(1));
 }
 
 export default function RelatorioAlunoPage() {

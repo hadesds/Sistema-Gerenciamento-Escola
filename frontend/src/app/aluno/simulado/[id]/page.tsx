@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -23,6 +24,7 @@ interface QuestaoSimulado {
   dificuldade_display: string;
   exige_justificativa: boolean;
   alternativas: Alternativa[];
+  imagem_url: string | null;
 }
 
 interface SimuladoDetalhe {
@@ -597,10 +599,37 @@ export default function VisualizarSimuladoPage() {
               <span style={{ color: 'var(--text-secondary)', fontSize: '1.3rem' }}>· {q.tipo_display}</span>
             </div>
 
-            {/* Enunciado */}
-            <p style={{ fontSize: '1.75rem', lineHeight: 1.65, marginBottom: '2.4rem', wordBreak: 'break-word' }}>
-              {q.enunciado}
-            </p>
+            {/* Enunciado + imagem responsiva */}
+            <style>{`
+              .questao-body { display: flex; gap: 2rem; align-items: flex-start; margin-bottom: 2.4rem; }
+              .questao-enunciado { flex: 1; font-size: 1.75rem; line-height: 1.65; word-break: break-word; }
+              .questao-img-desktop { flex: 0 0 auto; max-width: 38%; display: block; }
+              .questao-img-mobile  { display: none; margin: 1.6rem auto 0; text-align: center; }
+              @media (max-width: 700px) {
+                .questao-body { flex-direction: column; }
+                .questao-img-desktop { display: none; }
+                .questao-img-mobile  { display: block; }
+              }
+            `}</style>
+            <div className="questao-body">
+              <p className="questao-enunciado">{q.enunciado}</p>
+              {q.imagem_url && (
+                <div className="questao-img-desktop">
+                  <Image src={q.imagem_url} alt="Imagem da questão" width={380} height={260}
+                    style={{ width: '100%', height: 'auto', borderRadius: '1rem', objectFit: 'contain', border: '1px solid #e2e8f0' }}
+                    unoptimized
+                  />
+                </div>
+              )}
+            </div>
+            {q.imagem_url && (
+              <div className="questao-img-mobile">
+                <Image src={q.imagem_url} alt="Imagem da questão" width={500} height={340}
+                  style={{ maxWidth: '100%', height: 'auto', borderRadius: '1rem', objectFit: 'contain', border: '1px solid #e2e8f0' }}
+                  unoptimized
+                />
+              </div>
+            )}
 
             {/* Response area */}
             {q.tipo === 'objetiva' ? (

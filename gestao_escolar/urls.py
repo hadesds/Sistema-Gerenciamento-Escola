@@ -2,35 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponseRedirect
-from urllib.parse import urlsplit
-
-
-def _frontend_url(request):
-    """Retorna a URL base do frontend se for diferente do host atual, ou None."""
-    frontend = getattr(settings, 'FRONTEND_URL', '').rstrip('/')
-    if not frontend:
-        return None
-    if urlsplit(frontend).netloc == request.get_host():
-        return None  # mesma origem — evita loop
-    return frontend
-
-
-def root_redirect(request):
-    """/ → landing page do frontend, ou /admin/login/ como fallback."""
-    frontend = _frontend_url(request)
-    if frontend:
-        return HttpResponseRedirect(frontend + '/')
-    return HttpResponseRedirect('/admin/login/')
-
-
-def frontend_login_redirect(request):
-    """/login/ → página de login do frontend, ou /admin/login/ como fallback."""
-    frontend = _frontend_url(request)
-    if frontend:
-        return HttpResponseRedirect(frontend + '/login')
-    return HttpResponseRedirect('/admin/login/')
-
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,12 +10,11 @@ urlpatterns = [
     # API REST
     path('api/', include('escola.api_urls')),
 
-    # Redirecionamentos para o frontend Next.js
-    path('login/', frontend_login_redirect),
-    path('', root_redirect),
+    # / e /login/ → frontend (nginx roteia para Next.js na mesma porta)
+    path('login/', RedirectView.as_view(url='/login', permanent=False)),
+    path('', RedirectView.as_view(url='/', permanent=False)),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-

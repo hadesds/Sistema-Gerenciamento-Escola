@@ -224,16 +224,11 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
-# URL base do frontend. Usa FRONTEND_URL se definida, senão deriva do
-# primeiro CORS_ALLOWED_ORIGINS (que já aponta para o domínio do frontend).
+# Com nginx na frente, '/' resolve para o frontend em qualquer ambiente.
+# FRONTEND_URL ainda é lido para compatibilidade com Render (sem nginx).
 FRONTEND_URL = os.environ.get('FRONTEND_URL', '').strip().rstrip('/')
-if not FRONTEND_URL:
-    _cors_list = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
-    FRONTEND_URL = next(
-        (u.strip().rstrip('/') for u in _cors_list if u.strip().startswith('http')),
-        ''
-    )
 
 LOGIN_URL           = '/admin/login/'
 LOGIN_REDIRECT_URL  = '/admin/'
-LOGOUT_REDIRECT_URL = FRONTEND_URL or '/admin/login/'
+# Logout → raiz do mesmo host; nginx roteia para a landing page do Next.js.
+LOGOUT_REDIRECT_URL = FRONTEND_URL or '/'

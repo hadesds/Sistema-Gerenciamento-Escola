@@ -398,15 +398,6 @@ admin.site.site_header = 'CARA - Administração'
 admin.site.site_title = 'CARA Admin'
 admin.site.index_title = 'Painel de Administração'
 
-
-def _resolve_frontend_url():
-    url = getattr(settings, 'FRONTEND_URL', '').strip().rstrip('/')
-    if url:
-        return url
-    cors = getattr(settings, 'CORS_ALLOWED_ORIGINS', [])
-    if isinstance(cors, (list, tuple)) and cors:
-        return cors[0].rstrip('/')
-    return '/'
-
-
-admin.site.site_url = _resolve_frontend_url()
+# '/' é relativo: o browser resolve para a raiz do mesmo host/porta (nginx),
+# que roteia para o frontend Next.js — sem hardcoded de porta.
+admin.site.site_url = '/'

@@ -1,6 +1,8 @@
 import Cookies from 'js-cookie';
 
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5433').replace(/\/$/, '');
+// String vazia → URLs relativas (/api/...) — nginx roteia para o Django
+// Valor explícito (ex.: http://localhost:5433) → acesso direto sem nginx
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5433').replace(/\/$/, '');
 
 // Em produção (HTTPS), cookies cross-origin precisam de SameSite=None; Secure
 const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';

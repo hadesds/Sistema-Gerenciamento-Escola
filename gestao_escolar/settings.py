@@ -224,11 +224,10 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
-# Com nginx na frente, '/' resolve para o frontend em qualquer ambiente.
-# FRONTEND_URL ainda é lido para compatibilidade com Render (sem nginx).
 FRONTEND_URL = os.environ.get('FRONTEND_URL', '').strip().rstrip('/')
 
-LOGIN_URL           = '/admin/login/'
-LOGIN_REDIRECT_URL  = '/admin/'
-# Logout → raiz do mesmo host; nginx roteia para a landing page do Next.js.
-LOGOUT_REDIRECT_URL = FRONTEND_URL or '/'
+LOGIN_URL          = '/admin/login/'
+LOGIN_REDIRECT_URL = '/admin/'
+# Se FRONTEND_URL estiver configurado, vai direto para o frontend após logout.
+# Senão, vai para /admin/login/ — nunca usa '/' para evitar loop em produção.
+LOGOUT_REDIRECT_URL = FRONTEND_URL if FRONTEND_URL else '/admin/login/'

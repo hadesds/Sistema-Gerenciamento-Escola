@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
@@ -537,6 +536,15 @@ export default function VisualizarSimuladoPage() {
         .alt-circle { width: 2.8rem; height: 2.8rem; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.3rem; flex-shrink: 0; transition: all 0.15s; }
         .away-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .away-box { background: white; border-radius: 2rem; padding: 3.5rem 3rem; max-width: 46rem; width: 90%; text-align: center; }
+        .questao-body { display: flex; gap: 2rem; align-items: flex-start; margin-bottom: 2.4rem; }
+        .questao-enunciado { flex: 1; font-size: 1.75rem; line-height: 1.65; word-break: break-word; }
+        .questao-img-desktop { flex: 0 0 auto; max-width: 38%; display: block; }
+        .questao-img-mobile  { display: none; margin: 1.6rem auto 0; text-align: center; }
+        @media (max-width: 700px) {
+          .questao-body { flex-direction: column; }
+          .questao-img-desktop { display: none; }
+          .questao-img-mobile  { display: block; }
+        }
       `}</style>
 
       {/* Top bar */}
@@ -600,33 +608,22 @@ export default function VisualizarSimuladoPage() {
             </div>
 
             {/* Enunciado + imagem responsiva */}
-            <style>{`
-              .questao-body { display: flex; gap: 2rem; align-items: flex-start; margin-bottom: 2.4rem; }
-              .questao-enunciado { flex: 1; font-size: 1.75rem; line-height: 1.65; word-break: break-word; }
-              .questao-img-desktop { flex: 0 0 auto; max-width: 38%; display: block; }
-              .questao-img-mobile  { display: none; margin: 1.6rem auto 0; text-align: center; }
-              @media (max-width: 700px) {
-                .questao-body { flex-direction: column; }
-                .questao-img-desktop { display: none; }
-                .questao-img-mobile  { display: block; }
-              }
-            `}</style>
             <div className="questao-body">
               <p className="questao-enunciado">{q.enunciado}</p>
               {q.imagem_url && (
                 <div className="questao-img-desktop">
-                  <Image src={q.imagem_url} alt="Imagem da questão" width={380} height={260}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={q.imagem_url} alt="Imagem da questão"
                     style={{ width: '100%', height: 'auto', borderRadius: '1rem', objectFit: 'contain', border: '1px solid #e2e8f0' }}
-                    unoptimized
                   />
                 </div>
               )}
             </div>
             {q.imagem_url && (
               <div className="questao-img-mobile">
-                <Image src={q.imagem_url} alt="Imagem da questão" width={500} height={340}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={q.imagem_url} alt="Imagem da questão"
                   style={{ maxWidth: '100%', height: 'auto', borderRadius: '1rem', objectFit: 'contain', border: '1px solid #e2e8f0' }}
-                  unoptimized
                 />
               </div>
             )}

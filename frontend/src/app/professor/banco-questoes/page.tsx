@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { apiFetch, API_URL } from '@/lib/api';
-import Cookies from 'js-cookie';
-import Image from 'next/image';
+import { apiFetch, apiUpload } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Loading from '@/components/Loading';
@@ -155,13 +153,7 @@ export default function BancoQuestoesPage() {
       const alts = form.tipo === 'objetiva' ? form.alternativas.filter(a => a.texto.trim()) : [];
       fd.append('alternativas', JSON.stringify(alts));
 
-      const token = Cookies.get('access_token');
-      const res = await fetch(`${API_URL}/api/professor/banco-questoes/`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
-      });
-      if (!res.ok) throw new Error(await res.text());
+      await apiUpload('/professor/banco-questoes/', fd);
 
       setAlert({ type: 'success', message: 'Questão cadastrada com sucesso!' });
       setForm(FORM_INIT);
@@ -468,9 +460,9 @@ export default function BancoQuestoesPage() {
                 />
                 {imagemPreview && (
                   <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <Image src={imagemPreview} alt="Prévia" width={320} height={200}
-                      style={{ maxWidth: '100%', borderRadius: '1rem', objectFit: 'contain', border: '2px solid var(--border-light)' }}
-                      unoptimized
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={imagemPreview} alt="Prévia"
+                      style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '1rem', objectFit: 'contain', border: '2px solid var(--border-light)', display: 'block' }}
                     />
                     <button type="button" onClick={() => { setImagemFile(null); setImagemPreview(null); if (imagemInputRef.current) imagemInputRef.current.value = ''; }}
                       style={{ position: 'absolute', top: '0.4rem', right: '0.4rem', background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', color: '#fff', cursor: 'pointer', width: '2.8rem', height: '2.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -643,9 +635,9 @@ export default function BancoQuestoesPage() {
                   </p>
                   {q.imagem_url && (
                     <div style={{ flex: '0 0 auto', maxWidth: '34%' }}>
-                      <Image src={q.imagem_url} alt="Imagem da questão" width={280} height={180}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={q.imagem_url} alt="Imagem da questão"
                         style={{ width: '100%', height: 'auto', borderRadius: '0.8rem', objectFit: 'contain', border: '1px solid var(--border-light)' }}
-                        unoptimized
                       />
                     </div>
                   )}

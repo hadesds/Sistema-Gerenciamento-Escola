@@ -18,6 +18,31 @@ const COOKIE_OPTS_REFRESH: Cookies.CookieAttributes = {
   secure:   isSecure,
 };
 
+export async function apiUpload<T>(path: string, body: FormData): Promise<T> {
+  const token = Cookies.get('access_token');
+  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+  const res = await fetch(`${API_URL}/api${path}`, { method: 'POST', headers, body });
+
+  if (res.status === 401) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      const newToken = Cookies.get('access_token');
+      const retryHeaders: HeadersInit = newToken ? { Authorization: `Bearer ${newToken}` } : {};
+      const retryRes = await fetch(`${API_URL}/api${path}`, { method: 'POST', headers: retryHeaders, body });
+      if (!retryRes.ok) throw new Error(await retryRes.text());
+      return retryRes.json();
+    } else {
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      throw new Error('Sessão expirada');
+    }
+  }
+
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}

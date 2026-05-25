@@ -72,7 +72,7 @@ class Avaliacao(models.Model):
         verbose_name_plural = 'Avaliações'
     
     def calcular_media(self):
-        return (self.assiduidade + self.participacao + self.responsabilidade + self.sociabilidade) / 4.0
+        return (self.assiduidade + self.participacao + self.responsabilidade + self.sociabilidade) / 4
 
     def __str__(self):
         return f"Avaliação de {self.aluno} por {self.professor} em {self.data}"

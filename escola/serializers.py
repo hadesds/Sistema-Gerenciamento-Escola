@@ -127,11 +127,20 @@ class SimuladoSerializer(serializers.ModelSerializer):
     turma_nome = serializers.SerializerMethodField()
     autor_nome = serializers.SerializerMethodField()
     total_questoes = serializers.SerializerMethodField()
-    simulado_questoes = SimuladoQuestaoSerializer(many=True, read_only=True)
+    questoes = serializers.SerializerMethodField()
 
     class Meta:
         model = Simulado
-        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'total_questoes', 'simulado_questoes']
+        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'total_questoes', 'questoes']
+
+    def get_questoes(self, obj):
+        request = self.context.get('request')
+        result = []
+        for sq in obj.simulado_questoes.select_related('questao__materia').prefetch_related('questao__alternativas'):
+            data = QuestaoSerializer(sq.questao, context={'request': request}).data
+            data['valor'] = sq.valor
+            result.append(data)
+        return result
 
     def get_turma_nome(self, obj):
         return obj.turma_alvo.nome if obj.turma_alvo else ''

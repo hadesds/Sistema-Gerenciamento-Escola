@@ -432,7 +432,7 @@ def professor_criar_simulado(request):
     simulado.area_conhecimento = request.data.get('area_conhecimento', '')
     simulado.save()
 
-    return Response(SimuladoSerializer(simulado).data, status=201)
+    return Response(SimuladoSerializer(simulado, context={'request': request}).data, status=201)
 
 
 @api_view(['GET'])
@@ -443,7 +443,7 @@ def professor_lista_simulados(request):
         return Response({'detail': 'Acesso negado.'}, status=403)
 
     simulados = Simulado.objects.filter(autor=professor).select_related('turma_alvo').order_by('-id')
-    return Response(SimuladoSerializer(simulados, many=True).data)
+    return Response(SimuladoSerializer(simulados, many=True, context={'request': request}).data)
 
 
 @api_view(['GET'])
@@ -466,7 +466,7 @@ def professor_detalhe_simulado(request, simulado_id):
     simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
 
     if request.method == 'GET':
-        return Response(SimuladoSerializer(simulado).data)
+        return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'PATCH':
         if 'titulo' in request.data:
@@ -479,7 +479,7 @@ def professor_detalhe_simulado(request, simulado_id):
             turma = get_object_or_404(Turma, id=request.data['turma'])
             simulado.turma_alvo = turma
         simulado.save()
-        return Response(SimuladoSerializer(simulado).data)
+        return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'DELETE':
         simulado.delete()
@@ -496,7 +496,7 @@ def professor_remover_questao_simulado(request, simulado_id, questao_id):
     simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
     questao = get_object_or_404(Questao, id=questao_id)
     simulado.questoes.remove(questao)
-    return Response(SimuladoSerializer(simulado).data)
+    return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
 
 @api_view(['GET'])
@@ -711,7 +711,7 @@ def aluno_dashboard(request):
         'avaliacoes_recentes': AvaliacaoSerializer(avaliacoes[:5], many=True).data,
         'total_avaliacoes': avaliacoes.count(),
         'evolucao': evolucao,
-        'simulados': SimuladoSerializer(simulados, many=True).data,
+        'simulados': SimuladoSerializer(simulados, many=True, context={'request': request}).data,
     })
 
 
@@ -789,7 +789,7 @@ def aluno_meus_simulados(request):
         return Response({'detail': 'Acesso negado.'}, status=403)
 
     simulados = Simulado.objects.filter(turma_alvo=aluno.turma).select_related('autor')
-    return Response(SimuladoSerializer(simulados, many=True).data)
+    return Response(SimuladoSerializer(simulados, many=True, context={'request': request}).data)
 
 
 @api_view(['GET'])
@@ -803,7 +803,7 @@ def aluno_visualizar_simulado(request, simulado_id):
     if simulado.turma_alvo != aluno.turma:
         return Response({'detail': 'Sem acesso a este simulado.'}, status=403)
 
-    return Response(SimuladoSerializer(simulado).data)
+    return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
 
 # ==========================================

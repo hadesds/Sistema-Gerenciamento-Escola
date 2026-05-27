@@ -208,15 +208,15 @@ export default function AlunoDashboardPage() {
             {/* Stats */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
               {[
-                { icon: 'grade',                label: 'Média Geral',       value: data.media_geral.toFixed(2),              bg: 'linear-gradient(135deg,#0d2d6b,#1a4fa0)' },
-                { icon: 'event_available',       label: 'Assiduidade',       value: data.medias.assiduidade.toFixed(1),       bg: 'linear-gradient(135deg,#27ae60,#229954)' },
-                { icon: 'record_voice_over',     label: 'Participação',      value: data.medias.participacao.toFixed(1),      bg: 'linear-gradient(135deg,#1a73c7,#1a4fa0)' },
-                { icon: 'assignment_turned_in',  label: 'Responsabilidade',  value: data.medias.responsabilidade.toFixed(1),  bg: 'linear-gradient(135deg,#f39c12,#e67e22)' },
-                { icon: 'people',                label: 'Sociabilidade',     value: data.medias.sociabilidade.toFixed(1),     bg: 'linear-gradient(135deg,#9b59b6,#8e44ad)' },
-                { icon: 'assessment',            label: 'Avaliações',        value: String(data.total_avaliacoes),            bg: 'linear-gradient(135deg,#e74c3c,#c0392b)' },
-              ].map(s => (
+                { icon: 'grade',               label: 'Média Geral',      value: data.media_geral.toFixed(2)             },
+                { icon: 'event_available',      label: 'Assiduidade',      value: data.medias.assiduidade.toFixed(1)      },
+                { icon: 'record_voice_over',    label: 'Participação',     value: data.medias.participacao.toFixed(1)     },
+                { icon: 'assignment_turned_in', label: 'Responsabilidade', value: data.medias.responsabilidade.toFixed(1) },
+                { icon: 'people',               label: 'Sociabilidade',    value: data.medias.sociabilidade.toFixed(1)    },
+                { icon: 'assessment',           label: 'Avaliações',       value: String(data.total_avaliacoes)           },
+              ].map((s, i) => (
                 <div key={s.label} className="stat-card">
-                  <div className="stat-icon" style={{ background: s.bg }}>
+                  <div className="stat-icon" style={{ background: i % 2 === 0 ? '#1a4fa0' : '#3b8ed4', color: '#fff' }}>
                     <span className="material-icons-outlined">{s.icon}</span>
                   </div>
                   <div className="stat-info">

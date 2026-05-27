@@ -75,17 +75,17 @@ def professor_dashboard(request):
         for aluno in alunos_turma:
             avaliacoes = Avaliacao.objects.filter(aluno=aluno)
             if avaliacoes.exists():
-                media = avaliacoes.aggregate(
+                media = {k: float(v or 0) for k, v in avaliacoes.aggregate(
                     media_assiduidade=Avg('assiduidade'),
                     media_participacao=Avg('participacao'),
                     media_responsabilidade=Avg('responsabilidade'),
                     media_sociabilidade=Avg('sociabilidade')
-                )
+                ).items()}
                 media_geral = (
-                    (media['media_assiduidade'] or 0) +
-                    (media['media_participacao'] or 0) +
-                    (media['media_responsabilidade'] or 0) +
-                    (media['media_sociabilidade'] or 0)
+                    media['media_assiduidade'] +
+                    media['media_participacao'] +
+                    media['media_responsabilidade'] +
+                    media['media_sociabilidade']
                 ) / 4
                 foto_url = None
                 if aluno.foto:
@@ -104,17 +104,17 @@ def professor_dashboard(request):
     for turma in turmas:
         avaliacoes_turma = Avaliacao.objects.filter(aluno__turma=turma)
         if avaliacoes_turma.exists():
-            media_turma = avaliacoes_turma.aggregate(
+            media_turma = {k: float(v or 0) for k, v in avaliacoes_turma.aggregate(
                 media_assiduidade=Avg('assiduidade'),
                 media_participacao=Avg('participacao'),
                 media_responsabilidade=Avg('responsabilidade'),
                 media_sociabilidade=Avg('sociabilidade')
-            )
+            ).items()}
             media_geral_turma = (
-                (media_turma['media_assiduidade'] or 0) +
-                (media_turma['media_participacao'] or 0) +
-                (media_turma['media_responsabilidade'] or 0) +
-                (media_turma['media_sociabilidade'] or 0)
+                media_turma['media_assiduidade'] +
+                media_turma['media_participacao'] +
+                media_turma['media_responsabilidade'] +
+                media_turma['media_sociabilidade']
             ) / 4
             desempenho_turmas.append({
                 'turma': turma.nome,
@@ -157,7 +157,7 @@ def professor_turmas(request):
         avaliacoes_turma = Avaliacao.objects.filter(aluno__turma=turma, professor=professor)
         media_turma = 0
         if avaliacoes_turma.exists():
-            media_turma = avaliacoes_turma.aggregate(Avg('assiduidade'))['assiduidade__avg'] or 0
+            media_turma = float(avaliacoes_turma.aggregate(Avg('assiduidade'))['assiduidade__avg'] or 0)
         alunos_preview = []
         for aluno in turma.alunos.all()[:4]:
             foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else None
@@ -198,7 +198,7 @@ def professor_turma_carometro(request, turma_id):
         avaliacoes = Avaliacao.objects.filter(aluno=aluno)
         media = 0
         if avaliacoes.exists():
-            media = sum([av.calcular_media() for av in avaliacoes]) / avaliacoes.count()
+            media = sum([float(av.calcular_media()) for av in avaliacoes]) / avaliacoes.count()
         foto_url = None
         if aluno.foto:
             foto_url = request.build_absolute_uri(aluno.foto.url)
@@ -521,7 +521,7 @@ def professor_relatorio_aluno(request, aluno_id):
             media_responsabilidade=Avg('responsabilidade'),
             media_sociabilidade=Avg('sociabilidade')
         )
-        medias = {k: v or 0 for k, v in medias.items()}
+        medias = {k: float(v or 0) for k, v in medias.items()}
         media_geral = sum(medias.values()) / 4
 
     def calc_percent(value):
@@ -681,12 +681,12 @@ def aluno_dashboard(request):
             media_responsabilidade=Avg('responsabilidade'),
             media_sociabilidade=Avg('sociabilidade')
         )
-        medias = {k: v or 0 for k, v in medias.items()}
+        medias = {k: float(v or 0) for k, v in medias.items()}
         media_geral = sum(medias.values()) / 4
 
         if avaliacoes.count() > 1:
             ultima = avaliacoes.first()
-            evolucao = round(ultima.calcular_media() - media_geral, 2)
+            evolucao = round(float(ultima.calcular_media()) - media_geral, 2)
 
     simulados = Simulado.objects.filter(turma_alvo=aluno.turma).select_related('autor')[:5]
     foto_url = None
@@ -735,7 +735,7 @@ def aluno_meu_feedback(request):
             media_responsabilidade=Avg('responsabilidade'),
             media_sociabilidade=Avg('sociabilidade')
         )
-        medias = {k: v or 0 for k, v in medias.items()}
+        medias = {k: float(v or 0) for k, v in medias.items()}
         media_geral = sum(medias.values()) / 4
 
     foto_url = None

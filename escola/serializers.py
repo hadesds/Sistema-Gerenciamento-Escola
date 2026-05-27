@@ -41,6 +41,11 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
     aluno_foto_url = serializers.SerializerMethodField()
     media = serializers.SerializerMethodField()
     materia_nome = serializers.SerializerMethodField()
+    # DecimalField serializes as string by default — force float so JS .toFixed() works
+    assiduidade      = serializers.FloatField()
+    participacao     = serializers.FloatField()
+    responsabilidade = serializers.FloatField()
+    sociabilidade    = serializers.FloatField()
 
     class Meta:
         model = Avaliacao
@@ -63,7 +68,7 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
         return None
 
     def get_media(self, obj):
-        return round(obj.calcular_media(), 2)
+        return round(float(obj.calcular_media()), 2)
 
     def get_materia_nome(self, obj):
         return obj.materia.nome if obj.materia else ''

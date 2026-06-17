@@ -56,21 +56,6 @@ const FORM_INIT: AvaliacaoForm = {
   observacao: '',
 };
 
-const MATERIAS_NOTAS = [
-  { key: 'portugues',       label: 'Português' },
-  { key: 'matematica',      label: 'Matemática' },
-  { key: 'ciencias',        label: 'Ciências' },
-  { key: 'religiao',        label: 'Religião' },
-  { key: 'geografia',       label: 'Geografia' },
-  { key: 'historia',        label: 'História' },
-  { key: 'artes',           label: 'Artes' },
-  { key: 'ingles',          label: 'Inglês' },
-  { key: 'educacao_fisica', label: 'Educação Física' },
-  { key: 'filosofia',       label: 'Filosofia' },
-];
-
-type NotasForm = Record<string, string>;
-
 function calcMedia(provas: string[]): string {
   const validas = provas.map(p => parseFloat(p)).filter(n => !isNaN(n) && n >= 0 && n <= 10);
   if (!validas.length) return '—';
@@ -91,12 +76,6 @@ export default function CarometroPage() {
   const [form, setForm] = useState<AvaliacaoForm>(FORM_INIT);
   const [materiaError, setMateriaError] = useState('');
   const [loadingProvas, setLoadingProvas] = useState(false);
-
-  // Modal notas
-  const [alunoNotas, setAlunoNotas] = useState<AlunoInfo | null>(null);
-  const [epocaSelecionada, setEpocaSelecionada] = useState('1B');
-  const [notasForm, setNotasForm] = useState<NotasForm>({});
-  const [notasExistentes, setNotasExistentes] = useState<Record<string, Record<string, number>>>({});
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -207,39 +186,6 @@ export default function CarometroPage() {
     }
   }
 
-  async function abrirNotas(aluno: AlunoInfo) {
-    setAlunoNotas(aluno);
-    setEpocaSelecionada('1B');
-    try {
-      const notas = await apiFetch<Array<{ materia: string; nota: number; epoca: string }>>(
-        `/professor/notas/${aluno.id}/`
-      );
-      const por_epoca: Record<string, Record<string, number>> = {};
-      notas.forEach(n => {
-        por_epoca[n.epoca] = por_epoca[n.epoca] || {};
-        por_epoca[n.epoca][n.materia] = n.nota;
-      });
-      setNotasExistentes(por_epoca);
-      const init: NotasForm = {};
-      MATERIAS_NOTAS.forEach(m => {
-        init[m.key] = String(por_epoca['1B']?.[m.key] ?? '');
-      });
-      setNotasForm(init);
-    } catch {
-      setNotasExistentes({});
-      setNotasForm({});
-    }
-  }
-
-  function trocarEpoca(epoca: string) {
-    setEpocaSelecionada(epoca);
-    const init: NotasForm = {};
-    MATERIAS_NOTAS.forEach(m => {
-      init[m.key] = String(notasExistentes[epoca]?.[m.key] ?? '');
-    });
-    setNotasForm(init);
-  }
-
   async function handleAtribuirPerfil(aluno: AlunoInfo, papel: 'lider' | 'vice') {
     setPerfilSubmitting(aluno.id);
     try {
@@ -266,30 +212,6 @@ export default function CarometroPage() {
       setAlert({ type: 'error', message: 'Erro ao remover perfil.' });
     } finally {
       setPerfilSubmitting(null);
-    }
-  }
-
-  async function handleSalvarNotas(e: React.FormEvent) {
-    e.preventDefault();
-    if (!alunoNotas) return;
-    setSubmitting(true);
-    try {
-      const notas: Record<string, number> = {};
-      MATERIAS_NOTAS.forEach(m => {
-        const v = parseFloat(notasForm[m.key]);
-        if (!isNaN(v)) notas[m.key] = v;
-      });
-      await apiFetch(`/professor/notas/${alunoNotas.id}/`, {
-        method: 'POST',
-        body: JSON.stringify({ epoca: epocaSelecionada, notas }),
-      });
-      setAlert({ type: 'success', message: `Notas de ${alunoNotas.nome} salvas!` });
-      setNotasExistentes(prev => ({ ...prev, [epocaSelecionada]: notas }));
-      setAlunoNotas(null);
-    } catch {
-      setAlert({ type: 'error', message: 'Erro ao salvar notas.' });
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -422,10 +344,6 @@ export default function CarometroPage() {
                       }}>
                         <span className="material-icons-outlined">rate_review</span>
                         Avaliar
-                      </button>
-                      <button className="btn btn-secondary" onClick={() => abrirNotas(aluno)}>
-                        <span className="material-icons-outlined">edit_note</span>
-                        Notas
                       </button>
                       <Link href={`/professor/relatorio/${aluno.id}`} className="btn btn-secondary">
                         <span className="material-icons-outlined">bar_chart</span>
@@ -592,53 +510,6 @@ export default function CarometroPage() {
           </div>
         )}
 
-        {/* ── Modal Notas por Matéria ── */}
-        {alunoNotas && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-            <div className="card" style={{ width: '95%', maxWidth: '600px', maxHeight: '92vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2>Notas: {alunoNotas.nome}</h2>
-                <button onClick={() => setAlunoNotas(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '2.5rem' }}>&times;</button>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-                {EPOCAS.map(ep => (
-                  <button
-                    key={ep.key}
-                    type="button"
-                    className={`btn ${epocaSelecionada === ep.key ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => trocarEpoca(ep.key)}
-                  >
-                    {ep.label}
-                  </button>
-                ))}
-              </div>
-
-              <form onSubmit={handleSalvarNotas}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
-                  {MATERIAS_NOTAS.map(m => (
-                    <div className="form-group" key={m.key} style={{ marginBottom: 0 }}>
-                      <label>{m.label}</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="10"
-                        step="0.1"
-                        placeholder="0 – 10"
-                        value={notasForm[m.key] ?? ''}
-                        onChange={e => setNotasForm(f => ({ ...f, [m.key]: e.target.value }))}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <button type="submit" className="btn btn-submit" style={{ width: '100%', marginTop: '2rem' }} disabled={submitting}>
-                  {submitting ? 'Salvando...' : `Salvar notas do ${EPOCAS.find(e => e.key === epocaSelecionada)?.label}`}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
       </main>
       <footer style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-secondary)', fontSize: '1.4rem' }}>
         <p>&copy; 2025 Sistema CARA - Gestão Escolar Inteligente</p>

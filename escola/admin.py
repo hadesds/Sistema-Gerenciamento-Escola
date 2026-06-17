@@ -138,7 +138,7 @@ class AvaliacaoAdmin(admin.ModelAdmin):
         'professor__user__first_name', 'materia__nome',
     ]
     date_hierarchy = 'data'
-    readonly_fields = ['get_media_comportamento', 'get_media_raw']
+    readonly_fields = ['data', 'get_media_comportamento', 'get_media_raw']
     fieldsets = [
         ('Identificação', {
             'fields': ['aluno', 'professor', 'materia', 'data'],

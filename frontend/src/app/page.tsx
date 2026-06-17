@@ -32,7 +32,9 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
-  if (loading || user) return null;
+  if (loading) return null;
+  const redirecting = user && (user.tipo === 'professor' || user.tipo === 'aluno');
+  if (redirecting) return null;
 
   const features = [
     { icon: 'assessment',        color: C.primary,   title: 'Avaliações Comportamentais',

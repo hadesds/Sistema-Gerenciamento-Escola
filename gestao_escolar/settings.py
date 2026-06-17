@@ -228,6 +228,4 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', '').strip().rstrip('/')
 
 LOGIN_URL          = '/admin/login/'
 LOGIN_REDIRECT_URL = '/admin/'
-# Após o logout, vai para a rota /logout do frontend, que limpa os cookies JWT
-# e retorna à tela inicial — evitando o loop de redirecionamento para /admin/.
-LOGOUT_REDIRECT_URL = (FRONTEND_URL + '/logout') if FRONTEND_URL else '/logout/'
+LOGOUT_REDIRECT_URL = FRONTEND_URL if FRONTEND_URL else '/admin/login/'

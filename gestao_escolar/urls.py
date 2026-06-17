@@ -28,7 +28,6 @@ urlpatterns = [
     path('api/', include('escola.api_urls')),
 
     path('login/', _frontend_redirect('/login')),
-    path('logout/', _frontend_redirect('/logout')),
     path('', _frontend_redirect('/')),
 ]
 

@@ -44,9 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apiLogin(username, password);
     const userData = await apiFetch<User>('/me/');
     setUser(userData);
-    if (userData.tipo === 'admin') {
-      window.location.href = `${API_URL}/admin/`;
-    } else if (userData.tipo === 'professor') {
+    if (userData.tipo === 'professor') {
       router.push('/professor/dashboard');
     } else if (userData.tipo === 'aluno') {
       router.push('/aluno/dashboard');

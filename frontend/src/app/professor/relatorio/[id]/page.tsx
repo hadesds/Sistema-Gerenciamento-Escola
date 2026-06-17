@@ -158,7 +158,15 @@ export default function RelatorioAlunoPage() {
           @media print {
             .print-only { display: block; font-size: 10pt; color: #666; margin-top: 0.2rem; }
             .no-print { display: none !important; }
-            body { background: white !important; font-size: 12pt; }
+            /* Esconde glifos de ícone para não virarem texto literal no PDF */
+            .material-icons-outlined { display: none !important; }
+            body { background: white !important; font-size: 12pt; line-height: 1.4 !important; }
+            .relatorio-page-header { display: block !important; margin-bottom: 1rem; }
+            .stat-card, .card { break-inside: avoid; }
+            .stat-info h3 { font-size: 14pt !important; }
+            .stat-info p { font-size: 9pt !important; }
+            .comportamento-row strong { font-size: 11pt !important; }
+            .comportamento-row span { font-size: 10pt !important; }
             .container { max-width: 100% !important; padding: 0 !important; }
             nav, footer { display: none !important; }
             .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 1rem !important; }

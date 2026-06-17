@@ -914,4 +914,289 @@ def aluno_assiduidade(request):
         presente = presencas_data.get(str(a.user.pk), True)
         PresencaAluno.objects.create(registro=registro, aluno=a, presente=bool(presente))
 
+
+# ==========================================
+# RELATÓRIO PDF
+# ==========================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_relatorio_pdf(request, aluno_id):
+    """Gera e devolve o relatório completo do aluno em PDF via ReportLab."""
+    from io import BytesIO
+    from datetime import date
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
+    professor = _get_professor(request)
+    if not professor:
+        return HttpResponse('Acesso negado.', status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    avaliacoes = Avaliacao.objects.filter(aluno=aluno).order_by('-data')
+    MAX_SCORE = 5.0
+
+    # ── médias comportamentais ──────────────────────────────────────────────
+    medias = {'media_assiduidade': 0.0, 'media_participacao': 0.0,
+              'media_responsabilidade': 0.0, 'media_sociabilidade': 0.0}
+    if avaliacoes.exists():
+        agg = avaliacoes.aggregate(
+            media_assiduidade=Avg('assiduidade'),
+            media_participacao=Avg('participacao'),
+            media_responsabilidade=Avg('responsabilidade'),
+            media_sociabilidade=Avg('sociabilidade'),
+        )
+        medias = {k: float(v or 0) for k, v in agg.items()}
+    media_geral_comp = sum(medias.values()) / 4
+
+    def calc_percent(v):
+        return round((v / MAX_SCORE) * 100) if v and MAX_SCORE > 0 else 0
+
+    # ── notas por matéria (ProvaIndividual) ────────────────────────────────
+    provas_qs = ProvaIndividual.objects.filter(aluno=aluno).select_related('materia').order_by('materia__nome', 'epoca', 'numero')
+    provas_por_materia: dict = {}
+    for p in provas_qs:
+        mat = p.materia.nome
+        if mat not in provas_por_materia:
+            provas_por_materia[mat] = {'1B': [], '2B': [], '3B': [], '4B': []}
+        provas_por_materia[mat][p.epoca].append(float(p.nota))
+
+    # fallback: NotaMateria (legado)
+    notas_por_epoca: dict = {}
+    medias_materias: dict = {}
+    if not provas_por_materia:
+        notas_qs = NotaMateria.objects.filter(aluno=aluno).order_by('epoca', 'materia')
+        medias_raw: dict = {}
+        for nota in notas_qs:
+            ek = nota.get_epoca_display()
+            mk = nota.get_materia_display()
+            notas_por_epoca.setdefault(ek, {})[mk] = float(nota.nota)
+            medias_raw.setdefault(mk, []).append(float(nota.nota))
+        medias_materias = {m: round(sum(v)/len(v), 2) for m, v in medias_raw.items()}
+
+    def _avg(lst):
+        return round(sum(lst) / len(lst), 2) if lst else None
+
+    # ── build PDF ──────────────────────────────────────────────────────────
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        leftMargin=2*cm, rightMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm,
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Title'], fontSize=16, spaceAfter=4, alignment=TA_CENTER)
+    subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=9, textColor=colors.grey, alignment=TA_CENTER, spaceAfter=12)
+    section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=12, spaceBefore=14, spaceAfter=6, textColor=colors.HexColor('#0d2d6b'))
+    body_style = ParagraphStyle('Body', parent=styles['Normal'], fontSize=9, leading=13)
+
+    PRIMARY = colors.HexColor('#0d2d6b')
+    LIGHT = colors.HexColor('#e8f0fc')
+    SUCCESS = colors.HexColor('#27ae60')
+    WARNING = colors.HexColor('#f39c12')
+    DANGER = colors.HexColor('#e74c3c')
+
+    def nota_color(n):
+        if n is None:
+            return colors.grey
+        if n >= 7:
+            return SUCCESS
+        if n >= 5:
+            return WARNING
+        return DANGER
+
+    story = []
+
+    # Cabeçalho
+    story.append(Paragraph('Sistema CARA – Relatório do Aluno', title_style))
+    story.append(Paragraph(f'Gerado em {date.today().strftime("%d/%m/%Y")}', subtitle_style))
+    story.append(HRFlowable(width='100%', thickness=1, color=PRIMARY))
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Seção 1: Identificação ─────────────────────────────────────────────
+    story.append(Paragraph('Identificação', section_style))
+    nome = aluno.user.get_full_name() or aluno.user.username
+    turma_nome = aluno.turma.nome if aluno.turma else '–'
+    matricula = aluno.matricula or '–'
+    id_data = [
+        ['Nome', nome, 'Turma', turma_nome],
+        ['Matrícula', matricula, 'Total de Avaliações', str(avaliacoes.count())],
+    ]
+    id_table = Table(id_data, colWidths=[3.5*cm, 7*cm, 3*cm, 3.5*cm])
+    id_table.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTNAME', (2,0), (2,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('BACKGROUND', (0,0), (-1,-1), LIGHT),
+        ('ROWBACKGROUNDS', (0,0), (-1,-1), [LIGHT, colors.white]),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
+        ('PADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(id_table)
+    story.append(Spacer(1, 0.4*cm))
+
+    # ── Seção 2: Notas por Matéria e Bimestre ─────────────────────────────
+    story.append(Paragraph('Notas por Matéria e Bimestre', section_style))
+    EPOCAS_KEYS = ['1B', '2B', '3B', '4B']
+    EPOCAS_LABELS = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre']
+
+    if provas_por_materia:
+        header_row = ['Matéria'] + EPOCAS_LABELS + ['Média Anual']
+        table_data = [header_row]
+        all_means = []
+        bim_means = {k: [] for k in EPOCAS_KEYS}
+
+        for mat, epocas in sorted(provas_por_materia.items()):
+            row = [mat]
+            mat_all = []
+            for ek in EPOCAS_KEYS:
+                lst = epocas.get(ek, [])
+                m = _avg(lst)
+                row.append(f'{m:.2f}' if m is not None else '–')
+                if m is not None:
+                    mat_all.append(m)
+                    bim_means[ek].append(m)
+            ma = _avg(mat_all)
+            row.append(f'{ma:.2f}' if ma is not None else '–')
+            if ma is not None:
+                all_means.append(ma)
+            table_data.append(row)
+
+        # linha de média geral
+        mg_row = ['Média Geral']
+        for ek in EPOCAS_KEYS:
+            mg = _avg(bim_means[ek])
+            mg_row.append(f'{mg:.2f}' if mg is not None else '–')
+        mga = _avg(all_means)
+        mg_row.append(f'{mga:.2f}' if mga is not None else '–')
+        table_data.append(mg_row)
+
+        col_w = [4.5*cm] + [2.5*cm]*4 + [2.5*cm]
+        nt = Table(table_data, colWidths=col_w)
+        n_rows = len(table_data)
+        nt.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), PRIMARY),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('FONTNAME', (0,1), (0,-1), 'Helvetica-Bold'),
+            ('FONTNAME', (0,n_rows-1), (-1,n_rows-1), 'Helvetica-Bold'),
+            ('BACKGROUND', (0,n_rows-1), (-1,n_rows-1), LIGHT),
+            ('ROWBACKGROUNDS', (0,1), (-1,n_rows-2), [colors.white, colors.HexColor('#f5f8ff')]),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
+            ('ALIGN', (1,0), (-1,-1), 'CENTER'),
+            ('PADDING', (0,0), (-1,-1), 4),
+        ]))
+        story.append(nt)
+
+    elif notas_por_epoca:
+        EPOCAS_ORDER = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre']
+        epocas_presentes = [e for e in EPOCAS_ORDER if e in notas_por_epoca]
+        materias = sorted(medias_materias.keys())
+        header_row = ['Matéria'] + epocas_presentes + ['Média']
+        table_data = [header_row]
+        for mat in materias:
+            row = [mat]
+            for ep in epocas_presentes:
+                n = notas_por_epoca.get(ep, {}).get(mat)
+                row.append(f'{n:.1f}' if n is not None else '–')
+            row.append(f'{medias_materias[mat]:.2f}')
+            table_data.append(row)
+        col_w = [4.5*cm] + [2.5*cm]*len(epocas_presentes) + [2.5*cm]
+        nt = Table(table_data, colWidths=col_w)
+        nt.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), PRIMARY),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('FONTNAME', (0,1), (0,-1), 'Helvetica-Bold'),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f5f8ff')]),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
+            ('ALIGN', (1,0), (-1,-1), 'CENTER'),
+            ('PADDING', (0,0), (-1,-1), 4),
+        ]))
+        story.append(nt)
+    else:
+        story.append(Paragraph('Nenhuma nota registrada.', body_style))
+
+    story.append(Spacer(1, 0.4*cm))
+
+    # ── Seção 3: Comportamento ─────────────────────────────────────────────
+    story.append(Paragraph('Comportamento', section_style))
+    criterios = [
+        ('Assiduidade',      'media_assiduidade'),
+        ('Participação',     'media_participacao'),
+        ('Responsabilidade', 'media_responsabilidade'),
+        ('Sociabilidade',    'media_sociabilidade'),
+    ]
+    comp_data = [['Critério', 'Média (0–5)', 'Pontos (0–2.5)', '%']]
+    for label, key in criterios:
+        v = medias[key]
+        comp_data.append([label, f'{v:.2f}', f'{v/2:.2f}', f'{calc_percent(v)}%'])
+    comp_data.append(['Média Geral', f'{media_geral_comp:.2f}', f'{media_geral_comp/2:.2f}', f'{calc_percent(media_geral_comp)}%'])
+
+    ct = Table(comp_data, colWidths=[5*cm, 3.5*cm, 3.5*cm, 3*cm])
+    n_comp = len(comp_data)
+    ct.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), PRIMARY),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('FONTNAME', (0,n_comp-1), (-1,n_comp-1), 'Helvetica-Bold'),
+        ('BACKGROUND', (0,n_comp-1), (-1,n_comp-1), LIGHT),
+        ('ROWBACKGROUNDS', (0,1), (-1,n_comp-2), [colors.white, colors.HexColor('#f5f8ff')]),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
+        ('ALIGN', (1,0), (-1,-1), 'CENTER'),
+        ('PADDING', (0,0), (-1,-1), 5),
+    ]))
+    story.append(ct)
+    story.append(Spacer(1, 0.4*cm))
+
+    # ── Seção 4: Histórico de Avaliações ──────────────────────────────────
+    if avaliacoes.exists():
+        story.append(Paragraph('Histórico de Avaliações Comportamentais', section_style))
+        av_data = [['Data', 'Matéria', 'Assim.', 'Part.', 'Resp.', 'Soc.', 'Média', 'Observação']]
+        for av in avaliacoes:
+            media_av = float(av.calcular_media())
+            av_data.append([
+                av.data.strftime('%d/%m/%Y'),
+                av.materia.nome if av.materia else '–',
+                f'{float(av.assiduidade)/2:.1f}',
+                f'{float(av.participacao)/2:.1f}',
+                f'{float(av.responsabilidade)/2:.1f}',
+                f'{float(av.sociabilidade)/2:.1f}',
+                f'{media_av:.2f}',
+                av.observacao or '–',
+            ])
+
+        av_col_w = [2*cm, 2.5*cm, 1.3*cm, 1.3*cm, 1.3*cm, 1.3*cm, 1.5*cm, 5.8*cm]
+        avt = Table(av_data, colWidths=av_col_w, repeatRows=1)
+        avt.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), PRIMARY),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 7.5),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f5f8ff')]),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
+            ('ALIGN', (2,0), (6,-1), 'CENTER'),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('WORDWRAP', (7,1), (7,-1), True),
+            ('PADDING', (0,0), (-1,-1), 4),
+        ]))
+        story.append(avt)
+
+    # ── build & return ─────────────────────────────────────────────────────
+    doc.build(story)
+    buffer.seek(0)
+    nome_arquivo = f'relatorio_{nome.replace(" ", "_")}_{date.today().strftime("%Y%m%d")}.pdf'
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
+    return response
+
     return Response({'detail': 'Assiduidade registrada!', 'id': registro.id}, status=201)

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, API_URL } from '@/lib/api';
+import Cookies from 'js-cookie';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -88,6 +89,26 @@ export default function RelatorioAlunoPage() {
   const alunoId = params.id as string;
   const [data, setData] = useState<RelatorioData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exportando, setExportando] = useState(false);
+
+  async function exportarPDF() {
+    setExportando(true);
+    try {
+      const res = await fetch(`${API_URL}/api/professor/relatorio/${alunoId}/pdf/`, {
+        headers: { Authorization: `Bearer ${Cookies.get('access_token') ?? ''}` },
+      });
+      if (!res.ok) throw new Error('Erro ao gerar PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio_aluno_${alunoId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportando(false);
+    }
+  }
 
   useEffect(() => {
     apiFetch<RelatorioData>(`/professor/relatorio/${alunoId}/`)
@@ -154,10 +175,19 @@ export default function RelatorioAlunoPage() {
           /* Resumo semestral */
           .resumo-table td, .resumo-table th { padding: 0.8rem 1.2rem; }
 
-          @media screen { .no-print { display: inline-flex; } }
+          @media screen { .no-print { display: inline-flex; } .print-only { display: none; } }
           @media print {
+            .print-only { display: block; font-size: 10pt; color: #666; margin-top: 0.2rem; }
             .no-print { display: none !important; }
-            body { background: white !important; font-size: 12pt; }
+            /* Esconde glifos de ícone para não virarem texto literal no PDF */
+            .material-icons-outlined { display: none !important; }
+            body { background: white !important; font-size: 12pt; line-height: 1.4 !important; }
+            .relatorio-page-header { display: block !important; margin-bottom: 1rem; }
+            .stat-card, .card { break-inside: avoid; }
+            .stat-info h3 { font-size: 14pt !important; }
+            .stat-info p { font-size: 9pt !important; }
+            .comportamento-row strong { font-size: 11pt !important; }
+            .comportamento-row span { font-size: 10pt !important; }
             .container { max-width: 100% !important; padding: 0 !important; }
             nav, footer { display: none !important; }
             .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 1rem !important; }
@@ -169,6 +199,7 @@ export default function RelatorioAlunoPage() {
             h1 { font-size: 16pt; } h2 { font-size: 13pt; }
             .provas-bim-grid { grid-template-columns: repeat(4,1fr) !important; }
             .provas-bim-col { background: #f8f8f8 !important; border: 1px solid #ddd; }
+            .feedback-table td { word-break: break-word; }
           }
         `}</style>
 
@@ -177,11 +208,14 @@ export default function RelatorioAlunoPage() {
         ) : (
           <>
             <div className="relatorio-page-header">
-              <h1>Relatório do Aluno</h1>
+              <div>
+                <h1>Relatório do Aluno</h1>
+                <div className="print-only">Gerado em {new Date().toLocaleString('pt-BR')}</div>
+              </div>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <button className="btn btn-primary no-print" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button className="btn btn-primary" onClick={exportarPDF} disabled={exportando} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span className="material-icons-outlined">picture_as_pdf</span>
-                  Exportar PDF
+                  {exportando ? 'Gerando…' : 'Exportar PDF'}
                 </button>
                 <Link href="/professor/turmas" className="btn btn-secondary no-print">← Voltar</Link>
               </div>
@@ -467,8 +501,8 @@ export default function RelatorioAlunoPage() {
                           <td>{escalaComportamento(av.responsabilidade)}</td>
                           <td>{escalaComportamento(av.sociabilidade)}</td>
                           <td><NotaBadge nota={av.media} /></td>
-                          <td style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '20rem' }}>
-                            {av.observacao ? av.observacao.slice(0, 60) + (av.observacao.length > 60 ? '…' : '') : '–'}
+                          <td style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+                            {av.observacao || '–'}
                           </td>
                         </tr>
                       ))}

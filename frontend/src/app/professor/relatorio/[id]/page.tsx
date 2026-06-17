@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, API_URL } from '@/lib/api';
+import Cookies from 'js-cookie';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -88,6 +89,26 @@ export default function RelatorioAlunoPage() {
   const alunoId = params.id as string;
   const [data, setData] = useState<RelatorioData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exportando, setExportando] = useState(false);
+
+  async function exportarPDF() {
+    setExportando(true);
+    try {
+      const res = await fetch(`${API_URL}/api/professor/relatorio/${alunoId}/pdf/`, {
+        headers: { Authorization: `Bearer ${Cookies.get('access_token') ?? ''}` },
+      });
+      if (!res.ok) throw new Error('Erro ao gerar PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio_aluno_${alunoId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportando(false);
+    }
+  }
 
   useEffect(() => {
     apiFetch<RelatorioData>(`/professor/relatorio/${alunoId}/`)
@@ -192,9 +213,9 @@ export default function RelatorioAlunoPage() {
                 <div className="print-only">Gerado em {new Date().toLocaleString('pt-BR')}</div>
               </div>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <button className="btn btn-primary no-print" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button className="btn btn-primary" onClick={exportarPDF} disabled={exportando} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span className="material-icons-outlined">picture_as_pdf</span>
-                  Exportar PDF
+                  {exportando ? 'Gerando…' : 'Exportar PDF'}
                 </button>
                 <Link href="/professor/turmas" className="btn btn-secondary no-print">← Voltar</Link>
               </div>

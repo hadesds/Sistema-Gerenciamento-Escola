@@ -154,8 +154,9 @@ export default function RelatorioAlunoPage() {
           /* Resumo semestral */
           .resumo-table td, .resumo-table th { padding: 0.8rem 1.2rem; }
 
-          @media screen { .no-print { display: inline-flex; } }
+          @media screen { .no-print { display: inline-flex; } .print-only { display: none; } }
           @media print {
+            .print-only { display: block; font-size: 10pt; color: #666; margin-top: 0.2rem; }
             .no-print { display: none !important; }
             body { background: white !important; font-size: 12pt; }
             .container { max-width: 100% !important; padding: 0 !important; }
@@ -169,6 +170,7 @@ export default function RelatorioAlunoPage() {
             h1 { font-size: 16pt; } h2 { font-size: 13pt; }
             .provas-bim-grid { grid-template-columns: repeat(4,1fr) !important; }
             .provas-bim-col { background: #f8f8f8 !important; border: 1px solid #ddd; }
+            .feedback-table td { word-break: break-word; }
           }
         `}</style>
 
@@ -177,7 +179,10 @@ export default function RelatorioAlunoPage() {
         ) : (
           <>
             <div className="relatorio-page-header">
-              <h1>Relatório do Aluno</h1>
+              <div>
+                <h1>Relatório do Aluno</h1>
+                <div className="print-only">Gerado em {new Date().toLocaleString('pt-BR')}</div>
+              </div>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <button className="btn btn-primary no-print" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span className="material-icons-outlined">picture_as_pdf</span>
@@ -467,8 +472,8 @@ export default function RelatorioAlunoPage() {
                           <td>{escalaComportamento(av.responsabilidade)}</td>
                           <td>{escalaComportamento(av.sociabilidade)}</td>
                           <td><NotaBadge nota={av.media} /></td>
-                          <td style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '20rem' }}>
-                            {av.observacao ? av.observacao.slice(0, 60) + (av.observacao.length > 60 ? '…' : '') : '–'}
+                          <td style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+                            {av.observacao || '–'}
                           </td>
                         </tr>
                       ))}

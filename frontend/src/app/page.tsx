@@ -26,7 +26,6 @@ export default function Home() {
     if (!loading && user) {
       if (user.tipo === 'professor') router.push('/professor/dashboard');
       else if (user.tipo === 'aluno') router.push('/aluno/dashboard');
-      else if (user.tipo === 'admin') window.location.href = `${API_URL}/admin/`;
     }
   }, [user, loading, router]);
 

@@ -66,6 +66,28 @@ const AREAS_ENEM = [
   { label: "Matemática", icon: "calculate", cor: "#2980b9", siglas: ["MTM"] },
 ];
 
+// Novo sistema de notas — espelha escola/grade_config.py
+const AV_TIPOS = [
+  { codigo: "AV1", nome: "AV1" },
+  { codigo: "AV2", nome: "AV2" },
+  { codigo: "AV3", nome: "AV3 (Qualitativa)" },
+];
+
+const AREAS_NOTA = [
+  { codigo: "PRT", nome: "Português", avs: ["AV1"] },
+  { codigo: "MTM", nome: "Matemática", avs: ["AV1", "AV2"] },
+  { codigo: "LING", nome: "Linguagens e Códigos", avs: ["AV1", "AV2"] },
+  { codigo: "HUM", nome: "Ciências Humanas", avs: ["AV1", "AV2"] },
+  { codigo: "NAT", nome: "Ciências da Natureza", avs: ["AV1", "AV2"] },
+];
+
+const BIMESTRES = [
+  { codigo: "1B", nome: "1° Bimestre" },
+  { codigo: "2B", nome: "2° Bimestre" },
+  { codigo: "3B", nome: "3° Bimestre" },
+  { codigo: "4B", nome: "4° Bimestre" },
+];
+
 function difBadge(d: string, label: string) {
   const bg =
     d === "facil"
@@ -92,6 +114,9 @@ export default function CriarSimuladoPage() {
   const [usarTempo, setUsarTempo] = useState(false);
   const [tempoLimite, setTempoLimite] = useState("60");
   const [areaSimulado, setAreaSimulado] = useState("");
+  const [avTipo, setAvTipo] = useState("");
+  const [areaNota, setAreaNota] = useState("");
+  const [bimestre, setBimestre] = useState("");
   const [questoesSelecionadas, setQuestoesSelecionadas] = useState<
     QuestaoSelecionada[]
   >([]);
@@ -184,6 +209,9 @@ export default function CriarSimuladoPage() {
           titulo,
           tempo_limite: usarTempo ? parseInt(tempoLimite) : null,
           area_conhecimento: areaSimulado,
+          av_tipo: avTipo,
+          area: avTipo === "AV3" ? "" : areaNota,
+          epoca: bimestre,
         }),
       });
       setAlert({ type: "success", message: "Simulado criado com sucesso!" });
@@ -397,6 +425,85 @@ export default function CriarSimuladoPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Avaliação / Nota — novo sistema */}
+              <div className="form-group">
+                <label>Avaliação (lança nota automaticamente)</label>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(18rem, 1fr))",
+                    gap: "1.2rem",
+                  }}
+                >
+                  <div>
+                    <label style={{ fontSize: "1.3rem" }}>Tipo (AV)</label>
+                    <select
+                      value={avTipo}
+                      onChange={(e) => {
+                        setAvTipo(e.target.value);
+                        setAreaNota("");
+                      }}
+                    >
+                      <option value="">Nenhuma (sem nota)</option>
+                      {AV_TIPOS.map((a) => (
+                        <option key={a.codigo} value={a.codigo}>
+                          {a.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {avTipo && avTipo !== "AV3" && (
+                    <div>
+                      <label style={{ fontSize: "1.3rem" }}>Área</label>
+                      <select
+                        value={areaNota}
+                        onChange={(e) => setAreaNota(e.target.value)}
+                      >
+                        <option value="">Selecione a área...</option>
+                        {AREAS_NOTA.filter((a) => a.avs.includes(avTipo)).map(
+                          (a) => (
+                            <option key={a.codigo} value={a.codigo}>
+                              {a.nome}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+                  )}
+
+                  {avTipo && (
+                    <div>
+                      <label style={{ fontSize: "1.3rem" }}>Bimestre</label>
+                      <select
+                        value={bimestre}
+                        onChange={(e) => setBimestre(e.target.value)}
+                      >
+                        <option value="">Selecione o bimestre...</option>
+                        {BIMESTRES.map((b) => (
+                          <option key={b.codigo} value={b.codigo}>
+                            {b.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                {avTipo && avTipo !== "AV3" && (
+                  <p
+                    style={{
+                      fontSize: "1.25rem",
+                      color: "var(--text-secondary)",
+                      marginTop: "0.6rem",
+                    }}
+                  >
+                    Ao finalizar, a nota do aluno nesta área/bimestre é gerada
+                    automaticamente (questões discursivas ficam pendentes de
+                    correção).
+                  </p>
+                )}
               </div>
             </div>
 

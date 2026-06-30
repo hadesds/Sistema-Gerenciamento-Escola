@@ -59,6 +59,9 @@ export default function VisualizarSimuladoPage() {
   const [fase, setFase] = useState<Fase>('loading');
   const [questaoIdx, setQuestaoIdx] = useState(0);
   const [respostas, setRespostas] = useState<Respostas>({});
+  const [enviando, setEnviando] = useState(false);
+  const [resultadoApi, setResultadoApi] = useState<{ nota: number | null; status: string } | null>(null);
+  const enviadoRef = useRef(false);
 
   // Exam timer
   const [tempoRestante, setTempoRestante] = useState<number | null>(null);
@@ -104,7 +107,7 @@ export default function VisualizarSimuladoPage() {
       setTempoRestante(rem);
       if (rem === 0) {
         clearInterval(timerRef.current!);
-        setFase('resultado');
+        finalizarRef.current();
       }
     }, 500);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
@@ -180,6 +183,39 @@ export default function VisualizarSimuladoPage() {
     }
     return { acertos, respondidas, total: simulado.total_questoes };
   }
+
+  // ── Finalizar e enviar respostas ao backend ─────────────────────────────────
+  const finalizarProva = useCallback(async () => {
+    if (enviadoRef.current || !simulado) { setFase('resultado'); return; }
+    enviadoRef.current = true;
+    setEnviando(true);
+    const payload = {
+      respostas: simulado.questoes.map(qq => {
+        const r = respostas[qq.id];
+        if (qq.tipo === 'objetiva') {
+          return { questao: qq.id, alternativa: r ? Number(r) : null, texto: '' };
+        }
+        return { questao: qq.id, alternativa: null, texto: r ?? '' };
+      }),
+    };
+    try {
+      const res = await apiFetch<{ nota: number | null; status: string }>(
+        `/aluno/simulado/${simuladoId}/enviar/`,
+        { method: 'POST', body: JSON.stringify(payload) },
+      );
+      setResultadoApi(res);
+    } catch {
+      // mesmo em erro (ex.: já enviado), mostra a revisão local
+      setResultadoApi(null);
+    } finally {
+      setEnviando(false);
+      setFase('resultado');
+    }
+  }, [simulado, respostas, simuladoId]);
+
+  // mantém a referência mais recente para uso dentro do timer (evita closure obsoleta)
+  const finalizarRef = useRef(finalizarProva);
+  finalizarRef.current = finalizarProva;
 
   // ──────────────────────────────────────────────────────────────────────────
   // Render phases
@@ -402,11 +438,19 @@ export default function VisualizarSimuladoPage() {
                 </>
               )}
             </div>
-            {temObj && (
+            {resultadoApi && resultadoApi.status === 'corrigido' && resultadoApi.nota !== null ? (
+              <h2 style={{ color: 'white', fontSize: '2.4rem', marginBottom: '0.4rem' }}>
+                Nota: <strong>{Number(resultadoApi.nota).toFixed(1)}</strong>
+              </h2>
+            ) : resultadoApi && resultadoApi.status === 'pendente_correcao' ? (
+              <h2 style={{ color: 'white', fontSize: '2rem', marginBottom: '0.4rem' }}>
+                Aguardando correção das questões discursivas
+              </h2>
+            ) : temObj ? (
               <h2 style={{ color: 'white', fontSize: '2.4rem', marginBottom: '0.4rem' }}>
                 Nota estimada: <strong>{nota.toFixed(1)}</strong>
               </h2>
-            )}
+            ) : null}
             <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '1.5rem' }}>
               {temObj ? `${score.acertos} corretas · ` : ''}{score.respondidas} de {simulado.total_questoes} respondidas
             </p>
@@ -567,10 +611,11 @@ export default function VisualizarSimuladoPage() {
         <button
           className="btn btn-submit"
           style={{ fontSize: '1.35rem', padding: '0.8rem 1.6rem', whiteSpace: 'nowrap' }}
-          onClick={() => setFase('resultado')}
+          onClick={finalizarProva}
+          disabled={enviando}
         >
           <span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>check_circle</span>
-          Finalizar
+          {enviando ? 'Enviando...' : 'Finalizar'}
         </button>
       </div>
 
@@ -681,9 +726,9 @@ export default function VisualizarSimuladoPage() {
               <span className="material-icons-outlined">arrow_forward</span>
             </button>
           ) : (
-            <button className="btn btn-submit" onClick={() => setFase('resultado')}>
+            <button className="btn btn-submit" onClick={finalizarProva} disabled={enviando}>
               <span className="material-icons-outlined">check_circle</span>
-              Finalizar Prova
+              {enviando ? 'Enviando...' : 'Finalizar Prova'}
             </button>
           )}
         </div>

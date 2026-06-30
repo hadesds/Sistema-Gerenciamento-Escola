@@ -7,6 +7,7 @@ urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('me/', api_views.me, name='api_me'),
+    path('grade-config/', api_views.grade_config, name='api_grade_config'),
 
     # Professor
     path('professor/dashboard/', api_views.professor_dashboard, name='api_professor_dashboard'),
@@ -25,11 +26,13 @@ urlpatterns = [
     path('professor/notas/<int:aluno_id>/', api_views.professor_notas_aluno, name='api_professor_notas'),
     path('professor/provas/<int:aluno_id>/', api_views.professor_provas_aluno, name='api_professor_provas'),
     path('professor/perfil/<int:aluno_id>/', api_views.professor_perfil_turma, name='api_professor_perfil'),
+    path('professor/resultado/<int:resultado_id>/corrigir/', api_views.professor_corrigir_discursivas, name='api_corrigir_discursivas'),
 
     # Aluno
     path('aluno/dashboard/', api_views.aluno_dashboard, name='api_aluno_dashboard'),
     path('aluno/meu-feedback/', api_views.aluno_meu_feedback, name='api_aluno_feedback'),
     path('aluno/meus-simulados/', api_views.aluno_meus_simulados, name='api_aluno_simulados'),
     path('aluno/simulado/<int:simulado_id>/', api_views.aluno_visualizar_simulado, name='api_aluno_simulado'),
+    path('aluno/simulado/<int:simulado_id>/enviar/', api_views.aluno_enviar_simulado, name='api_aluno_enviar_simulado'),
     path('aluno/assiduidade/', api_views.aluno_assiduidade, name='api_aluno_assiduidade'),
 ]

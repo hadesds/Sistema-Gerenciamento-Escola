@@ -430,6 +430,9 @@ def professor_criar_simulado(request):
     simulado.titulo = request.data.get('titulo', '')
     simulado.tempo_limite = request.data.get('tempo_limite') or None
     simulado.area_conhecimento = request.data.get('area_conhecimento', '')
+    simulado.av_tipo = request.data.get('av_tipo', '') or ''
+    simulado.area = request.data.get('area', '') or ''
+    simulado.epoca = request.data.get('epoca', '') or ''
     simulado.save()
 
     return Response(SimuladoSerializer(simulado, context={'request': request}).data, status=201)
@@ -475,6 +478,12 @@ def professor_detalhe_simulado(request, simulado_id):
             simulado.tempo_limite = request.data['tempo_limite'] or None
         if 'area_conhecimento' in request.data:
             simulado.area_conhecimento = request.data['area_conhecimento']
+        if 'av_tipo' in request.data:
+            simulado.av_tipo = request.data['av_tipo'] or ''
+        if 'area' in request.data:
+            simulado.area = request.data['area'] or ''
+        if 'epoca' in request.data:
+            simulado.epoca = request.data['epoca'] or ''
         if 'turma' in request.data:
             turma = get_object_or_404(Turma, id=request.data['turma'])
             simulado.turma_alvo = turma
@@ -804,6 +813,99 @@ def aluno_visualizar_simulado(request, simulado_id):
         return Response({'detail': 'Sem acesso a este simulado.'}, status=403)
 
     return Response(SimuladoSerializer(simulado, context={'request': request}).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def aluno_enviar_simulado(request, simulado_id):
+    """O aluno envia as respostas; corrige automaticamente as objetivas e gera a nota.
+
+    Payload: { respostas: [ { questao: <id>, alternativa: <id|null>, texto: <str> }, ... ] }
+    """
+    from django.utils import timezone
+    from .models import ResultadoSimulado, RespostaAluno, AlternativaQuestao
+    from .grading import corrigir_resultado
+    from .serializers import ResultadoSimuladoSerializer
+
+    aluno = _get_aluno(request)
+    if not aluno:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    simulado = get_object_or_404(Simulado, id=simulado_id)
+    if simulado.turma_alvo != aluno.turma:
+        return Response({'detail': 'Sem acesso a este simulado.'}, status=403)
+
+    if ResultadoSimulado.objects.filter(simulado=simulado, aluno=aluno).exists():
+        return Response({'detail': 'Você já enviou este simulado.'}, status=409)
+
+    respostas_payload = request.data.get('respostas', [])
+
+    resultado = ResultadoSimulado.objects.create(
+        simulado=simulado, aluno=aluno, enviado_em=timezone.now(),
+    )
+
+    # questões válidas do simulado
+    questoes_validas = {sq.questao_id: sq.questao for sq in
+                        simulado.simulado_questoes.select_related('questao')}
+
+    for item in respostas_payload:
+        qid = item.get('questao')
+        if qid not in questoes_validas:
+            continue
+        alt_id = item.get('alternativa')
+        alternativa = None
+        if alt_id:
+            alternativa = AlternativaQuestao.objects.filter(id=alt_id, questao_id=qid).first()
+        RespostaAluno.objects.create(
+            resultado=resultado,
+            questao=questoes_validas[qid],
+            alternativa=alternativa,
+            texto=item.get('texto', '') or '',
+        )
+
+    corrigir_resultado(resultado)
+    return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data, status=201)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def professor_corrigir_discursivas(request, resultado_id):
+    """O professor pontua as discursivas pendentes; recalcula a nota e fecha a NotaArea.
+
+    Payload: { pontos: { <resposta_id>: <valor>, ... } }
+    """
+    from .models import ResultadoSimulado, RespostaAluno
+    from .grading import corrigir_resultado
+    from .serializers import ResultadoSimuladoSerializer
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    resultado = get_object_or_404(ResultadoSimulado, id=resultado_id)
+    if resultado.simulado.autor_id != professor.pk:
+        return Response({'detail': 'Sem acesso a este resultado.'}, status=403)
+
+    pontos_map = request.data.get('pontos', {})
+    for resp_id, valor in pontos_map.items():
+        resp = RespostaAluno.objects.filter(id=resp_id, resultado=resultado).first()
+        if resp and resp.questao.tipo != 'objetiva':
+            try:
+                resp.pontos = float(valor)
+                resp.save()
+            except (TypeError, ValueError):
+                continue
+
+    corrigir_resultado(resultado)
+    return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def grade_config(request):
+    """Expõe a taxonomia de disciplinas/áreas/AVs/épocas para o frontend."""
+    from .grade_config import config_dict
+    return Response(config_dict())
 
 
 # ==========================================

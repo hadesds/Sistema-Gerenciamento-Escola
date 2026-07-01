@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, SimuladoQuestao, NotaMateria, PerfilTurma, AlternativaQuestao, Materia
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, SimuladoQuestao, NotaMateria, PerfilTurma, AlternativaQuestao, Materia, ResultadoSimulado, RespostaAluno
 
 class TurmaSerializer(serializers.ModelSerializer):
     turno_display = serializers.CharField(source='get_turno_display', read_only=True)
@@ -136,7 +136,7 @@ class SimuladoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Simulado
-        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'total_questoes', 'questoes']
+        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'av_tipo', 'area', 'epoca', 'total_questoes', 'questoes']
 
     def get_questoes(self, obj):
         request = self.context.get('request')
@@ -155,6 +155,32 @@ class SimuladoSerializer(serializers.ModelSerializer):
 
     def get_total_questoes(self, obj):
         return obj.questoes.count()
+
+
+class RespostaAlunoSerializer(serializers.ModelSerializer):
+    questao_enunciado = serializers.CharField(source='questao.enunciado', read_only=True)
+    questao_tipo      = serializers.CharField(source='questao.tipo', read_only=True)
+
+    class Meta:
+        model = RespostaAluno
+        fields = ['id', 'questao', 'questao_enunciado', 'questao_tipo',
+                  'alternativa', 'texto', 'correta', 'pontos']
+
+
+class ResultadoSimuladoSerializer(serializers.ModelSerializer):
+    respostas   = RespostaAlunoSerializer(many=True, read_only=True)
+    aluno_nome  = serializers.SerializerMethodField()
+    av_tipo     = serializers.CharField(source='simulado.av_tipo', read_only=True)
+    area        = serializers.CharField(source='simulado.area', read_only=True)
+    epoca       = serializers.CharField(source='simulado.epoca', read_only=True)
+
+    class Meta:
+        model = ResultadoSimulado
+        fields = ['id', 'simulado', 'aluno', 'aluno_nome', 'nota', 'status',
+                  'cancelado', 'enviado_em', 'av_tipo', 'area', 'epoca', 'respostas']
+
+    def get_aluno_nome(self, obj):
+        return obj.aluno.user.get_full_name() or obj.aluno.user.username
 
 
 class NotaMateriaSerializer(serializers.ModelSerializer):

@@ -213,6 +213,10 @@ export default function RelatorioAlunoPage() {
                 <div className="print-only">Gerado em {new Date().toLocaleString('pt-BR')}</div>
               </div>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <Link href={`/professor/notas/${alunoId}`} className="btn btn-secondary no-print" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className="material-icons-outlined">edit_note</span>
+                  Gerenciar Notas
+                </Link>
                 <button className="btn btn-primary" onClick={exportarPDF} disabled={exportando} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span className="material-icons-outlined">picture_as_pdf</span>
                   {exportando ? 'Gerando…' : 'Exportar PDF'}

@@ -27,6 +27,9 @@ urlpatterns = [
     path('professor/provas/<int:aluno_id>/', api_views.professor_provas_aluno, name='api_professor_provas'),
     path('professor/perfil/<int:aluno_id>/', api_views.professor_perfil_turma, name='api_professor_perfil'),
     path('professor/resultado/<int:resultado_id>/corrigir/', api_views.professor_corrigir_discursivas, name='api_corrigir_discursivas'),
+    path('professor/consolidado/<int:aluno_id>/', api_views.professor_consolidado, name='api_professor_consolidado'),
+    path('professor/nota-area/<int:aluno_id>/', api_views.professor_nota_area, name='api_professor_nota_area'),
+    path('professor/nota-qualitativa/<int:aluno_id>/', api_views.professor_nota_qualitativa, name='api_professor_nota_qualitativa'),
 
     # Aluno
     path('aluno/dashboard/', api_views.aluno_dashboard, name='api_aluno_dashboard'),
@@ -34,5 +37,6 @@ urlpatterns = [
     path('aluno/meus-simulados/', api_views.aluno_meus_simulados, name='api_aluno_simulados'),
     path('aluno/simulado/<int:simulado_id>/', api_views.aluno_visualizar_simulado, name='api_aluno_simulado'),
     path('aluno/simulado/<int:simulado_id>/enviar/', api_views.aluno_enviar_simulado, name='api_aluno_enviar_simulado'),
+    path('aluno/minhas-notas/', api_views.aluno_minhas_notas, name='api_aluno_minhas_notas'),
     path('aluno/assiduidade/', api_views.aluno_assiduidade, name='api_aluno_assiduidade'),
 ]

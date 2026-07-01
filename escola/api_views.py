@@ -867,6 +867,25 @@ def aluno_enviar_simulado(request, simulado_id):
     return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data, status=201)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def aluno_minhas_notas(request):
+    """Notas consolidadas do próprio aluno por bimestre × disciplina."""
+    from .grading import consolidar_notas
+
+    aluno = _get_aluno(request)
+    if not aluno:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    return Response({
+        'aluno': {
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'turma': aluno.turma.nome if aluno.turma else '',
+        },
+        'notas': consolidar_notas(aluno),
+    })
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def professor_corrigir_discursivas(request, resultado_id):
@@ -906,6 +925,106 @@ def grade_config(request):
     """Expõe a taxonomia de disciplinas/áreas/AVs/épocas para o frontend."""
     from .grade_config import config_dict
     return Response(config_dict())
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_consolidado(request, aluno_id):
+    """Notas consolidadas do aluno por bimestre × disciplina."""
+    from .grading import consolidar_notas
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    return Response({
+        'aluno': {
+            'id': aluno.user.id,
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'turma': aluno.turma.nome if aluno.turma else '',
+        },
+        'notas': consolidar_notas(aluno),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def professor_nota_area(request, aluno_id):
+    """Override manual de uma NotaArea (correção/recuperação de AV1/AV2)."""
+    from .models import NotaArea
+    from .grade_config import AV_TIPOS, AREA_CHOICES, EPOCAS
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    epoca = request.data.get('epoca')
+    av_tipo = request.data.get('av_tipo')
+    area = request.data.get('area')
+    nota = request.data.get('nota')
+
+    validos = lambda val, choices: val in [c[0] for c in choices]
+    if not (validos(epoca, EPOCAS) and validos(av_tipo, AV_TIPOS) and validos(area, AREA_CHOICES)):
+        return Response({'detail': 'Época, AV ou área inválidos.'}, status=400)
+    try:
+        nota_f = float(nota)
+        if not (0 <= nota_f <= 10):
+            raise ValueError
+    except (TypeError, ValueError):
+        return Response({'detail': 'Nota inválida (0–10).'}, status=400)
+
+    obj, _ = NotaArea.objects.update_or_create(
+        aluno=aluno, epoca=epoca, av_tipo=av_tipo, area=area,
+        defaults={'nota': nota_f, 'origem': 'manual'},
+    )
+    return Response({'ok': True, 'nota': float(obj.nota), 'origem': obj.origem})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def professor_nota_qualitativa(request, aluno_id):
+    """Lança/atualiza a AV3 qualitativa por disciplina.
+
+    Payload: { epoca, notas: { <materia_id>: <nota>, ... } }  ou  { epoca, materia_id, nota }
+    """
+    from .models import NotaQualitativa
+    from .grade_config import EPOCAS
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    epoca = request.data.get('epoca')
+    if epoca not in [c[0] for c in EPOCAS]:
+        return Response({'detail': 'Época inválida.'}, status=400)
+
+    notas_map = request.data.get('notas')
+    if notas_map is None:
+        # formato single
+        mid = request.data.get('materia_id')
+        notas_map = {mid: request.data.get('nota')} if mid else {}
+
+    salvas = 0
+    for materia_id, valor in notas_map.items():
+        materia = Materia.objects.filter(id=materia_id).first()
+        if not materia:
+            continue
+        try:
+            nf = float(valor)
+            if not (0 <= nf <= 10):
+                continue
+        except (TypeError, ValueError):
+            continue
+        NotaQualitativa.objects.update_or_create(
+            aluno=aluno, epoca=epoca, materia=materia,
+            defaults={'nota': nf, 'professor': professor},
+        )
+        salvas += 1
+
+    return Response({'ok': True, 'salvas': salvas})
 
 
 # ==========================================

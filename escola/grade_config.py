@@ -54,6 +54,32 @@ EPOCAS = [
 # Choices simplificados (só código/nome) para os campos dos models
 AREA_CHOICES = [(cod, nome) for (cod, nome, _disc, _avs) in AREAS]
 
+# Mapeamento canônico disciplina -> área usada em cada AV.
+# Necessário porque uma disciplina pode aparecer em várias áreas; para calcular a
+# média por disciplina precisamos de UMA área por AV.
+DISCIPLINA_AREA = {
+    'PRT': {'AV1': 'PRT',  'AV2': 'LING'},
+    'LPR': {'AV1': 'PRT',  'AV2': 'LING'},
+    'MTM': {'AV1': 'MTM',  'AV2': 'MTM'},
+    'LMT': {'AV1': 'MTM',  'AV2': 'MTM'},
+    'ING': {'AV1': 'LING', 'AV2': 'LING'},
+    'ESP': {'AV1': 'LING', 'AV2': 'LING'},
+    'EDF': {'AV1': 'LING', 'AV2': 'LING'},
+    'ART': {'AV1': 'LING', 'AV2': 'LING'},
+    'GGF': {'AV1': 'HUM',  'AV2': 'HUM'},
+    'HST': {'AV1': 'HUM',  'AV2': 'HUM'},
+    'SOC': {'AV1': 'HUM',  'AV2': 'HUM'},
+    'FIL': {'AV1': 'HUM',  'AV2': 'HUM'},
+    'QMC': {'AV1': 'NAT',  'AV2': 'NAT'},
+    'FSC': {'AV1': 'NAT',  'AV2': 'NAT'},
+    'BIO': {'AV1': 'NAT',  'AV2': 'NAT'},
+}
+
+
+def disciplinas_ordenadas():
+    """Lista [(sigla, nome)] das disciplinas na ordem de DISCIPLINAS."""
+    return list(DISCIPLINAS)
+
 
 def areas_para_av(av_tipo):
     """Retorna a lista de áreas (cod, nome) válidas para um tipo de AV."""

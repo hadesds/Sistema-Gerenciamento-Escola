@@ -11,7 +11,8 @@ Fluxo:
 """
 from decimal import Decimal
 
-from .models import SimuladoQuestao, NotaArea
+from .models import SimuladoQuestao, NotaArea, NotaQualitativa, Materia
+from .grade_config import DISCIPLINAS, DISCIPLINA_AREA, EPOCAS
 
 
 def _valor_questao(simulado, questao_id):
@@ -85,3 +86,45 @@ def consolidar_nota_area(resultado):
         },
     )
     return nota_area
+
+
+def consolidar_notas(aluno):
+    """Consolida as notas do aluno por bimestre × disciplina.
+
+    Média final por disciplina = (AV1_área + AV2_área + AV3_disciplina) / 3,
+    tratando nota ausente como 0.
+    """
+    # Índices para lookup rápido
+    areas = {
+        (na.epoca, na.av_tipo, na.area): float(na.nota)
+        for na in NotaArea.objects.filter(aluno=aluno)
+    }
+    # NotaQualitativa por (epoca, sigla da matéria)
+    qualis = {}
+    for nq in NotaQualitativa.objects.filter(aluno=aluno).select_related('materia'):
+        if nq.materia:
+            qualis[(nq.epoca, nq.materia.sigla)] = float(nq.nota)
+
+    # id da Materia por sigla (para edição da AV3)
+    materia_por_sigla = {m.sigla: m.id for m in Materia.objects.all()}
+
+    resultado = {}
+    for epoca_cod, _epoca_nome in EPOCAS:
+        linhas = []
+        for sigla, nome in DISCIPLINAS:
+            mapa = DISCIPLINA_AREA.get(sigla, {})
+            area_av1 = mapa.get('AV1')
+            area_av2 = mapa.get('AV2')
+            av1 = areas.get((epoca_cod, 'AV1', area_av1))
+            av2 = areas.get((epoca_cod, 'AV2', area_av2))
+            av3 = qualis.get((epoca_cod, sigla))
+            final = round(((av1 or 0) + (av2 or 0) + (av3 or 0)) / 3, 2)
+            linhas.append({
+                'sigla': sigla, 'nome': nome,
+                'area_av1': area_av1, 'area_av2': area_av2,
+                'materia_id': materia_por_sigla.get(sigla),
+                'av1': av1, 'av2': av2, 'av3': av3,
+                'final': final,
+            })
+        resultado[epoca_cod] = linhas
+    return resultado

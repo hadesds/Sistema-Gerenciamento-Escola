@@ -27,6 +27,7 @@ export default function Navbar() {
   const alunoLinks = [
     { href: '/aluno/dashboard',      icon: 'home',       label: 'Início' },
     { href: '/aluno/meu-feedback',   icon: 'assessment', label: 'Meu Feedback' },
+    { href: '/aluno/notas',          icon: 'grade',      label: 'Minhas Notas' },
     { href: '/aluno/meus-simulados', icon: 'quiz',       label: 'Simulados' },
     ...(user.papel === 'lider' || user.papel === 'vice'
       ? [{ href: '/aluno/assiduidade', icon: 'checklist', label: 'Assiduidade' }]

@@ -42,14 +42,15 @@ interface RelatorioData {
     materia_nome: string;
     observacao: string;
   }>;
-  // provas individuais por matéria e bimestre
-  provas_por_materia: Record<string, Record<string, number[]>>;
-  medias_provas: Record<string, number>;
-  media_geral_provas: number | null;
-  // legado (NotaMateria)
-  notas_por_epoca: Record<string, Record<string, number>>;
-  medias_materias: Record<string, number>;
-  media_geral_materias: number | null;
+  // novo sistema: notas consolidadas por bimestre × disciplina
+  consolidado: Record<string, Array<{
+    sigla: string;
+    nome: string;
+    av1: number | null;
+    av2: number | null;
+    av3: number | null;
+    final: number;
+  }>>;
 }
 
 const CRITERIOS = [
@@ -66,17 +67,14 @@ const EPOCAS = [
   { key: '4B', label: '4° Bimestre' },
 ];
 
-const EPOCAS_ORDER = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre'];
-
 function notaColor(nota: number) {
   if (nota >= 7) return 'var(--color-success)';
   if (nota >= 5) return 'var(--color-warning)';
   return 'var(--color-danger)';
 }
 
-function avg(arr: number[]): number | null {
-  if (!arr.length) return null;
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
+function fmtNota(v: number | null): string {
+  return v == null ? '–' : v.toFixed(1);
 }
 
 // Converte 0–5 (step 0.5) para pontuação 0–2.5 pts (÷ 2)
@@ -250,22 +248,25 @@ export default function RelatorioAlunoPage() {
                 </div>
                 <div className="stat-info"><h3>{escalaComportamento(data.media_geral).toFixed(1)} / 2.5</h3><p>Média Comportamental</p></div>
               </div>
-              {data.media_geral_provas !== null && (
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg,#27ae60,#229954)' }}>
-                    <span className="material-icons-outlined">school</span>
+              {(() => {
+                // média geral do ano: média das médias finais das disciplinas com alguma nota
+                const finais: number[] = [];
+                Object.values(data.consolidado).forEach(linhas =>
+                  linhas.forEach(l => {
+                    if (l.av1 != null || l.av2 != null || l.av3 != null) finais.push(l.final);
+                  }),
+                );
+                if (!finais.length) return null;
+                const media = finais.reduce((a, b) => a + b, 0) / finais.length;
+                return (
+                  <div className="stat-card">
+                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg,#27ae60,#229954)' }}>
+                      <span className="material-icons-outlined">school</span>
+                    </div>
+                    <div className="stat-info"><h3>{media.toFixed(2)}</h3><p>Média Geral (Notas)</p></div>
                   </div>
-                  <div className="stat-info"><h3>{data.media_geral_provas.toFixed(2)}</h3><p>Média Geral das Provas</p></div>
-                </div>
-              )}
-              {data.media_geral_provas === null && data.media_geral_materias !== null && (
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg,#27ae60,#229954)' }}>
-                    <span className="material-icons-outlined">school</span>
-                  </div>
-                  <div className="stat-info"><h3>{data.media_geral_materias.toFixed(2)}</h3><p>Média Geral Matérias</p></div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Comportamento */}
@@ -290,193 +291,52 @@ export default function RelatorioAlunoPage() {
               ))}
             </div>
 
-            {/* Provas por Matéria – seção principal */}
-            {Object.keys(data.provas_por_materia).length > 0 && (
-              <div className="card mb-2">
-                <h2 style={{ marginBottom: '2rem' }}>
-                  <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>menu_book</span>
-                  Provas por Matéria e Bimestre
-                </h2>
-
-                {Object.entries(data.provas_por_materia).map(([matNome, epocas]) => {
-                  const todasNotas = Object.values(epocas).flat();
-                  const mediaAno = avg(todasNotas);
-
-                  return (
-                    <div className="provas-materia-card" key={matNome}>
-                      <div className="provas-materia-nome">
-                        <span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>subject</span>
-                        {matNome}
-                        {mediaAno !== null && (
-                          <span style={{ marginLeft: 'auto', fontSize: '1.4rem', fontWeight: 700, color: notaColor(mediaAno) }}>
-                            Média do Ano: {mediaAno.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="provas-bim-grid">
-                        {EPOCAS.map(ep => {
-                          const notas = epocas[ep.key] || [];
-                          const mediaEp = avg(notas);
-                          return (
-                            <div className="provas-bim-col" key={ep.key}>
-                              <div className="provas-bim-label">{ep.label}</div>
-                              {notas.length === 0 ? (
-                                <p className="provas-sem-dados">Sem provas</p>
-                              ) : (
-                                notas.map((n, i) => (
-                                  <div className="prova-item" key={i}>
-                                    <span style={{ color: 'var(--text-secondary)' }}>P{i + 1}</span>
-                                    <strong style={{ color: notaColor(n) }}>{n.toFixed(1)}</strong>
-                                  </div>
-                                ))
-                              )}
-                              {notas.length > 0 && mediaEp !== null && (
-                                <div className="prova-media-row">
-                                  <span className="prova-media-label">Média</span>
-                                  <strong style={{ color: notaColor(mediaEp) }}>{mediaEp.toFixed(2)}</strong>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Resumo Semestral */}
-                {Object.keys(data.provas_por_materia).length > 1 && (
-                  <>
-                    <h3 style={{ margin: '2rem 0 1rem', borderTop: '2px solid var(--border-light)', paddingTop: '1.5rem' }}>
-                      Resumo Semestral
-                    </h3>
-                    <div className="table-scroll">
-                      <table className="feedback-table resumo-table">
-                        <thead>
-                          <tr>
-                            <th>Matéria</th>
-                            {EPOCAS.map(ep => <th key={ep.key}>{ep.label}</th>)}
-                            <th>Média Anual</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(data.provas_por_materia).map(([matNome, epocas]) => {
-                            const mediaAno = avg(Object.values(epocas).flat());
-                            return (
-                              <tr key={matNome}>
-                                <td><strong>{matNome}</strong></td>
-                                {EPOCAS.map(ep => {
-                                  const m = avg(epocas[ep.key] || []);
-                                  return (
-                                    <td key={ep.key}>
-                                      {m !== null
-                                        ? <span style={{ fontWeight: 600, color: notaColor(m) }}>{m.toFixed(2)}</span>
-                                        : <span style={{ color: 'var(--text-secondary)' }}>–</span>}
-                                    </td>
-                                  );
-                                })}
-                                <td>
-                                  {mediaAno !== null
-                                    ? <strong style={{ color: notaColor(mediaAno) }}>{mediaAno.toFixed(2)}</strong>
-                                    : '–'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                          {/* Linha de média geral */}
-                          <tr style={{ background: 'var(--bg-card-add)', fontWeight: 700 }}>
-                            <td>Média Geral</td>
-                            {EPOCAS.map(ep => {
-                              const vals = Object.values(data.provas_por_materia)
-                                .map(epocas => avg(epocas[ep.key] || []))
-                                .filter((v): v is number => v !== null);
-                              const m = avg(vals);
-                              return (
-                                <td key={ep.key}>
-                                  {m !== null
-                                    ? <strong style={{ color: notaColor(m) }}>{m.toFixed(2)}</strong>
-                                    : '–'}
-                                </td>
-                              );
-                            })}
-                            <td>
-                              {data.media_geral_provas !== null && (
-                                <strong style={{ color: notaColor(data.media_geral_provas) }}>
-                                  {data.media_geral_provas.toFixed(2)}
-                                </strong>
-                              )}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Notas legado (NotaMateria) – exibido apenas se não há provas individuais */}
-            {Object.keys(data.provas_por_materia).length === 0 && Object.keys(data.notas_por_epoca).length > 0 && (() => {
-              const epocasPresentes = EPOCAS_ORDER.filter(e => data.notas_por_epoca[e]);
-              const materias = Object.keys(data.medias_materias);
+            {/* Notas por Disciplina (AV1/AV2/AV3) */}
+            {(() => {
+              const bimestresComNota = EPOCAS.filter(ep =>
+                (data.consolidado[ep.key] ?? []).some(
+                  l => l.av1 != null || l.av2 != null || l.av3 != null,
+                ),
+              );
               return (
                 <div className="card mb-2">
                   <h2 style={{ marginBottom: '1.5rem' }}>
                     <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>menu_book</span>
-                    Notas por Matéria
+                    Notas por Disciplina
                   </h2>
-                  <div className="table-scroll">
-                    <table className="feedback-table">
-                      <thead>
-                        <tr>
-                          <th>Matéria</th>
-                          {epocasPresentes.map(e => <th key={e}>{e}</th>)}
-                          <th>Média</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {materias.map(mat => (
-                          <tr key={mat}>
-                            <td><strong>{mat}</strong></td>
-                            {epocasPresentes.map(e => {
-                              const nota = data.notas_por_epoca[e]?.[mat];
-                              return (
-                                <td key={e}>
-                                  {nota !== undefined
-                                    ? <span style={{ fontWeight: 600, color: notaColor(nota) }}>{nota.toFixed(1)}</span>
-                                    : <span style={{ color: 'var(--text-secondary)' }}>–</span>}
-                                </td>
-                              );
-                            })}
-                            <td>
-                              <span style={{ fontWeight: 700, color: notaColor(data.medias_materias[mat]) }}>
-                                {data.medias_materias[mat].toFixed(2)}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                        <tr style={{ background: 'var(--bg-card-add)' }}>
-                          <td><strong>Média Geral</strong></td>
-                          {epocasPresentes.map(e => {
-                            const vals = Object.values(data.notas_por_epoca[e] || {}) as number[];
-                            const a = vals.length ? vals.reduce((x, y) => x + y, 0) / vals.length : null;
-                            return (
-                              <td key={e}>
-                                {a !== null ? <strong style={{ color: notaColor(a) }}>{a.toFixed(2)}</strong> : '–'}
-                              </td>
-                            );
-                          })}
-                          <td>
-                            {data.media_geral_materias !== null && (
-                              <strong style={{ color: notaColor(data.media_geral_materias) }}>
-                                {data.media_geral_materias.toFixed(2)}
-                              </strong>
-                            )}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                  {bimestresComNota.length === 0 ? (
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.4rem' }}>
+                      Nenhuma nota lançada até o momento.
+                    </p>
+                  ) : (
+                    bimestresComNota.map(ep => (
+                      <div key={ep.key} style={{ marginBottom: '2rem' }}>
+                        <h3 style={{ marginBottom: '1rem' }}>{ep.label}</h3>
+                        <div className="table-scroll">
+                          <table className="feedback-table">
+                            <thead>
+                              <tr>
+                                <th>Disciplina</th><th>AV1</th><th>AV2</th><th>AV3</th><th>Média Final</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(data.consolidado[ep.key] ?? []).map(l => (
+                                <tr key={l.sigla}>
+                                  <td><strong>{l.nome}</strong></td>
+                                  <td>{fmtNota(l.av1)}</td>
+                                  <td>{fmtNota(l.av2)}</td>
+                                  <td>{fmtNota(l.av3)}</td>
+                                  <td>
+                                    <strong style={{ color: notaColor(l.final) }}>{l.final.toFixed(2)}</strong>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               );
             })()}

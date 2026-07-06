@@ -511,6 +511,8 @@ def professor_remover_questao_simulado(request, simulado_id, questao_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def professor_relatorio_aluno(request, aluno_id):
+    from .grading import consolidar_notas
+
     professor = _get_professor(request)
     if not professor:
         return Response({'detail': 'Acesso negado.'}, status=403)
@@ -606,10 +608,12 @@ def professor_relatorio_aluno(request, aluno_id):
         'notas_por_epoca': notas_por_epoca,
         'medias_materias': medias_materias,
         'media_geral_materias': media_geral_materias,
-        # provas individuais agrupadas
+        # provas individuais agrupadas (legado)
         'provas_por_materia': provas_por_materia,
         'medias_provas': medias_provas,
         'media_geral_provas': media_geral_provas,
+        # novo sistema: notas consolidadas por bimestre × disciplina
+        'consolidado': consolidar_notas(aluno),
     })
 
 
@@ -1178,31 +1182,6 @@ def professor_relatorio_pdf(request, aluno_id):
     def calc_percent(v):
         return round((v / MAX_SCORE) * 100) if v and MAX_SCORE > 0 else 0
 
-    # ── notas por matéria (ProvaIndividual) ────────────────────────────────
-    provas_qs = ProvaIndividual.objects.filter(aluno=aluno).select_related('materia').order_by('materia__nome', 'epoca', 'numero')
-    provas_por_materia: dict = {}
-    for p in provas_qs:
-        mat = p.materia.nome
-        if mat not in provas_por_materia:
-            provas_por_materia[mat] = {'1B': [], '2B': [], '3B': [], '4B': []}
-        provas_por_materia[mat][p.epoca].append(float(p.nota))
-
-    # fallback: NotaMateria (legado)
-    notas_por_epoca: dict = {}
-    medias_materias: dict = {}
-    if not provas_por_materia:
-        notas_qs = NotaMateria.objects.filter(aluno=aluno).order_by('epoca', 'materia')
-        medias_raw: dict = {}
-        for nota in notas_qs:
-            ek = nota.get_epoca_display()
-            mk = nota.get_materia_display()
-            notas_por_epoca.setdefault(ek, {})[mk] = float(nota.nota)
-            medias_raw.setdefault(mk, []).append(float(nota.nota))
-        medias_materias = {m: round(sum(v)/len(v), 2) for m, v in medias_raw.items()}
-
-    def _avg(lst):
-        return round(sum(lst) / len(lst), 2) if lst else None
-
     # ── build PDF ──────────────────────────────────────────────────────────
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -1262,88 +1241,59 @@ def professor_relatorio_pdf(request, aluno_id):
     story.append(id_table)
     story.append(Spacer(1, 0.4*cm))
 
-    # ── Seção 2: Notas por Matéria e Bimestre ─────────────────────────────
-    story.append(Paragraph('Notas por Matéria e Bimestre', section_style))
-    EPOCAS_KEYS = ['1B', '2B', '3B', '4B']
-    EPOCAS_LABELS = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre']
+    # ── Seção 2: Notas por Disciplina (AV1/AV2/AV3) ───────────────────────
+    from .grading import consolidar_notas
+    from .grade_config import EPOCAS as GRADE_EPOCAS
 
-    if provas_por_materia:
-        header_row = ['Matéria'] + EPOCAS_LABELS + ['Média Anual']
-        table_data = [header_row]
-        all_means = []
-        bim_means = {k: [] for k in EPOCAS_KEYS}
+    story.append(Paragraph('Notas por Disciplina', section_style))
 
-        for mat, epocas in sorted(provas_por_materia.items()):
-            row = [mat]
-            mat_all = []
-            for ek in EPOCAS_KEYS:
-                lst = epocas.get(ek, [])
-                m = _avg(lst)
-                row.append(f'{m:.2f}' if m is not None else '–')
-                if m is not None:
-                    mat_all.append(m)
-                    bim_means[ek].append(m)
-            ma = _avg(mat_all)
-            row.append(f'{ma:.2f}' if ma is not None else '–')
-            if ma is not None:
-                all_means.append(ma)
-            table_data.append(row)
+    consolidado = consolidar_notas(aluno)
+    epocas_label = dict(GRADE_EPOCAS)
 
-        # linha de média geral
-        mg_row = ['Média Geral']
-        for ek in EPOCAS_KEYS:
-            mg = _avg(bim_means[ek])
-            mg_row.append(f'{mg:.2f}' if mg is not None else '–')
-        mga = _avg(all_means)
-        mg_row.append(f'{mga:.2f}' if mga is not None else '–')
-        table_data.append(mg_row)
+    def _cel(v):
+        return f'{v:.1f}' if v is not None else '–'
 
-        col_w = [4.5*cm] + [2.5*cm]*4 + [2.5*cm]
-        nt = Table(table_data, colWidths=col_w)
-        n_rows = len(table_data)
-        nt.setStyle(TableStyle([
+    algum_bimestre = False
+    for epoca_cod, _lbl in GRADE_EPOCAS:
+        linhas = consolidado.get(epoca_cod, [])
+        # só mostra o bimestre se houver ao menos uma nota lançada
+        if not any(l['av1'] is not None or l['av2'] is not None or l['av3'] is not None
+                   for l in linhas):
+            continue
+        algum_bimestre = True
+
+        story.append(Paragraph(epocas_label.get(epoca_cod, epoca_cod),
+                               ParagraphStyle('Bim', parent=body_style, fontSize=10,
+                                              spaceBefore=8, spaceAfter=4,
+                                              textColor=PRIMARY, fontName='Helvetica-Bold')))
+
+        table_data = [['Disciplina', 'AV1', 'AV2', 'AV3', 'Média Final']]
+        for l in linhas:
+            table_data.append([l['nome'], _cel(l['av1']), _cel(l['av2']), _cel(l['av3']),
+                               f"{l['final']:.2f}"])
+
+        col_w = [6*cm] + [2.4*cm]*4
+        nt = Table(table_data, colWidths=col_w, repeatRows=1)
+        estilo = [
             ('BACKGROUND', (0,0), (-1,0), PRIMARY),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
             ('FONTSIZE', (0,0), (-1,-1), 8),
             ('FONTNAME', (0,1), (0,-1), 'Helvetica-Bold'),
-            ('FONTNAME', (0,n_rows-1), (-1,n_rows-1), 'Helvetica-Bold'),
-            ('BACKGROUND', (0,n_rows-1), (-1,n_rows-1), LIGHT),
-            ('ROWBACKGROUNDS', (0,1), (-1,n_rows-2), [colors.white, colors.HexColor('#f5f8ff')]),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
-            ('ALIGN', (1,0), (-1,-1), 'CENTER'),
-            ('PADDING', (0,0), (-1,-1), 4),
-        ]))
-        story.append(nt)
-
-    elif notas_por_epoca:
-        EPOCAS_ORDER = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre']
-        epocas_presentes = [e for e in EPOCAS_ORDER if e in notas_por_epoca]
-        materias = sorted(medias_materias.keys())
-        header_row = ['Matéria'] + epocas_presentes + ['Média']
-        table_data = [header_row]
-        for mat in materias:
-            row = [mat]
-            for ep in epocas_presentes:
-                n = notas_por_epoca.get(ep, {}).get(mat)
-                row.append(f'{n:.1f}' if n is not None else '–')
-            row.append(f'{medias_materias[mat]:.2f}')
-            table_data.append(row)
-        col_w = [4.5*cm] + [2.5*cm]*len(epocas_presentes) + [2.5*cm]
-        nt = Table(table_data, colWidths=col_w)
-        nt.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), PRIMARY),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 8),
-            ('FONTNAME', (0,1), (0,-1), 'Helvetica-Bold'),
+            ('FONTNAME', (4,1), (4,-1), 'Helvetica-Bold'),
             ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f5f8ff')]),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
             ('ALIGN', (1,0), (-1,-1), 'CENTER'),
             ('PADDING', (0,0), (-1,-1), 4),
-        ]))
+        ]
+        # cor da média final por faixa
+        for i, l in enumerate(linhas, start=1):
+            estilo.append(('TEXTCOLOR', (4,i), (4,i), nota_color(l['final'])))
+        nt.setStyle(TableStyle(estilo))
         story.append(nt)
-    else:
+        story.append(Spacer(1, 0.25*cm))
+
+    if not algum_bimestre:
         story.append(Paragraph('Nenhuma nota registrada.', body_style))
 
     story.append(Spacer(1, 0.4*cm))

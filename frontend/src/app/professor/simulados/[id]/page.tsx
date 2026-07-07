@@ -280,7 +280,7 @@ export default function DetalheSimuladoPage() {
         .q-row:hover { background:#f8f9fa; }
         .q-num { width:3rem; height:3rem; border-radius:50%; background:var(--color-secondary); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.4rem; flex-shrink:0; margin-top:0.2rem; }
         .q-info { flex:1; min-width:0; overflow:hidden; }
-        .q-enunciado { font-size:1.45rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.4rem; }
+        .q-enunciado { font-size: 1.45rem; font-weight: 600; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.4rem; }
         .q-meta { display:flex; gap:0.6rem; flex-wrap:wrap; }
         .badge-sm { padding:0.3rem 0.8rem; border-radius:2rem; font-size:1.15rem; font-weight:600; color:white; white-space:nowrap; }
         .q-expand { padding:1.6rem; border-top:2px solid var(--border-light); background:#fafbfc; font-size:1.4rem; overflow:hidden; }

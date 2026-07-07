@@ -321,10 +321,13 @@ def professor_banco_questoes(request):
                         alternativas_raw = []
                 for i, alt in enumerate(alternativas_raw):
                     texto = str(alt.get('texto', '')).strip()
-                    if texto:
+                    img = request.FILES.get(f'alt_imagem_{i}')
+                    # cria a alternativa se tiver texto OU imagem
+                    if texto or img:
                         AlternativaQuestao.objects.create(
                             questao=questao,
                             texto=texto,
+                            imagem=img or None,
                             correta=bool(alt.get('correta', False)),
                             ordem=i,
                         )

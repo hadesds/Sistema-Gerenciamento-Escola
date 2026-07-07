@@ -81,9 +81,17 @@ class MateriaSerializer(serializers.ModelSerializer):
 
 
 class AlternativaSerializer(serializers.ModelSerializer):
+    imagem_url = serializers.SerializerMethodField()
+
     class Meta:
         model = AlternativaQuestao
-        fields = ['id', 'texto', 'correta', 'ordem']
+        fields = ['id', 'texto', 'correta', 'ordem', 'imagem_url']
+
+    def get_imagem_url(self, obj):
+        if not obj.imagem:
+            return None
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.imagem.url) if request else obj.imagem.url
 
 
 class QuestaoSerializer(serializers.ModelSerializer):

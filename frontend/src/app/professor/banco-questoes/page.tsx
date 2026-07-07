@@ -14,6 +14,7 @@ interface Alternativa {
   texto: string;
   correta: boolean;
   ordem: number;
+  imagem_url?: string | null;
 }
 
 interface Materia {
@@ -85,6 +86,9 @@ export default function BancoQuestoesPage() {
   const [imagemFile, setImagemFile]   = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const imagemInputRef                = useRef<HTMLInputElement>(null);
+  // imagem por alternativa (indexada pela posição no array form.alternativas)
+  const [altImgs, setAltImgs]         = useState<Record<number, File>>({});
+  const [altPreviews, setAltPreviews] = useState<Record<number, string>>({});
   const [alert, setAlert]             = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting]   = useState(false);
 
@@ -123,18 +127,49 @@ export default function BancoQuestoesPage() {
       const hasCorrect = alts.some(a => a.correta);
       return { ...f, alternativas: hasCorrect ? alts : alts.map((a, i) => ({ ...a, correta: i === 0 })) };
     });
+    // reindexa as imagens das alternativas (as após idx sobem uma posição)
+    const shift = (m: Record<number, unknown>) => {
+      const out: Record<number, unknown> = {};
+      Object.entries(m).forEach(([k, v]) => {
+        const i = Number(k);
+        if (i < idx) out[i] = v;
+        else if (i > idx) out[i - 1] = v;
+      });
+      return out;
+    };
+    setAltImgs(prev => shift(prev) as Record<number, File>);
+    setAltPreviews(prev => shift(prev) as Record<number, string>);
+  }
+
+  function setAltImagem(idx: number, file: File | null) {
+    setAltImgs(prev => {
+      const n = { ...prev };
+      if (file) n[idx] = file; else delete n[idx];
+      return n;
+    });
+    setAltPreviews(prev => {
+      const n = { ...prev };
+      if (n[idx]) URL.revokeObjectURL(n[idx]);
+      if (file) n[idx] = URL.createObjectURL(file); else delete n[idx];
+      return n;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // alternativa vale se tem texto OU imagem
+    const preenchida = (a: { texto: string }, i: number) => a.texto.trim() !== '' || !!altImgs[i];
+
     if (form.tipo === 'objetiva') {
-      const filled = form.alternativas.filter(a => a.texto.trim());
-      if (filled.length < 2) {
-        setAlert({ type: 'error', message: 'Adicione ao menos 2 alternativas com texto.' });
+      const filledIdx = form.alternativas
+        .map((a, i) => ({ a, i }))
+        .filter(({ a, i }) => preenchida(a, i));
+      if (filledIdx.length < 2) {
+        setAlert({ type: 'error', message: 'Adicione ao menos 2 alternativas (com texto ou imagem).' });
         return;
       }
-      if (!filled.some(a => a.correta)) {
+      if (!filledIdx.some(({ a }) => a.correta)) {
         setAlert({ type: 'error', message: 'Marque qual alternativa é a correta.' });
         return;
       }
@@ -150,8 +185,20 @@ export default function BancoQuestoesPage() {
       fd.append('tipo', form.tipo);
       fd.append('exige_justificativa', String(form.exige_justificativa));
       if (imagemFile) fd.append('imagem', imagemFile);
-      const alts = form.tipo === 'objetiva' ? form.alternativas.filter(a => a.texto.trim()) : [];
-      fd.append('alternativas', JSON.stringify(alts));
+
+      if (form.tipo === 'objetiva') {
+        // mantém só alternativas preenchidas e reindexa para casar com alt_imagem_<i>
+        const kept = form.alternativas
+          .map((a, i) => ({ a, i }))
+          .filter(({ a, i }) => preenchida(a, i));
+        const alts = kept.map(({ a }) => ({ texto: a.texto, correta: a.correta }));
+        fd.append('alternativas', JSON.stringify(alts));
+        kept.forEach(({ i }, newIdx) => {
+          if (altImgs[i]) fd.append(`alt_imagem_${newIdx}`, altImgs[i]);
+        });
+      } else {
+        fd.append('alternativas', JSON.stringify([]));
+      }
 
       await apiUpload('/professor/banco-questoes/', fd);
 
@@ -159,6 +206,8 @@ export default function BancoQuestoesPage() {
       setForm(FORM_INIT);
       setImagemFile(null);
       setImagemPreview(null);
+      setAltImgs({});
+      setAltPreviews({});
       if (imagemInputRef.current) imagemInputRef.current.value = '';
       setShowForm(false);
       fetchData(materiaFiltro);
@@ -251,6 +300,14 @@ export default function BancoQuestoesPage() {
             flex-shrink: 0;
             accent-color: #27ae60;
           }
+          .alt-img-btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 3.2rem; height: 3.2rem; flex-shrink: 0;
+            border: 2px solid #d0daea; border-radius: 0.8rem;
+            cursor: pointer; color: #1a73c7; background: #fff; transition: all 0.2s;
+          }
+          .alt-img-btn:hover { border-color: #1a73c7; background: #f0f7ff; }
+          .alt-img-btn .material-icons-outlined { font-size: 1.9rem; }
           .alt-remove {
             background: none;
             border: none;
@@ -483,32 +540,55 @@ export default function BancoQuestoesPage() {
                   </label>
                   <div className="alt-list">
                     {form.alternativas.map((alt, i) => (
-                      <div key={i} className="alt-row">
-                        <div className={`alt-letra${alt.correta ? ' correta' : ''}`}>{ALPHA[i]}</div>
-                        <input
-                          className="alt-input"
-                          type="text"
-                          placeholder={`Alternativa ${ALPHA[i]}…`}
-                          value={alt.texto}
-                          onChange={e => setAltTexto(i, e.target.value)}
-                        />
-                        <input
-                          type="radio"
-                          className="alt-radio"
-                          name="correta"
-                          title="Marcar como correta"
-                          checked={alt.correta}
-                          onChange={() => setAltCorreta(i)}
-                        />
-                        <button
-                          type="button"
-                          className="alt-remove"
-                          onClick={() => removeAlt(i)}
-                          disabled={form.alternativas.length <= 2}
-                          title="Remover alternativa"
-                        >
-                          <span className="material-icons-outlined">delete_outline</span>
-                        </button>
+                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        <div className="alt-row">
+                          <div className={`alt-letra${alt.correta ? ' correta' : ''}`}>{ALPHA[i]}</div>
+                          <input
+                            className="alt-input"
+                            type="text"
+                            placeholder={`Alternativa ${ALPHA[i]}…`}
+                            value={alt.texto}
+                            onChange={e => setAltTexto(i, e.target.value)}
+                          />
+                          <label className="alt-img-btn" title="Adicionar imagem à alternativa">
+                            <span className="material-icons-outlined">image</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={e => setAltImagem(i, e.target.files?.[0] ?? null)}
+                            />
+                          </label>
+                          <input
+                            type="radio"
+                            className="alt-radio"
+                            name="correta"
+                            title="Marcar como correta"
+                            checked={alt.correta}
+                            onChange={() => setAltCorreta(i)}
+                          />
+                          <button
+                            type="button"
+                            className="alt-remove"
+                            onClick={() => removeAlt(i)}
+                            disabled={form.alternativas.length <= 2}
+                            title="Remover alternativa"
+                          >
+                            <span className="material-icons-outlined">delete_outline</span>
+                          </button>
+                        </div>
+                        {altPreviews[i] && (
+                          <div style={{ marginLeft: '4.2rem', position: 'relative', display: 'inline-block', width: 'fit-content' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={altPreviews[i]} alt={`Imagem alternativa ${ALPHA[i]}`}
+                              style={{ maxHeight: '110px', maxWidth: '100%', borderRadius: '0.8rem', objectFit: 'contain', border: '2px solid var(--border-light)', display: 'block' }}
+                            />
+                            <button type="button" onClick={() => setAltImagem(i, null)}
+                              style={{ position: 'absolute', top: '0.3rem', right: '0.3rem', background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', color: '#fff', cursor: 'pointer', width: '2.4rem', height: '2.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span className="material-icons-outlined" style={{ fontSize: '1.6rem' }}>close</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -649,7 +729,15 @@ export default function BancoQuestoesPage() {
                     {q.alternativas.map((alt, i) => (
                       <div key={alt.id ?? i} className={`questao-alt-item${alt.correta ? ' correta' : ''}`}>
                         <div className="questao-alt-badge">{ALPHA[i]}</div>
-                        <span style={{ flex: 1 }}>{alt.texto}</span>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {alt.texto && <span>{alt.texto}</span>}
+                          {alt.imagem_url && (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={alt.imagem_url} alt={`Alternativa ${ALPHA[i]}`}
+                              style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '0.6rem', objectFit: 'contain', border: '1px solid var(--border-light)' }}
+                            />
+                          )}
+                        </div>
                         {alt.correta && (
                           <span className="material-icons-outlined" style={{ color: '#27ae60', fontSize: '1.8rem', flexShrink: 0 }}>
                             check_circle

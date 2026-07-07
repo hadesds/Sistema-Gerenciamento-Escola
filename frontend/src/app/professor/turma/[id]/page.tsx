@@ -27,12 +27,7 @@ interface CarometroData {
   busca: string;
 }
 
-interface Materia { id: number; nome: string; sigla: string; }
-
-// provas_bimestrais: list of grade strings per epoch
 interface AvaliacaoForm {
-  materia_id: string;
-  provas_bimestrais: Record<string, string[]>;
   assiduidade: number;
   participacao: number;
   responsabilidade: number;
@@ -40,27 +35,10 @@ interface AvaliacaoForm {
   observacao: string;
 }
 
-const EPOCAS = [
-  { key: '1B', label: '1° Bimestre' },
-  { key: '2B', label: '2° Bimestre' },
-  { key: '3B', label: '3° Bimestre' },
-  { key: '4B', label: '4° Bimestre' },
-];
-
-const EMPTY_PROVAS = { '1B': [], '2B': [], '3B': [], '4B': [] } as Record<string, string[]>;
-
 const FORM_INIT: AvaliacaoForm = {
-  materia_id: '',
-  provas_bimestrais: { '1B': [], '2B': [], '3B': [], '4B': [] },
   assiduidade: 3.0, participacao: 3.0, responsabilidade: 3.0, sociabilidade: 3.0,
   observacao: '',
 };
-
-function calcMedia(provas: string[]): string {
-  const validas = provas.map(p => parseFloat(p)).filter(n => !isNaN(n) && n >= 0 && n <= 10);
-  if (!validas.length) return '—';
-  return (validas.reduce((a, b) => a + b, 0) / validas.length).toFixed(2);
-}
 
 export default function CarometroPage() {
   const params = useParams();
@@ -69,13 +47,10 @@ export default function CarometroPage() {
   const [data, setData] = useState<CarometroData | null>(null);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
-  const [materias, setMaterias] = useState<Materia[]>([]);
 
   // Modal avaliação
   const [alunoAvaliando, setAlunoAvaliando] = useState<AlunoInfo | null>(null);
   const [form, setForm] = useState<AvaliacaoForm>(FORM_INIT);
-  const [materiaError, setMateriaError] = useState('');
-  const [loadingProvas, setLoadingProvas] = useState(false);
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -90,7 +65,6 @@ export default function CarometroPage() {
 
   useEffect(() => {
     fetchData();
-    apiFetch<Materia[]>('/professor/materias/').then(setMaterias).catch(() => {});
   }, [fetchData]);
 
   function handleBusca(e: React.FormEvent) {
@@ -98,77 +72,14 @@ export default function CarometroPage() {
     fetchData(busca);
   }
 
-  // When matéria changes, load existing provas for that student+materia
-  async function handleMateriaChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const materiaId = e.target.value;
-    setMateriaError('');
-    setForm(f => ({ ...f, materia_id: materiaId, provas_bimestrais: { ...EMPTY_PROVAS } }));
-    if (!materiaId || !alunoAvaliando) return;
-
-    setLoadingProvas(true);
-    try {
-      const provas = await apiFetch<Record<string, number[]>>(
-        `/professor/provas/${alunoAvaliando.id}/?materia_id=${materiaId}`
-      );
-      const converted: Record<string, string[]> = { '1B': [], '2B': [], '3B': [], '4B': [] };
-      for (const ep of ['1B', '2B', '3B', '4B']) {
-        converted[ep] = (provas[ep] || []).map(String);
-      }
-      setForm(f => ({ ...f, materia_id: materiaId, provas_bimestrais: converted }));
-    } catch {
-      // no existing provas, keep empty
-    } finally {
-      setLoadingProvas(false);
-    }
-  }
-
-  function addProva(ep: string) {
-    setForm(f => ({
-      ...f,
-      provas_bimestrais: {
-        ...f.provas_bimestrais,
-        [ep]: [...f.provas_bimestrais[ep], ''],
-      },
-    }));
-  }
-
-  function removeProva(ep: string, idx: number) {
-    setForm(f => ({
-      ...f,
-      provas_bimestrais: {
-        ...f.provas_bimestrais,
-        [ep]: f.provas_bimestrais[ep].filter((_, i) => i !== idx),
-      },
-    }));
-  }
-
-  function setProvaNota(ep: string, idx: number, val: string) {
-    setForm(f => {
-      const list = [...f.provas_bimestrais[ep]];
-      list[idx] = val;
-      return { ...f, provas_bimestrais: { ...f.provas_bimestrais, [ep]: list } };
-    });
-  }
-
   async function handleAvaliar(e: React.FormEvent) {
     e.preventDefault();
     if (!alunoAvaliando) return;
-    if (!form.materia_id) {
-      setMateriaError('Selecione uma matéria para continuar.');
-      return;
-    }
     setSubmitting(true);
     try {
-      const provas: Record<string, number[]> = {};
-      for (const [ep, lista] of Object.entries(form.provas_bimestrais)) {
-        const validas = lista.map(g => parseFloat(g)).filter(n => !isNaN(n) && n >= 0 && n <= 10);
-        if (validas.length) provas[ep] = validas;
-      }
       await apiFetch(`/professor/avaliar/${alunoAvaliando.id}/`, {
         method: 'POST',
         body: JSON.stringify({
-          materia_id: Number(form.materia_id),
-          provas_bimestrais: provas,
           assiduidade: form.assiduidade,
           participacao: form.participacao,
           responsabilidade: form.responsabilidade,
@@ -340,7 +251,6 @@ export default function CarometroPage() {
                       <button className="btn btn-primary" onClick={() => {
                         setAlunoAvaliando(aluno);
                         setForm(FORM_INIT);
-                        setMateriaError('');
                       }}>
                         <span className="material-icons-outlined">rate_review</span>
                         Avaliar
@@ -401,76 +311,6 @@ export default function CarometroPage() {
                 <button onClick={() => setAlunoAvaliando(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '2.5rem' }}>&times;</button>
               </div>
               <form onSubmit={handleAvaliar}>
-
-                {/* Matéria – obrigatória */}
-                <div className="av-section-title">
-                  <span className="material-icons-outlined">menu_book</span>
-                  Matéria <span style={{ color: 'var(--color-danger)', marginLeft: '0.2rem' }}>*</span>
-                </div>
-                <div className="form-group">
-                  <select
-                    value={form.materia_id}
-                    onChange={handleMateriaChange}
-                    style={{ borderColor: materiaError ? 'var(--color-danger)' : undefined }}
-                  >
-                    <option value="">— Selecione a matéria —</option>
-                    {materias.map(m => (
-                      <option key={m.id} value={m.id}>{m.nome}</option>
-                    ))}
-                  </select>
-                  {materiaError && <p className="materia-required">{materiaError}</p>}
-                </div>
-
-                {/* Provas por Bimestre */}
-                <div className="av-section-title">
-                  <span className="material-icons-outlined">grade</span>
-                  Provas por Bimestre
-                  {loadingProvas && <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>carregando...</span>}
-                </div>
-                <p style={{ fontSize: '1.3rem', color: 'var(--text-secondary)', marginBottom: '1.2rem' }}>
-                  Adicione as notas de cada prova realizada. A média do bimestre é calculada automaticamente.
-                </p>
-
-                {EPOCAS.map(ep => {
-                  const provas = form.provas_bimestrais[ep.key];
-                  const media = calcMedia(provas);
-                  return (
-                    <div className="bim-section" key={ep.key}>
-                      <div className="bim-header">
-                        <strong>{ep.label}</strong>
-                        <span className="bim-media-badge">
-                          Média: {media}
-                        </span>
-                      </div>
-                      {provas.map((nota, idx) => (
-                        <div className="prova-row" key={idx}>
-                          <label>Prova {idx + 1}</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="10"
-                            step="0.1"
-                            placeholder="0 – 10"
-                            value={nota}
-                            onChange={e => setProvaNota(ep.key, idx, e.target.value)}
-                          />
-                          <button
-                            type="button"
-                            className="btn-remove-prova"
-                            onClick={() => removeProva(ep.key, idx)}
-                            title="Remover prova"
-                          >
-                            &times;
-                          </button>
-                        </div>
-                      ))}
-                      <button type="button" className="btn-add-prova" onClick={() => addProva(ep.key)}>
-                        <span className="material-icons-outlined" style={{ fontSize: '1.6rem' }}>add</span>
-                        Adicionar Prova
-                      </button>
-                    </div>
-                  );
-                })}
 
                 {/* Comportamento */}
                 <div className="av-section-title">

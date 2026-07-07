@@ -233,16 +233,11 @@ def professor_registrar_avaliacao(request, aluno_id):
 
     aluno = get_object_or_404(Aluno, pk=aluno_id)
     try:
-        from decimal import Decimal
-
+        # Matéria é opcional (as notas de disciplina vêm dos simulados agora).
         materia_id = request.data.get('materia_id')
-        if not materia_id:
-            return Response({'detail': 'A matéria é obrigatória.'}, status=400)
-        materia_obj = get_object_or_404(Materia, pk=materia_id)
+        materia_obj = Materia.objects.filter(pk=materia_id).first() if materia_id else None
 
         observacao = request.data.get('observacao', '')
-        # provas_bimestrais: { '1B': [8.5, 7.0], '2B': [9.0], ... }
-        provas_bimestrais = request.data.get('provas_bimestrais', {})
 
         def _comportamento(key):
             try:
@@ -261,45 +256,6 @@ def professor_registrar_avaliacao(request, aluno_id):
             materia=materia_obj,
             observacao=observacao,
         )
-
-        materia_key = SIGLA_TO_NOTA_MATERIA.get(materia_obj.sigla)
-        epocas_validas = {'1B', '2B', '3B', '4B'}
-
-        for epoca, notas_lista in provas_bimestrais.items():
-            if epoca not in epocas_validas or not isinstance(notas_lista, list):
-                continue
-
-            notas_validas = []
-            for nota_val in notas_lista:
-                try:
-                    n = float(nota_val)
-                    if 0 <= n <= 10:
-                        notas_validas.append(n)
-                except (TypeError, ValueError):
-                    pass
-
-            if not notas_validas:
-                continue
-
-            # Substitui as provas individuais deste bimestre para esta matéria/aluno
-            ProvaIndividual.objects.filter(aluno=aluno, materia=materia_obj, epoca=epoca).delete()
-            for i, nota_val in enumerate(notas_validas, 1):
-                ProvaIndividual.objects.create(
-                    aluno=aluno,
-                    professor=professor,
-                    materia=materia_obj,
-                    epoca=epoca,
-                    numero=i,
-                    nota=Decimal(str(round(nota_val, 2))),
-                )
-
-            # Salva a média no NotaMateria (retrocompatibilidade)
-            media = sum(notas_validas) / len(notas_validas)
-            if materia_key:
-                NotaMateria.objects.update_or_create(
-                    aluno=aluno, materia=materia_key, epoca=epoca,
-                    defaults={'professor': professor, 'nota': Decimal(str(round(media, 2)))}
-                )
 
         return Response({
             'message': f'Avaliação de {aluno.user.get_full_name()} registrada com sucesso!',
@@ -505,13 +461,88 @@ def professor_remover_questao_simulado(request, simulado_id, questao_id):
     simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
     questao = get_object_or_404(Questao, id=questao_id)
     simulado.questoes.remove(questao)
+    # Recalcula as notas de quem já respondeu (a questão anulada deixa de contar).
+    from .grading import recomputar_simulado
+    recomputar_simulado(simulado)
     return Response(SimuladoSerializer(simulado, context={'request': request}).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_simulado_resultados(request, simulado_id):
+    """Andamento do simulado por aluno da turma-alvo: status, nota e discursivas pendentes."""
+    from .models import ResultadoSimulado
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
+
+    # questões que ainda pertencem ao simulado (para filtrar respostas de questões removidas)
+    questao_ids = set(simulado.simulado_questoes.values_list('questao_id', flat=True))
+
+    resultados = {
+        r.aluno_id: r
+        for r in ResultadoSimulado.objects.filter(simulado=simulado)
+        .prefetch_related('respostas__questao')
+    }
+
+    alunos_out = []
+    turma = simulado.turma_alvo
+    alunos = Aluno.objects.filter(turma=turma).select_related('user') if turma else []
+    for aluno in alunos:
+        r = resultados.get(aluno.user_id)
+        foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else None
+        if not r:
+            status_str = 'nao_iniciado'
+            nota = None
+            resultado_id = None
+            pendentes = []
+        else:
+            status_str = r.status
+            nota = float(r.nota) if r.nota is not None else None
+            resultado_id = r.id
+            pendentes = [
+                {
+                    'resposta_id': resp.id,
+                    'questao_enunciado': resp.questao.enunciado,
+                    'texto': resp.texto,
+                }
+                for resp in r.respostas.all()
+                if resp.questao_id in questao_ids
+                and resp.questao.tipo != 'objetiva'
+                and resp.pontos is None
+            ]
+        alunos_out.append({
+            'aluno_id': aluno.user_id,
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'foto_url': foto_url,
+            'status': status_str,
+            'nota': nota,
+            'resultado_id': resultado_id,
+            'pendentes': pendentes,
+        })
+
+    return Response({
+        'simulado': {
+            'id': simulado.id,
+            'titulo': simulado.titulo,
+            'turma': turma.nome if turma else '',
+            'av_tipo': simulado.av_tipo,
+            'area': simulado.area,
+            'epoca': simulado.epoca,
+            'total_questoes': simulado.questoes.count(),
+        },
+        'alunos': alunos_out,
+    })
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def professor_relatorio_aluno(request, aluno_id):
     from .grading import consolidar_notas
+    from .models import ResultadoSimulado
 
     professor = _get_professor(request)
     if not professor:
@@ -614,6 +645,21 @@ def professor_relatorio_aluno(request, aluno_id):
         'media_geral_provas': media_geral_provas,
         # novo sistema: notas consolidadas por bimestre × disciplina
         'consolidado': consolidar_notas(aluno),
+        # resultados por simulado (com status de pendência de correção)
+        'simulados': [
+            {
+                'resultado_id': r.id,
+                'simulado_id': r.simulado_id,
+                'titulo': r.simulado.titulo or f'Simulado #{r.simulado_id}',
+                'av_tipo': r.simulado.av_tipo,
+                'area': r.simulado.area,
+                'epoca': r.simulado.epoca,
+                'nota': float(r.nota) if r.nota is not None else None,
+                'status': r.status,
+            }
+            for r in ResultadoSimulado.objects.filter(aluno=aluno)
+                .select_related('simulado').order_by('-enviado_em')
+        ],
     })
 
 

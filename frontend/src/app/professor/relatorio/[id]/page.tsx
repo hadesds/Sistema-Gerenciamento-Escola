@@ -51,6 +51,17 @@ interface RelatorioData {
     av3: number | null;
     final: number;
   }>>;
+  // resultados por simulado (com status de pendência)
+  simulados: Array<{
+    resultado_id: number;
+    simulado_id: number;
+    titulo: string;
+    av_tipo: string;
+    area: string;
+    epoca: string;
+    nota: number | null;
+    status: 'pendente_correcao' | 'corrigido';
+  }>;
 }
 
 const CRITERIOS = [
@@ -340,6 +351,51 @@ export default function RelatorioAlunoPage() {
                 </div>
               );
             })()}
+
+            {/* Simulados do aluno */}
+            {data.simulados.length > 0 && (
+              <div className="card mb-2">
+                <h2 style={{ marginBottom: '1.5rem' }}>
+                  <span className="material-icons-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>quiz</span>
+                  Simulados
+                </h2>
+                <div className="table-scroll">
+                  <table className="feedback-table">
+                    <thead>
+                      <tr>
+                        <th>Simulado</th><th>AV</th><th>Área</th><th>Bim.</th><th>Nota</th><th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.simulados.map(s => (
+                        <tr key={s.resultado_id}>
+                          <td><strong>{s.titulo}</strong></td>
+                          <td>{s.av_tipo || '–'}</td>
+                          <td>{s.area || '–'}</td>
+                          <td>{s.epoca || '–'}</td>
+                          <td>
+                            {s.nota != null
+                              ? <strong style={{ color: notaColor(s.nota) }}>{s.nota.toFixed(2)}</strong>
+                              : '–'}
+                          </td>
+                          <td>
+                            {s.status === 'pendente_correcao' ? (
+                              <Link href={`/professor/simulados/${s.simulado_id}`}
+                                style={{ color: 'var(--color-warning)', fontWeight: 700, textDecoration: 'none' }}>
+                                <span className="material-icons-outlined" style={{ fontSize: '1.4rem', verticalAlign: 'middle', marginRight: '0.2rem' }}>pending_actions</span>
+                                Pendente de correção
+                              </Link>
+                            ) : (
+                              <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>Corrigido</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Histórico Comportamental */}
             {data.avaliacoes.length > 0 && (

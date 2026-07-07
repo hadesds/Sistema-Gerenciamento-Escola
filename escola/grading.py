@@ -15,17 +15,18 @@ from .models import SimuladoQuestao, NotaArea, NotaQualitativa, Materia
 from .grade_config import DISCIPLINAS, DISCIPLINA_AREA, EPOCAS
 
 
-def _valor_questao(simulado, questao_id):
-    sq = SimuladoQuestao.objects.filter(simulado=simulado, questao_id=questao_id).first()
-    return Decimal(sq.valor) if sq else Decimal('1.00')
-
-
 def corrigir_resultado(resultado):
     """Corrige as respostas objetivas, calcula a nota e consolida NotaArea quando possível.
 
     Retorna o próprio resultado já salvo.
     """
     simulado = resultado.simulado
+    # valor de cada questão que AINDA pertence ao simulado (questões removidas/anuladas
+    # deixam de contar, e suas respostas são ignoradas no cálculo)
+    valores = {
+        sq.questao_id: Decimal(sq.valor)
+        for sq in simulado.simulado_questoes.all()
+    }
     respostas = list(resultado.respostas.select_related('questao', 'alternativa'))
 
     valor_total = Decimal('0')
@@ -33,7 +34,9 @@ def corrigir_resultado(resultado):
     tem_pendente = False
 
     for r in respostas:
-        valor = _valor_questao(simulado, r.questao_id)
+        if r.questao_id not in valores:
+            continue  # questão foi removida/anulada do simulado
+        valor = valores[r.questao_id]
         valor_total += valor
 
         if r.questao.tipo == 'objetiva':
@@ -86,6 +89,18 @@ def consolidar_nota_area(resultado):
         },
     )
     return nota_area
+
+
+def recomputar_simulado(simulado):
+    """Recalcula todos os resultados de um simulado (ex.: após excluir/anular questão).
+
+    Retorna a quantidade de resultados recalculados.
+    """
+    n = 0
+    for resultado in simulado.resultados.all():
+        corrigir_resultado(resultado)
+        n += 1
+    return n
 
 
 def consolidar_notas(aluno):

@@ -233,16 +233,11 @@ def professor_registrar_avaliacao(request, aluno_id):
 
     aluno = get_object_or_404(Aluno, pk=aluno_id)
     try:
-        from decimal import Decimal
-
+        # Matéria é opcional (as notas de disciplina vêm dos simulados agora).
         materia_id = request.data.get('materia_id')
-        if not materia_id:
-            return Response({'detail': 'A matéria é obrigatória.'}, status=400)
-        materia_obj = get_object_or_404(Materia, pk=materia_id)
+        materia_obj = Materia.objects.filter(pk=materia_id).first() if materia_id else None
 
         observacao = request.data.get('observacao', '')
-        # provas_bimestrais: { '1B': [8.5, 7.0], '2B': [9.0], ... }
-        provas_bimestrais = request.data.get('provas_bimestrais', {})
 
         def _comportamento(key):
             try:
@@ -261,45 +256,6 @@ def professor_registrar_avaliacao(request, aluno_id):
             materia=materia_obj,
             observacao=observacao,
         )
-
-        materia_key = SIGLA_TO_NOTA_MATERIA.get(materia_obj.sigla)
-        epocas_validas = {'1B', '2B', '3B', '4B'}
-
-        for epoca, notas_lista in provas_bimestrais.items():
-            if epoca not in epocas_validas or not isinstance(notas_lista, list):
-                continue
-
-            notas_validas = []
-            for nota_val in notas_lista:
-                try:
-                    n = float(nota_val)
-                    if 0 <= n <= 10:
-                        notas_validas.append(n)
-                except (TypeError, ValueError):
-                    pass
-
-            if not notas_validas:
-                continue
-
-            # Substitui as provas individuais deste bimestre para esta matéria/aluno
-            ProvaIndividual.objects.filter(aluno=aluno, materia=materia_obj, epoca=epoca).delete()
-            for i, nota_val in enumerate(notas_validas, 1):
-                ProvaIndividual.objects.create(
-                    aluno=aluno,
-                    professor=professor,
-                    materia=materia_obj,
-                    epoca=epoca,
-                    numero=i,
-                    nota=Decimal(str(round(nota_val, 2))),
-                )
-
-            # Salva a média no NotaMateria (retrocompatibilidade)
-            media = sum(notas_validas) / len(notas_validas)
-            if materia_key:
-                NotaMateria.objects.update_or_create(
-                    aluno=aluno, materia=materia_key, epoca=epoca,
-                    defaults={'professor': professor, 'nota': Decimal(str(round(media, 2)))}
-                )
 
         return Response({
             'message': f'Avaliação de {aluno.user.get_full_name()} registrada com sucesso!',
@@ -505,12 +461,89 @@ def professor_remover_questao_simulado(request, simulado_id, questao_id):
     simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
     questao = get_object_or_404(Questao, id=questao_id)
     simulado.questoes.remove(questao)
+    # Recalcula as notas de quem já respondeu (a questão anulada deixa de contar).
+    from .grading import recomputar_simulado
+    recomputar_simulado(simulado)
     return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def professor_simulado_resultados(request, simulado_id):
+    """Andamento do simulado por aluno da turma-alvo: status, nota e discursivas pendentes."""
+    from .models import ResultadoSimulado
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    simulado = get_object_or_404(Simulado, id=simulado_id, autor=professor)
+
+    # questões que ainda pertencem ao simulado (para filtrar respostas de questões removidas)
+    questao_ids = set(simulado.simulado_questoes.values_list('questao_id', flat=True))
+
+    resultados = {
+        r.aluno_id: r
+        for r in ResultadoSimulado.objects.filter(simulado=simulado)
+        .prefetch_related('respostas__questao')
+    }
+
+    alunos_out = []
+    turma = simulado.turma_alvo
+    alunos = Aluno.objects.filter(turma=turma).select_related('user') if turma else []
+    for aluno in alunos:
+        r = resultados.get(aluno.user_id)
+        foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else None
+        if not r:
+            status_str = 'nao_iniciado'
+            nota = None
+            resultado_id = None
+            pendentes = []
+        else:
+            status_str = r.status
+            nota = float(r.nota) if r.nota is not None else None
+            resultado_id = r.id
+            pendentes = [
+                {
+                    'resposta_id': resp.id,
+                    'questao_enunciado': resp.questao.enunciado,
+                    'texto': resp.texto,
+                }
+                for resp in r.respostas.all()
+                if resp.questao_id in questao_ids
+                and resp.questao.tipo != 'objetiva'
+                and resp.pontos is None
+            ]
+        alunos_out.append({
+            'aluno_id': aluno.user_id,
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'foto_url': foto_url,
+            'status': status_str,
+            'nota': nota,
+            'resultado_id': resultado_id,
+            'pendentes': pendentes,
+        })
+
+    return Response({
+        'simulado': {
+            'id': simulado.id,
+            'titulo': simulado.titulo,
+            'turma': turma.nome if turma else '',
+            'av_tipo': simulado.av_tipo,
+            'area': simulado.area,
+            'epoca': simulado.epoca,
+            'total_questoes': simulado.questoes.count(),
+        },
+        'alunos': alunos_out,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def professor_relatorio_aluno(request, aluno_id):
+    from .grading import consolidar_notas
+    from .models import ResultadoSimulado
+
     professor = _get_professor(request)
     if not professor:
         return Response({'detail': 'Acesso negado.'}, status=403)
@@ -606,10 +639,27 @@ def professor_relatorio_aluno(request, aluno_id):
         'notas_por_epoca': notas_por_epoca,
         'medias_materias': medias_materias,
         'media_geral_materias': media_geral_materias,
-        # provas individuais agrupadas
+        # provas individuais agrupadas (legado)
         'provas_por_materia': provas_por_materia,
         'medias_provas': medias_provas,
         'media_geral_provas': media_geral_provas,
+        # novo sistema: notas consolidadas por bimestre × disciplina
+        'consolidado': consolidar_notas(aluno),
+        # resultados por simulado (com status de pendência de correção)
+        'simulados': [
+            {
+                'resultado_id': r.id,
+                'simulado_id': r.simulado_id,
+                'titulo': r.simulado.titulo or f'Simulado #{r.simulado_id}',
+                'av_tipo': r.simulado.av_tipo,
+                'area': r.simulado.area,
+                'epoca': r.simulado.epoca,
+                'nota': float(r.nota) if r.nota is not None else None,
+                'status': r.status,
+            }
+            for r in ResultadoSimulado.objects.filter(aluno=aluno)
+                .select_related('simulado').order_by('-enviado_em')
+        ],
     })
 
 
@@ -867,6 +917,25 @@ def aluno_enviar_simulado(request, simulado_id):
     return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data, status=201)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def aluno_minhas_notas(request):
+    """Notas consolidadas do próprio aluno por bimestre × disciplina."""
+    from .grading import consolidar_notas
+
+    aluno = _get_aluno(request)
+    if not aluno:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    return Response({
+        'aluno': {
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'turma': aluno.turma.nome if aluno.turma else '',
+        },
+        'notas': consolidar_notas(aluno),
+    })
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def professor_corrigir_discursivas(request, resultado_id):
@@ -906,6 +975,106 @@ def grade_config(request):
     """Expõe a taxonomia de disciplinas/áreas/AVs/épocas para o frontend."""
     from .grade_config import config_dict
     return Response(config_dict())
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_consolidado(request, aluno_id):
+    """Notas consolidadas do aluno por bimestre × disciplina."""
+    from .grading import consolidar_notas
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    return Response({
+        'aluno': {
+            'id': aluno.user.id,
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'turma': aluno.turma.nome if aluno.turma else '',
+        },
+        'notas': consolidar_notas(aluno),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def professor_nota_area(request, aluno_id):
+    """Override manual de uma NotaArea (correção/recuperação de AV1/AV2)."""
+    from .models import NotaArea
+    from .grade_config import AV_TIPOS, AREA_CHOICES, EPOCAS
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    epoca = request.data.get('epoca')
+    av_tipo = request.data.get('av_tipo')
+    area = request.data.get('area')
+    nota = request.data.get('nota')
+
+    validos = lambda val, choices: val in [c[0] for c in choices]
+    if not (validos(epoca, EPOCAS) and validos(av_tipo, AV_TIPOS) and validos(area, AREA_CHOICES)):
+        return Response({'detail': 'Época, AV ou área inválidos.'}, status=400)
+    try:
+        nota_f = float(nota)
+        if not (0 <= nota_f <= 10):
+            raise ValueError
+    except (TypeError, ValueError):
+        return Response({'detail': 'Nota inválida (0–10).'}, status=400)
+
+    obj, _ = NotaArea.objects.update_or_create(
+        aluno=aluno, epoca=epoca, av_tipo=av_tipo, area=area,
+        defaults={'nota': nota_f, 'origem': 'manual'},
+    )
+    return Response({'ok': True, 'nota': float(obj.nota), 'origem': obj.origem})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def professor_nota_qualitativa(request, aluno_id):
+    """Lança/atualiza a AV3 qualitativa por disciplina.
+
+    Payload: { epoca, notas: { <materia_id>: <nota>, ... } }  ou  { epoca, materia_id, nota }
+    """
+    from .models import NotaQualitativa
+    from .grade_config import EPOCAS
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aluno = get_object_or_404(Aluno, pk=aluno_id)
+    epoca = request.data.get('epoca')
+    if epoca not in [c[0] for c in EPOCAS]:
+        return Response({'detail': 'Época inválida.'}, status=400)
+
+    notas_map = request.data.get('notas')
+    if notas_map is None:
+        # formato single
+        mid = request.data.get('materia_id')
+        notas_map = {mid: request.data.get('nota')} if mid else {}
+
+    salvas = 0
+    for materia_id, valor in notas_map.items():
+        materia = Materia.objects.filter(id=materia_id).first()
+        if not materia:
+            continue
+        try:
+            nf = float(valor)
+            if not (0 <= nf <= 10):
+                continue
+        except (TypeError, ValueError):
+            continue
+        NotaQualitativa.objects.update_or_create(
+            aluno=aluno, epoca=epoca, materia=materia,
+            defaults={'nota': nf, 'professor': professor},
+        )
+        salvas += 1
+
+    return Response({'ok': True, 'salvas': salvas})
 
 
 # ==========================================
@@ -1059,31 +1228,6 @@ def professor_relatorio_pdf(request, aluno_id):
     def calc_percent(v):
         return round((v / MAX_SCORE) * 100) if v and MAX_SCORE > 0 else 0
 
-    # ── notas por matéria (ProvaIndividual) ────────────────────────────────
-    provas_qs = ProvaIndividual.objects.filter(aluno=aluno).select_related('materia').order_by('materia__nome', 'epoca', 'numero')
-    provas_por_materia: dict = {}
-    for p in provas_qs:
-        mat = p.materia.nome
-        if mat not in provas_por_materia:
-            provas_por_materia[mat] = {'1B': [], '2B': [], '3B': [], '4B': []}
-        provas_por_materia[mat][p.epoca].append(float(p.nota))
-
-    # fallback: NotaMateria (legado)
-    notas_por_epoca: dict = {}
-    medias_materias: dict = {}
-    if not provas_por_materia:
-        notas_qs = NotaMateria.objects.filter(aluno=aluno).order_by('epoca', 'materia')
-        medias_raw: dict = {}
-        for nota in notas_qs:
-            ek = nota.get_epoca_display()
-            mk = nota.get_materia_display()
-            notas_por_epoca.setdefault(ek, {})[mk] = float(nota.nota)
-            medias_raw.setdefault(mk, []).append(float(nota.nota))
-        medias_materias = {m: round(sum(v)/len(v), 2) for m, v in medias_raw.items()}
-
-    def _avg(lst):
-        return round(sum(lst) / len(lst), 2) if lst else None
-
     # ── build PDF ──────────────────────────────────────────────────────────
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -1143,88 +1287,59 @@ def professor_relatorio_pdf(request, aluno_id):
     story.append(id_table)
     story.append(Spacer(1, 0.4*cm))
 
-    # ── Seção 2: Notas por Matéria e Bimestre ─────────────────────────────
-    story.append(Paragraph('Notas por Matéria e Bimestre', section_style))
-    EPOCAS_KEYS = ['1B', '2B', '3B', '4B']
-    EPOCAS_LABELS = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre']
+    # ── Seção 2: Notas por Disciplina (AV1/AV2/AV3) ───────────────────────
+    from .grading import consolidar_notas
+    from .grade_config import EPOCAS as GRADE_EPOCAS
 
-    if provas_por_materia:
-        header_row = ['Matéria'] + EPOCAS_LABELS + ['Média Anual']
-        table_data = [header_row]
-        all_means = []
-        bim_means = {k: [] for k in EPOCAS_KEYS}
+    story.append(Paragraph('Notas por Disciplina', section_style))
 
-        for mat, epocas in sorted(provas_por_materia.items()):
-            row = [mat]
-            mat_all = []
-            for ek in EPOCAS_KEYS:
-                lst = epocas.get(ek, [])
-                m = _avg(lst)
-                row.append(f'{m:.2f}' if m is not None else '–')
-                if m is not None:
-                    mat_all.append(m)
-                    bim_means[ek].append(m)
-            ma = _avg(mat_all)
-            row.append(f'{ma:.2f}' if ma is not None else '–')
-            if ma is not None:
-                all_means.append(ma)
-            table_data.append(row)
+    consolidado = consolidar_notas(aluno)
+    epocas_label = dict(GRADE_EPOCAS)
 
-        # linha de média geral
-        mg_row = ['Média Geral']
-        for ek in EPOCAS_KEYS:
-            mg = _avg(bim_means[ek])
-            mg_row.append(f'{mg:.2f}' if mg is not None else '–')
-        mga = _avg(all_means)
-        mg_row.append(f'{mga:.2f}' if mga is not None else '–')
-        table_data.append(mg_row)
+    def _cel(v):
+        return f'{v:.1f}' if v is not None else '–'
 
-        col_w = [4.5*cm] + [2.5*cm]*4 + [2.5*cm]
-        nt = Table(table_data, colWidths=col_w)
-        n_rows = len(table_data)
-        nt.setStyle(TableStyle([
+    algum_bimestre = False
+    for epoca_cod, _lbl in GRADE_EPOCAS:
+        linhas = consolidado.get(epoca_cod, [])
+        # só mostra o bimestre se houver ao menos uma nota lançada
+        if not any(l['av1'] is not None or l['av2'] is not None or l['av3'] is not None
+                   for l in linhas):
+            continue
+        algum_bimestre = True
+
+        story.append(Paragraph(epocas_label.get(epoca_cod, epoca_cod),
+                               ParagraphStyle('Bim', parent=body_style, fontSize=10,
+                                              spaceBefore=8, spaceAfter=4,
+                                              textColor=PRIMARY, fontName='Helvetica-Bold')))
+
+        table_data = [['Disciplina', 'AV1', 'AV2', 'AV3', 'Média Final']]
+        for l in linhas:
+            table_data.append([l['nome'], _cel(l['av1']), _cel(l['av2']), _cel(l['av3']),
+                               f"{l['final']:.2f}"])
+
+        col_w = [6*cm] + [2.4*cm]*4
+        nt = Table(table_data, colWidths=col_w, repeatRows=1)
+        estilo = [
             ('BACKGROUND', (0,0), (-1,0), PRIMARY),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
             ('FONTSIZE', (0,0), (-1,-1), 8),
             ('FONTNAME', (0,1), (0,-1), 'Helvetica-Bold'),
-            ('FONTNAME', (0,n_rows-1), (-1,n_rows-1), 'Helvetica-Bold'),
-            ('BACKGROUND', (0,n_rows-1), (-1,n_rows-1), LIGHT),
-            ('ROWBACKGROUNDS', (0,1), (-1,n_rows-2), [colors.white, colors.HexColor('#f5f8ff')]),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
-            ('ALIGN', (1,0), (-1,-1), 'CENTER'),
-            ('PADDING', (0,0), (-1,-1), 4),
-        ]))
-        story.append(nt)
-
-    elif notas_por_epoca:
-        EPOCAS_ORDER = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre']
-        epocas_presentes = [e for e in EPOCAS_ORDER if e in notas_por_epoca]
-        materias = sorted(medias_materias.keys())
-        header_row = ['Matéria'] + epocas_presentes + ['Média']
-        table_data = [header_row]
-        for mat in materias:
-            row = [mat]
-            for ep in epocas_presentes:
-                n = notas_por_epoca.get(ep, {}).get(mat)
-                row.append(f'{n:.1f}' if n is not None else '–')
-            row.append(f'{medias_materias[mat]:.2f}')
-            table_data.append(row)
-        col_w = [4.5*cm] + [2.5*cm]*len(epocas_presentes) + [2.5*cm]
-        nt = Table(table_data, colWidths=col_w)
-        nt.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), PRIMARY),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 8),
-            ('FONTNAME', (0,1), (0,-1), 'Helvetica-Bold'),
+            ('FONTNAME', (4,1), (4,-1), 'Helvetica-Bold'),
             ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f5f8ff')]),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cccccc')),
             ('ALIGN', (1,0), (-1,-1), 'CENTER'),
             ('PADDING', (0,0), (-1,-1), 4),
-        ]))
+        ]
+        # cor da média final por faixa
+        for i, l in enumerate(linhas, start=1):
+            estilo.append(('TEXTCOLOR', (4,i), (4,i), nota_color(l['final'])))
+        nt.setStyle(TableStyle(estilo))
         story.append(nt)
-    else:
+        story.append(Spacer(1, 0.25*cm))
+
+    if not algum_bimestre:
         story.append(Paragraph('Nenhuma nota registrada.', body_style))
 
     story.append(Spacer(1, 0.4*cm))

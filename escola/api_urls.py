@@ -21,12 +21,16 @@ urlpatterns = [
     path('professor/simulados/', api_views.professor_lista_simulados, name='api_lista_simulados'),
     path('professor/simulado/<int:simulado_id>/', api_views.professor_detalhe_simulado, name='api_detalhe_simulado'),
     path('professor/simulado/<int:simulado_id>/questao/<int:questao_id>/', api_views.professor_remover_questao_simulado, name='api_remover_questao_simulado'),
+    path('professor/simulado/<int:simulado_id>/resultados/', api_views.professor_simulado_resultados, name='api_simulado_resultados'),
     path('professor/relatorio/<int:aluno_id>/', api_views.professor_relatorio_aluno, name='api_relatorio_aluno'),
     path('professor/relatorio/<int:aluno_id>/pdf/', api_views.professor_relatorio_pdf, name='api_relatorio_pdf'),
     path('professor/notas/<int:aluno_id>/', api_views.professor_notas_aluno, name='api_professor_notas'),
     path('professor/provas/<int:aluno_id>/', api_views.professor_provas_aluno, name='api_professor_provas'),
     path('professor/perfil/<int:aluno_id>/', api_views.professor_perfil_turma, name='api_professor_perfil'),
     path('professor/resultado/<int:resultado_id>/corrigir/', api_views.professor_corrigir_discursivas, name='api_corrigir_discursivas'),
+    path('professor/consolidado/<int:aluno_id>/', api_views.professor_consolidado, name='api_professor_consolidado'),
+    path('professor/nota-area/<int:aluno_id>/', api_views.professor_nota_area, name='api_professor_nota_area'),
+    path('professor/nota-qualitativa/<int:aluno_id>/', api_views.professor_nota_qualitativa, name='api_professor_nota_qualitativa'),
 
     # Aluno
     path('aluno/dashboard/', api_views.aluno_dashboard, name='api_aluno_dashboard'),
@@ -34,5 +38,6 @@ urlpatterns = [
     path('aluno/meus-simulados/', api_views.aluno_meus_simulados, name='api_aluno_simulados'),
     path('aluno/simulado/<int:simulado_id>/', api_views.aluno_visualizar_simulado, name='api_aluno_simulado'),
     path('aluno/simulado/<int:simulado_id>/enviar/', api_views.aluno_enviar_simulado, name='api_aluno_enviar_simulado'),
+    path('aluno/minhas-notas/', api_views.aluno_minhas_notas, name='api_aluno_minhas_notas'),
     path('aluno/assiduidade/', api_views.aluno_assiduidade, name='api_aluno_assiduidade'),
 ]

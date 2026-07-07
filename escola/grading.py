@@ -11,12 +11,8 @@ Fluxo:
 """
 from decimal import Decimal
 
-from .models import SimuladoQuestao, NotaArea
-
-
-def _valor_questao(simulado, questao_id):
-    sq = SimuladoQuestao.objects.filter(simulado=simulado, questao_id=questao_id).first()
-    return Decimal(sq.valor) if sq else Decimal('1.00')
+from .models import SimuladoQuestao, NotaArea, NotaQualitativa, Materia
+from .grade_config import DISCIPLINAS, DISCIPLINA_AREA, EPOCAS
 
 
 def corrigir_resultado(resultado):
@@ -25,6 +21,12 @@ def corrigir_resultado(resultado):
     Retorna o próprio resultado já salvo.
     """
     simulado = resultado.simulado
+    # valor de cada questão que AINDA pertence ao simulado (questões removidas/anuladas
+    # deixam de contar, e suas respostas são ignoradas no cálculo)
+    valores = {
+        sq.questao_id: Decimal(sq.valor)
+        for sq in simulado.simulado_questoes.all()
+    }
     respostas = list(resultado.respostas.select_related('questao', 'alternativa'))
 
     valor_total = Decimal('0')
@@ -32,7 +34,9 @@ def corrigir_resultado(resultado):
     tem_pendente = False
 
     for r in respostas:
-        valor = _valor_questao(simulado, r.questao_id)
+        if r.questao_id not in valores:
+            continue  # questão foi removida/anulada do simulado
+        valor = valores[r.questao_id]
         valor_total += valor
 
         if r.questao.tipo == 'objetiva':
@@ -85,3 +89,57 @@ def consolidar_nota_area(resultado):
         },
     )
     return nota_area
+
+
+def recomputar_simulado(simulado):
+    """Recalcula todos os resultados de um simulado (ex.: após excluir/anular questão).
+
+    Retorna a quantidade de resultados recalculados.
+    """
+    n = 0
+    for resultado in simulado.resultados.all():
+        corrigir_resultado(resultado)
+        n += 1
+    return n
+
+
+def consolidar_notas(aluno):
+    """Consolida as notas do aluno por bimestre × disciplina.
+
+    Média final por disciplina = (AV1_área + AV2_área + AV3_disciplina) / 3,
+    tratando nota ausente como 0.
+    """
+    # Índices para lookup rápido
+    areas = {
+        (na.epoca, na.av_tipo, na.area): float(na.nota)
+        for na in NotaArea.objects.filter(aluno=aluno)
+    }
+    # NotaQualitativa por (epoca, sigla da matéria)
+    qualis = {}
+    for nq in NotaQualitativa.objects.filter(aluno=aluno).select_related('materia'):
+        if nq.materia:
+            qualis[(nq.epoca, nq.materia.sigla)] = float(nq.nota)
+
+    # id da Materia por sigla (para edição da AV3)
+    materia_por_sigla = {m.sigla: m.id for m in Materia.objects.all()}
+
+    resultado = {}
+    for epoca_cod, _epoca_nome in EPOCAS:
+        linhas = []
+        for sigla, nome in DISCIPLINAS:
+            mapa = DISCIPLINA_AREA.get(sigla, {})
+            area_av1 = mapa.get('AV1')
+            area_av2 = mapa.get('AV2')
+            av1 = areas.get((epoca_cod, 'AV1', area_av1))
+            av2 = areas.get((epoca_cod, 'AV2', area_av2))
+            av3 = qualis.get((epoca_cod, sigla))
+            final = round(((av1 or 0) + (av2 or 0) + (av3 or 0)) / 3, 2)
+            linhas.append({
+                'sigla': sigla, 'nome': nome,
+                'area_av1': area_av1, 'area_av2': area_av2,
+                'materia_id': materia_por_sigla.get(sigla),
+                'av1': av1, 'av2': av2, 'av3': av3,
+                'final': final,
+            })
+        resultado[epoca_cod] = linhas
+    return resultado

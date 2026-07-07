@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import Navbar from '@/components/Navbar';
@@ -47,6 +47,28 @@ interface Turma {
   nome: string;
 }
 
+interface PendenteResp {
+  resposta_id: number;
+  questao_enunciado: string;
+  texto: string;
+}
+
+interface ResultadoAluno {
+  aluno_id: number;
+  nome: string;
+  foto_url: string | null;
+  status: 'nao_iniciado' | 'pendente_correcao' | 'corrigido';
+  nota: number | null;
+  resultado_id: number | null;
+  pendentes: PendenteResp[];
+}
+
+const STATUS_INFO: Record<string, { label: string; color: string; icon: string }> = {
+  nao_iniciado:      { label: 'Não iniciado',       color: '#94a3b8', icon: 'radio_button_unchecked' },
+  pendente_correcao: { label: 'Pendente correção',  color: '#f39c12', icon: 'pending_actions' },
+  corrigido:         { label: 'Corrigido',          color: '#27ae60', icon: 'check_circle' },
+};
+
 const DIF_COLOR: Record<string, string> = {
   facil: '#27ae60',
   medio: '#f39c12',
@@ -73,6 +95,18 @@ export default function DetalheSimuladoPage() {
   const [tempo, setTempo] = useState('');
   const [area, setArea] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  // andamento / resultados
+  const [resultados, setResultados] = useState<ResultadoAluno[]>([]);
+  const [expandedAluno, setExpandedAluno] = useState<number | null>(null);
+  const [pontos, setPontos] = useState<Record<number, string>>({});
+  const [corrigindo, setCorrigindo] = useState<number | null>(null);
+
+  const carregarResultados = useCallback(() => {
+    apiFetch<{ alunos: ResultadoAluno[] }>(`/professor/simulado/${id}/resultados/`)
+      .then(d => setResultados(d.alunos))
+      .catch(() => setResultados([]));
+  }, [id]);
 
   useEffect(() => {
     const numId = Number(id);
@@ -105,7 +139,35 @@ export default function DetalheSimuladoPage() {
         setError(`Erro ao carregar simulado: ${msg}`);
       })
       .finally(() => setLoading(false));
-  }, [id]);
+
+    carregarResultados();
+  }, [id, carregarResultados]);
+
+  async function handleCorrigir(resultadoId: number, pendentes: PendenteResp[]) {
+    setCorrigindo(resultadoId);
+    try {
+      const pontosMap: Record<number, number> = {};
+      for (const p of pendentes) {
+        const v = pontos[p.resposta_id];
+        if (v !== undefined && v !== '' && !isNaN(parseFloat(v))) {
+          pontosMap[p.resposta_id] = parseFloat(v);
+        }
+      }
+      await apiFetch(`/professor/resultado/${resultadoId}/corrigir/`, {
+        method: 'POST',
+        body: JSON.stringify({ pontos: pontosMap }),
+      });
+      showToast('Correção salva.');
+      setExpandedAluno(null);
+      setPontos({});
+      carregarResultados();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      showToast(`Erro ao salvar correção: ${msg}`, false);
+    } finally {
+      setCorrigindo(null);
+    }
+  }
 
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok });
@@ -143,6 +205,7 @@ export default function DetalheSimuladoPage() {
       );
       setSimulado(updated);
       showToast('Questão removida do simulado.');
+      carregarResultados();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';
       showToast(`Erro ao remover questão: ${msg}`, false);
@@ -419,6 +482,93 @@ export default function DetalheSimuladoPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Andamento e Notas */}
+        <div className="det-card" style={{ marginTop: '2rem' }}>
+          <h2 style={{ marginBottom: '2rem', fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span className="material-icons-outlined">groups</span>
+            Andamento e Notas
+          </h2>
+
+          {resultados.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.4rem' }}>
+              Nenhum aluno na turma-alvo (ou turma não definida).
+            </p>
+          ) : (
+            <div className="q-list">
+              {resultados.map(a => {
+                const info = STATUS_INFO[a.status];
+                const aberto = expandedAluno === a.aluno_id;
+                const temPendencia = a.status === 'pendente_correcao' && a.pendentes.length > 0;
+                return (
+                  <div key={a.aluno_id} className="q-item">
+                    <div
+                      className="q-row"
+                      style={{ cursor: temPendencia ? 'pointer' : 'default' }}
+                      onClick={() => temPendencia && setExpandedAluno(aberto ? null : a.aluno_id)}
+                    >
+                      <div className="q-info">
+                        <div className="q-enunciado" style={{ whiteSpace: 'normal' }}>{a.nome}</div>
+                        <div className="q-meta" style={{ alignItems: 'center' }}>
+                          <span className="badge-sm" style={{ background: info.color, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <span className="material-icons-outlined" style={{ fontSize: '1.4rem' }}>{info.icon}</span>
+                            {info.label}
+                          </span>
+                          {a.nota != null && (
+                            <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                              Nota: {a.nota.toFixed(2)}
+                            </span>
+                          )}
+                          {temPendencia && (
+                            <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>
+                              {a.pendentes.length} discursiva(s) a corrigir
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {temPendencia && (
+                        <span className="material-icons-outlined" style={{ color: 'var(--text-secondary)', fontSize: '2rem', flexShrink: 0, transform: aberto ? 'rotate(180deg)' : 'none' }}>
+                          expand_more
+                        </span>
+                      )}
+                    </div>
+
+                    {aberto && temPendencia && a.resultado_id != null && (
+                      <div className="q-expand">
+                        {a.pendentes.map(p => (
+                          <div key={p.resposta_id} style={{ marginBottom: '1.4rem' }}>
+                            <div style={{ fontWeight: 600, marginBottom: '0.4rem' }}>{p.questao_enunciado}</div>
+                            <div style={{ background: '#fff', border: '1px solid var(--border-light)', borderRadius: '0.8rem', padding: '0.8rem 1rem', marginBottom: '0.6rem', fontSize: '1.35rem', whiteSpace: 'pre-wrap' }}>
+                              {p.texto || <em style={{ color: 'var(--text-secondary)' }}>Sem resposta.</em>}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <label style={{ fontSize: '1.3rem', color: 'var(--text-secondary)' }}>Pontos:</label>
+                              <input
+                                type="number" min={0} step={0.5}
+                                value={pontos[p.resposta_id] ?? ''}
+                                onChange={e => setPontos(prev => ({ ...prev, [p.resposta_id]: e.target.value }))}
+                                style={{ width: '8rem', padding: '0.5rem 0.7rem', border: '2px solid var(--border-light)', borderRadius: '0.8rem', fontSize: '1.4rem' }}
+                              />
+                              <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>(valor da questão no simulado)</span>
+                            </div>
+                          </div>
+                        ))}
+                        <button
+                          className="save-btn"
+                          style={{ marginTop: '0.4rem' }}
+                          disabled={corrigindo === a.resultado_id}
+                          onClick={() => handleCorrigir(a.resultado_id!, a.pendentes)}
+                        >
+                          {corrigindo === a.resultado_id ? 'Salvando...' : 'Salvar correção'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
 

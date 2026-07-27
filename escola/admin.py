@@ -617,7 +617,7 @@ _SECOES = [
         'Professor', 'Turma', 'Materia', 'Questao', 'Simulado',
     ]),
     ('area-admin', 'Administração', [
-        'Administrador', 'User', 'Group',
+        'Administrador', 'User', 'Group', 'LogAtividade',
     ]),
 ]
 

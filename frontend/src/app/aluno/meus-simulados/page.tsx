@@ -10,7 +10,7 @@ import Loading from '@/components/Loading';
 interface Simulado {
   id: number;
   titulo: string;
-  turma_nome: string;
+  turma_nomes: string[];
   autor_nome: string;
   total_questoes: number;
   data_criacao: string;
@@ -70,7 +70,7 @@ export default function MeusSimuladosPage() {
                       {new Date(s.data_criacao).toLocaleDateString('pt-BR')}
                     </p>
                     <h3 style={{ color: 'white', fontSize: '1.8rem', margin: '0 0 0.4rem', wordBreak: 'break-word' }}>
-                      {s.titulo || `Simulado — ${s.turma_nome}`}
+                      {s.titulo || `Simulado — ${s.turma_nomes.join(', ')}`}
                     </h3>
                     <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.3rem', margin: 0 }}>
                       Prof. {s.autor_nome}

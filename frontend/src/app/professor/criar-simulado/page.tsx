@@ -109,7 +109,7 @@ export default function CriarSimuladoPage() {
   const router = useRouter();
   const [data, setData] = useState<SimuladoData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [turmaId, setTurmaId] = useState("");
+  const [turmaIds, setTurmaIds] = useState<string[]>([]);
   const [titulo, setTitulo] = useState("");
   const [usarTempo, setUsarTempo] = useState(false);
   const [tempoLimite, setTempoLimite] = useState("60");
@@ -184,6 +184,12 @@ export default function CriarSimuladoPage() {
     setQuestoesSelecionadas((prev) => prev.filter((s) => !ids.has(s.id)));
   }
 
+  function toggleTurma(id: string) {
+    setTurmaIds((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
+    );
+  }
+
   const todosFiltradosSelecionados =
     questoesFiltradas.length > 0 &&
     questoesFiltradas.every((q) =>
@@ -192,10 +198,10 @@ export default function CriarSimuladoPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!turmaId || questoesSelecionadas.length === 0) {
+    if (turmaIds.length === 0 || questoesSelecionadas.length === 0) {
       setAlert({
         type: "error",
-        message: "Selecione uma turma e pelo menos uma questão.",
+        message: "Selecione ao menos uma turma e pelo menos uma questão.",
       });
       return;
     }
@@ -204,7 +210,7 @@ export default function CriarSimuladoPage() {
       await apiFetch("/professor/criar-simulado/", {
         method: "POST",
         body: JSON.stringify({
-          turma: turmaId,
+          turmas: turmaIds.map(Number),
           questoes: questoesSelecionadas, // [{id, valor}, ...]
           titulo,
           tempo_limite: usarTempo ? parseInt(tempoLimite) : null,
@@ -310,21 +316,39 @@ export default function CriarSimuladoPage() {
 
               <div className="form-group">
                 <label>
-                  Turma alvo{" "}
-                  <span style={{ color: "var(--color-danger)" }}>*</span>
+                  Turmas{" "}
+                  <span style={{ color: "var(--color-danger)" }}>*</span>{" "}
+                  <span style={{ color: "#94a3b8", fontWeight: 400 }}>
+                    (selecione uma ou mais)
+                  </span>
                 </label>
-                <select
-                  value={turmaId}
-                  onChange={(e) => setTurmaId(e.target.value)}
-                  required
+                <div
+                  style={{ display: "flex", flexWrap: "wrap", gap: "0.8rem" }}
                 >
-                  <option value="">Selecione uma turma...</option>
-                  {data.turmas.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nome}
-                    </option>
-                  ))}
-                </select>
+                  {data.turmas.map((t) => {
+                    const id = String(t.id);
+                    const checked = turmaIds.includes(id);
+                    return (
+                      <div
+                        key={t.id}
+                        className={`check-row${checked ? " checked" : ""}`}
+                        style={{ flex: "0 1 auto" }}
+                        onClick={() => toggleTurma(id)}
+                      >
+                        <div className="check-box">
+                          {checked && (
+                            <span className="material-icons-outlined">
+                              check
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: "1.45rem", fontWeight: 600 }}>
+                          {t.nome}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Toggle tempo limite */}

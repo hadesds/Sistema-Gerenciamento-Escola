@@ -135,9 +135,10 @@ class Command(BaseCommand):
             ),
         ]
 
-        simulado = Simulado.objects.filter(autor=professor, turma_alvo=turma).first()
+        simulado = Simulado.objects.filter(autor=professor, turmas=turma).first()
         if not simulado:
-            simulado = Simulado.objects.create(autor=professor, turma_alvo=turma)
+            simulado = Simulado.objects.create(autor=professor)
+            simulado.turmas.add(turma)
         simulado.questoes.set(questoes)
 
         self.stdout.write(self.style.SUCCESS("Dados demo criados/atualizados com sucesso."))

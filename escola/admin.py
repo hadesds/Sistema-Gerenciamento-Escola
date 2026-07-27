@@ -396,14 +396,15 @@ class SimuladoQuestaoInline(admin.TabularInline):
 
 @admin.register(Simulado)
 class SimuladoAdmin(admin.ModelAdmin):
-    list_display = ['get_titulo', 'autor', 'turma_alvo', 'get_av', 'area', 'epoca',
+    list_display = ['get_titulo', 'autor', 'get_turmas', 'get_av', 'area', 'epoca',
                     'tempo_limite', 'total_questoes', 'total_resultados', 'data_criacao']
-    list_filter = ['av_tipo', 'area', 'epoca', 'turma_alvo', 'autor', 'data_criacao']
-    search_fields = ['titulo', 'autor__user__first_name', 'turma_alvo__nome']
+    list_filter = ['av_tipo', 'area', 'epoca', 'turmas', 'autor', 'data_criacao']
+    search_fields = ['titulo', 'autor__user__first_name', 'turmas__nome']
     date_hierarchy = 'data_criacao'
     inlines = [SimuladoQuestaoInline]
+    filter_horizontal = ['turmas']
     fieldsets = [
-        ('Identificação', {'fields': ['titulo', 'autor', 'turma_alvo', 'data_criacao']}),
+        ('Identificação', {'fields': ['titulo', 'autor', 'turmas', 'data_criacao']}),
         ('Avaliação (novo sistema de notas)', {
             'description': 'AV1/AV2 geram nota automática por área; AV3 é qualitativa. Área e Bimestre definem onde a nota é lançada.',
             'fields': ['av_tipo', 'area', 'epoca'],
@@ -413,8 +414,12 @@ class SimuladoAdmin(admin.ModelAdmin):
     readonly_fields = ['data_criacao']
 
     def get_titulo(self, obj):
-        return obj.titulo or f'Simulado de {obj.autor} – {obj.turma_alvo}'
+        return obj.titulo or f'Simulado de {obj.autor} – {self.get_turmas(obj)}'
     get_titulo.short_description = 'Título'
+
+    def get_turmas(self, obj):
+        return ', '.join(obj.turmas.values_list('nome', flat=True)) or '–'
+    get_turmas.short_description = 'Turmas'
 
     def get_av(self, obj):
         return obj.av_tipo or '–'

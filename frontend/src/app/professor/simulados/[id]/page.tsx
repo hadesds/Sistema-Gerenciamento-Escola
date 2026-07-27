@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -33,8 +34,8 @@ interface Questao {
 interface Simulado {
   id: number;
   titulo: string;
-  turma_alvo: number;
-  turma_nome: string;
+  turmas: number[];
+  turma_nomes: string[];
   autor_nome: string;
   data_criacao: string;
   tempo_limite: number | null;
@@ -64,6 +65,12 @@ interface ResultadoAluno {
   pendentes: PendenteResp[];
 }
 
+interface TurmaResultado {
+  turma_id: number;
+  turma_nome: string;
+  alunos: ResultadoAluno[];
+}
+
 const STATUS_INFO: Record<string, { label: string; color: string; icon: string }> = {
   nao_iniciado:      { label: 'Não iniciado',       color: '#94a3b8', icon: 'radio_button_unchecked' },
   pendente_correcao: { label: 'Pendente correção',  color: '#f39c12', icon: 'pending_actions' },
@@ -91,22 +98,27 @@ export default function DetalheSimuladoPage() {
 
   // edit state
   const [titulo, setTitulo] = useState('');
-  const [turmaId, setTurmaId] = useState('');
+  const [turmaIds, setTurmaIds] = useState<string[]>([]);
   const [usarTempo, setUsarTempo] = useState(false);
   const [tempo, setTempo] = useState('');
   const [area, setArea] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   // andamento / resultados
-  const [resultados, setResultados] = useState<ResultadoAluno[]>([]);
+  const [turmasResultado, setTurmasResultado] = useState<TurmaResultado[]>([]);
+  const [expandedTurma, setExpandedTurma] = useState<number | null>(null);
   const [expandedAluno, setExpandedAluno] = useState<number | null>(null);
   const [pontos, setPontos] = useState<Record<number, string>>({});
   const [corrigindo, setCorrigindo] = useState<number | null>(null);
 
   const carregarResultados = useCallback(() => {
-    apiFetch<{ alunos: ResultadoAluno[] }>(`/professor/simulado/${id}/resultados/`)
-      .then(d => setResultados(d.alunos))
-      .catch(() => setResultados([]));
+    apiFetch<{ turmas: TurmaResultado[] }>(`/professor/simulado/${id}/resultados/`)
+      .then(d => {
+        setTurmasResultado(d.turmas);
+        // Se há só uma turma, já deixa o bloco aberto.
+        if (d.turmas.length === 1) setExpandedTurma(d.turmas[0].turma_id);
+      })
+      .catch(() => setTurmasResultado([]));
   }, [id]);
 
   useEffect(() => {
@@ -130,7 +142,7 @@ export default function DetalheSimuladoPage() {
         setSimulado(s);
         setTurmas(turmaList);
         setTitulo(s.titulo || '');
-        setTurmaId(String(s.turma_alvo ?? ''));
+        setTurmaIds(s.turmas.map(String));
         setUsarTempo(!!s.tempo_limite);
         setTempo(s.tempo_limite ? String(s.tempo_limite) : '');
         setArea(s.area_conhecimento || '');
@@ -175,6 +187,12 @@ export default function DetalheSimuladoPage() {
     setTimeout(() => setToast(null), 3000);
   }
 
+  function toggleTurma(turmaId: string) {
+    setTurmaIds(prev =>
+      prev.includes(turmaId) ? prev.filter(t => t !== turmaId) : [...prev, turmaId],
+    );
+  }
+
   async function handleSave() {
     setSaving(true);
     try {
@@ -182,13 +200,14 @@ export default function DetalheSimuladoPage() {
         method: 'PATCH',
         body: JSON.stringify({
           titulo,
-          turma: turmaId || undefined,
+          turmas: turmaIds.map(Number),
           tempo_limite: usarTempo && tempo ? Number(tempo) : null,
           area_conhecimento: area,
         }),
       });
       setSimulado(updated);
       showToast('Simulado atualizado com sucesso!');
+      carregarResultados();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';
       showToast(`Erro ao salvar: ${msg}`, false);
@@ -244,9 +263,13 @@ export default function DetalheSimuladoPage() {
     </ProtectedRoute>
   );
 
+  const turmasIguais =
+    turmaIds.length === simulado.turmas.length &&
+    turmaIds.every(t => simulado.turmas.includes(Number(t)));
+
   const dirty =
     titulo !== (simulado.titulo || '') ||
-    turmaId !== String(simulado.turma_alvo ?? '') ||
+    !turmasIguais ||
     (usarTempo ? Number(tempo) : null) !== simulado.tempo_limite ||
     area !== (simulado.area_conhecimento || '');
 
@@ -264,6 +287,9 @@ export default function DetalheSimuladoPage() {
         .det-field label { display:block; font-size:1.3rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.5rem; }
         .det-field input, .det-field select { width:100%; padding:1rem 1.2rem; border:2px solid var(--border-light); border-radius:1rem; font-size:1.5rem; background:white; color:var(--text-primary); transition:border-color 0.2s; box-sizing:border-box; }
         .det-field input:focus, .det-field select:focus { outline:none; border-color:var(--color-secondary); }
+        .turma-chip { display:flex; align-items:center; gap:0.5rem; padding:0.7rem 1.2rem; border-radius:1rem; border:2px solid var(--border-light); font-size:1.4rem; font-weight:600; cursor:pointer; transition:all 0.2s; user-select:none; }
+        .turma-chip:hover { border-color:var(--color-secondary); }
+        .turma-chip.checked { border-color:var(--color-secondary); background:rgba(52,152,219,0.1); color:var(--color-secondary); }
         .tempo-row { display:flex; align-items:center; gap:1rem; }
         .toggle-btn { position:relative; width:4.4rem; height:2.4rem; flex-shrink:0; }
         .toggle-btn input { opacity:0; width:0; height:0; }
@@ -330,11 +356,25 @@ export default function DetalheSimuladoPage() {
               </div>
 
               <div className="det-field">
-                <label>Turma Alvo</label>
-                <select value={turmaId} onChange={e => setTurmaId(e.target.value)}>
-                  <option value="">Selecionar turma...</option>
-                  {turmas.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-                </select>
+                <label>Turmas</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem' }}>
+                  {turmas.map(t => {
+                    const tid = String(t.id);
+                    const checked = turmaIds.includes(tid);
+                    return (
+                      <div
+                        key={t.id}
+                        className={`turma-chip${checked ? ' checked' : ''}`}
+                        onClick={() => toggleTurma(tid)}
+                      >
+                        <span className="material-icons-outlined" style={{ fontSize: '1.6rem' }}>
+                          {checked ? 'check_box' : 'check_box_outline_blank'}
+                        </span>
+                        {t.nome}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="det-field">
@@ -497,77 +537,124 @@ export default function DetalheSimuladoPage() {
             Andamento e Notas
           </h2>
 
-          {resultados.length === 0 ? (
+          {turmasResultado.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.4rem' }}>
-              Nenhum aluno na turma-alvo (ou turma não definida).
+              Nenhuma turma vinculada a este simulado.
             </p>
           ) : (
             <div className="q-list">
-              {resultados.map(a => {
-                const info = STATUS_INFO[a.status];
-                const aberto = expandedAluno === a.aluno_id;
-                const temPendencia = a.status === 'pendente_correcao' && a.pendentes.length > 0;
+              {turmasResultado.map(t => {
+                const turmaAberta = expandedTurma === t.turma_id;
+                const respondidos = t.alunos.filter(a => a.status !== 'nao_iniciado').length;
+                const pendentesCount = t.alunos.filter(a => a.status === 'pendente_correcao').length;
                 return (
-                  <div key={a.aluno_id} className="q-item">
+                  <div key={t.turma_id} className="q-item">
                     <div
                       className="q-row"
-                      style={{ cursor: temPendencia ? 'pointer' : 'default' }}
-                      onClick={() => temPendencia && setExpandedAluno(aberto ? null : a.aluno_id)}
+                      onClick={() => setExpandedTurma(turmaAberta ? null : t.turma_id)}
                     >
                       <div className="q-info">
-                        <div className="q-enunciado" style={{ whiteSpace: 'normal' }}>{a.nome}</div>
+                        <div className="q-enunciado" style={{ whiteSpace: 'normal' }}>Turma {t.turma_nome}</div>
                         <div className="q-meta" style={{ alignItems: 'center' }}>
-                          <span className="badge-sm" style={{ background: info.color, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <span className="material-icons-outlined" style={{ fontSize: '1.4rem' }}>{info.icon}</span>
-                            {info.label}
+                          <span className="badge-sm" style={{ background: '#1a73c7' }}>
+                            {respondidos}/{t.alunos.length} responderam
                           </span>
-                          {a.nota != null && (
-                            <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-primary)' }}>
-                              Nota: {a.nota.toFixed(2)}
-                            </span>
-                          )}
-                          {temPendencia && (
-                            <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>
-                              {a.pendentes.length} discursiva(s) a corrigir
+                          {pendentesCount > 0 && (
+                            <span className="badge-sm" style={{ background: STATUS_INFO.pendente_correcao.color }}>
+                              {pendentesCount} pendente(s) de correção
                             </span>
                           )}
                         </div>
                       </div>
-                      {temPendencia && (
-                        <span className="material-icons-outlined" style={{ color: 'var(--text-secondary)', fontSize: '2rem', flexShrink: 0, transform: aberto ? 'rotate(180deg)' : 'none' }}>
-                          expand_more
-                        </span>
-                      )}
+                      <span className="material-icons-outlined" style={{ color: 'var(--text-secondary)', fontSize: '2rem', flexShrink: 0, transform: turmaAberta ? 'rotate(180deg)' : 'none' }}>
+                        expand_more
+                      </span>
                     </div>
 
-                    {aberto && temPendencia && a.resultado_id != null && (
+                    {turmaAberta && (
                       <div className="q-expand">
-                        {a.pendentes.map(p => (
-                          <div key={p.resposta_id} style={{ marginBottom: '1.4rem' }}>
-                            <div style={{ fontWeight: 600, marginBottom: '0.4rem' }}>{p.questao_enunciado}</div>
-                            <div style={{ background: '#fff', border: '1px solid var(--border-light)', borderRadius: '0.8rem', padding: '0.8rem 1rem', marginBottom: '0.6rem', fontSize: '1.35rem', whiteSpace: 'pre-wrap' }}>
-                              {p.texto || <em style={{ color: 'var(--text-secondary)' }}>Sem resposta.</em>}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                              <label style={{ fontSize: '1.3rem', color: 'var(--text-secondary)' }}>Pontos:</label>
-                              <input
-                                type="number" min={0} step={0.5}
-                                value={pontos[p.resposta_id] ?? ''}
-                                onChange={e => setPontos(prev => ({ ...prev, [p.resposta_id]: e.target.value }))}
-                                style={{ width: '8rem', padding: '0.5rem 0.7rem', border: '2px solid var(--border-light)', borderRadius: '0.8rem', fontSize: '1.4rem' }}
-                              />
-                              <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>(valor da questão no simulado)</span>
-                            </div>
-                          </div>
-                        ))}
-                        <button
-                          className="save-btn"
-                          style={{ marginTop: '0.4rem' }}
-                          disabled={corrigindo === a.resultado_id}
-                          onClick={() => handleCorrigir(a.resultado_id!, a.pendentes)}
-                        >
-                          {corrigindo === a.resultado_id ? 'Salvando...' : 'Salvar correção'}
-                        </button>
+                        <div className="q-list">
+                          {t.alunos.map(a => {
+                            const info = STATUS_INFO[a.status];
+                            const aberto = expandedAluno === a.aluno_id;
+                            const temPendencia = a.status === 'pendente_correcao' && a.pendentes.length > 0;
+                            return (
+                              <div key={a.aluno_id} className="q-item">
+                                <div
+                                  className="q-row"
+                                  style={{ cursor: temPendencia ? 'pointer' : 'default' }}
+                                  onClick={() => temPendencia && setExpandedAluno(aberto ? null : a.aluno_id)}
+                                >
+                                  <div className="q-info">
+                                    <div className="q-enunciado" style={{ whiteSpace: 'normal' }}>{a.nome}</div>
+                                    <div className="q-meta" style={{ alignItems: 'center' }}>
+                                      <span className="badge-sm" style={{ background: info.color, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <span className="material-icons-outlined" style={{ fontSize: '1.4rem' }}>{info.icon}</span>
+                                        {info.label}
+                                      </span>
+                                      {a.nota != null && (
+                                        <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                                          Nota: {a.nota.toFixed(2)}
+                                        </span>
+                                      )}
+                                      {temPendencia && (
+                                        <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>
+                                          {a.pendentes.length} discursiva(s) a corrigir
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {a.status !== 'nao_iniciado' && (
+                                    <Link
+                                      href={`/professor/notas/${a.aluno_id}`}
+                                      onClick={e => e.stopPropagation()}
+                                      className="btn btn-secondary"
+                                      style={{ fontSize: '1.2rem', padding: '0.5rem 1rem', flexShrink: 0, whiteSpace: 'nowrap' }}
+                                    >
+                                      Ajustar notas
+                                    </Link>
+                                  )}
+                                  {temPendencia && (
+                                    <span className="material-icons-outlined" style={{ color: 'var(--text-secondary)', fontSize: '2rem', flexShrink: 0, transform: aberto ? 'rotate(180deg)' : 'none' }}>
+                                      expand_more
+                                    </span>
+                                  )}
+                                </div>
+
+                                {aberto && temPendencia && a.resultado_id != null && (
+                                  <div className="q-expand">
+                                    {a.pendentes.map(p => (
+                                      <div key={p.resposta_id} style={{ marginBottom: '1.4rem' }}>
+                                        <div style={{ fontWeight: 600, marginBottom: '0.4rem' }}>{p.questao_enunciado}</div>
+                                        <div style={{ background: '#fff', border: '1px solid var(--border-light)', borderRadius: '0.8rem', padding: '0.8rem 1rem', marginBottom: '0.6rem', fontSize: '1.35rem', whiteSpace: 'pre-wrap' }}>
+                                          {p.texto || <em style={{ color: 'var(--text-secondary)' }}>Sem resposta.</em>}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                          <label style={{ fontSize: '1.3rem', color: 'var(--text-secondary)' }}>Pontos:</label>
+                                          <input
+                                            type="number" min={0} step={0.5}
+                                            value={pontos[p.resposta_id] ?? ''}
+                                            onChange={e => setPontos(prev => ({ ...prev, [p.resposta_id]: e.target.value }))}
+                                            style={{ width: '8rem', padding: '0.5rem 0.7rem', border: '2px solid var(--border-light)', borderRadius: '0.8rem', fontSize: '1.4rem' }}
+                                          />
+                                          <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>(valor da questão no simulado)</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    <button
+                                      className="save-btn"
+                                      style={{ marginTop: '0.4rem' }}
+                                      disabled={corrigindo === a.resultado_id}
+                                      onClick={() => handleCorrigir(a.resultado_id!, a.pendentes)}
+                                    >
+                                      {corrigindo === a.resultado_id ? 'Salvando...' : 'Salvar correção'}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>

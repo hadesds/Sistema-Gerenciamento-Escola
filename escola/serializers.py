@@ -137,14 +137,15 @@ class SimuladoQuestaoSerializer(serializers.ModelSerializer):
         fields = ['questao', 'valor']
 
 class SimuladoSerializer(serializers.ModelSerializer):
-    turma_nome = serializers.SerializerMethodField()
+    turmas = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    turma_nomes = serializers.SerializerMethodField()
     autor_nome = serializers.SerializerMethodField()
     total_questoes = serializers.SerializerMethodField()
     questoes = serializers.SerializerMethodField()
 
     class Meta:
         model = Simulado
-        fields = ['id', 'turma_alvo', 'turma_nome', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'av_tipo', 'area', 'epoca', 'total_questoes', 'questoes']
+        fields = ['id', 'turmas', 'turma_nomes', 'autor_nome', 'data_criacao', 'titulo', 'tempo_limite', 'area_conhecimento', 'av_tipo', 'area', 'epoca', 'total_questoes', 'questoes']
 
     def get_questoes(self, obj):
         request = self.context.get('request')
@@ -155,8 +156,8 @@ class SimuladoSerializer(serializers.ModelSerializer):
             result.append(data)
         return result
 
-    def get_turma_nome(self, obj):
-        return obj.turma_alvo.nome if obj.turma_alvo else ''
+    def get_turma_nomes(self, obj):
+        return list(obj.turmas.values_list('nome', flat=True))
 
     def get_autor_nome(self, obj):
         return obj.autor.user.get_full_name() or obj.autor.user.username

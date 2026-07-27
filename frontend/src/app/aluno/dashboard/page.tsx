@@ -37,7 +37,7 @@ interface AlunoDashboard {
   evolucao: number;
   simulados: Array<{
     id: number;
-    turma_nome: string;
+    turma_nomes: string[];
     autor_nome: string;
     total_questoes: number;
     data_criacao: string;

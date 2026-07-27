@@ -270,7 +270,7 @@ class SimuladoQuestao(models.Model):
 class Simulado(models.Model):
     questoes          = models.ManyToManyField(Questao, through='SimuladoQuestao', related_name='simulados')
     autor             = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name='simulados_criados')
-    turma_alvo        = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, related_name='simulados')
+    turmas            = models.ManyToManyField(Turma, related_name='simulados', blank=True)
     data_criacao      = models.DateTimeField(auto_now_add=True)
     titulo            = models.CharField(max_length=200, blank=True, default='')
     tempo_limite      = models.PositiveIntegerField(null=True, blank=True, help_text='Tempo limite em minutos')
@@ -287,7 +287,8 @@ class Simulado(models.Model):
         verbose_name_plural = 'Simulados'
 
     def __str__(self):
-        return f"Simulado por {self.autor} para {self.turma_alvo}"
+        turmas = ', '.join(self.turmas.values_list('nome', flat=True))
+        return f"Simulado por {self.autor} para {turmas or 'nenhuma turma'}"
 
 
 class ResultadoSimulado(models.Model):

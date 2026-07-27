@@ -372,15 +372,19 @@ def professor_criar_simulado(request):
     if not professor:
         return Response({'detail': 'Acesso negado.'}, status=403)
 
-    turma_id = request.data.get('turma')
+    turma_ids = request.data.get('turmas', [])
     questoes_payload = request.data.get('questoes', [])
 
-    if not turma_id or not questoes_payload:            
-        return Response({'detail': 'Selecione uma turma e pelo menos uma questão.'}, status=400)
+    if not turma_ids or not questoes_payload:
+        return Response({'detail': 'Selecione ao menos uma turma e pelo menos uma questão.'}, status=400)
 
-    turma = get_object_or_404(Turma, id=turma_id)
-    simulado = Simulado.objects.create(autor=professor, turma_alvo=turma)
-    for item in questoes_payload:                      
+    turmas = Turma.objects.filter(id__in=turma_ids)
+    if not turmas.exists():
+        return Response({'detail': 'Selecione ao menos uma turma e pelo menos uma questão.'}, status=400)
+
+    simulado = Simulado.objects.create(autor=professor)
+    simulado.turmas.set(turmas)
+    for item in questoes_payload:
         SimuladoQuestao.objects.create(
             simulado=simulado,
             questao_id=item['id'],
@@ -404,7 +408,7 @@ def professor_lista_simulados(request):
     if not professor:
         return Response({'detail': 'Acesso negado.'}, status=403)
 
-    simulados = Simulado.objects.filter(autor=professor).select_related('turma_alvo').order_by('-id')
+    simulados = Simulado.objects.filter(autor=professor).prefetch_related('turmas').order_by('-id')
     return Response(SimuladoSerializer(simulados, many=True, context={'request': request}).data)
 
 
@@ -443,9 +447,9 @@ def professor_detalhe_simulado(request, simulado_id):
             simulado.area = request.data['area'] or ''
         if 'epoca' in request.data:
             simulado.epoca = request.data['epoca'] or ''
-        if 'turma' in request.data:
-            turma = get_object_or_404(Turma, id=request.data['turma'])
-            simulado.turma_alvo = turma
+        if 'turmas' in request.data:
+            turmas = Turma.objects.filter(id__in=request.data['turmas'])
+            simulado.turmas.set(turmas)
         simulado.save()
         return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
@@ -491,10 +495,7 @@ def professor_simulado_resultados(request, simulado_id):
         .prefetch_related('respostas__questao')
     }
 
-    alunos_out = []
-    turma = simulado.turma_alvo
-    alunos = Aluno.objects.filter(turma=turma).select_related('user') if turma else []
-    for aluno in alunos:
+    def montar_aluno(aluno):
         r = resultados.get(aluno.user_id)
         foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else None
         if not r:
@@ -517,7 +518,7 @@ def professor_simulado_resultados(request, simulado_id):
                 and resp.questao.tipo != 'objetiva'
                 and resp.pontos is None
             ]
-        alunos_out.append({
+        return {
             'aluno_id': aluno.user_id,
             'nome': aluno.user.get_full_name() or aluno.user.username,
             'foto_url': foto_url,
@@ -525,19 +526,30 @@ def professor_simulado_resultados(request, simulado_id):
             'nota': nota,
             'resultado_id': resultado_id,
             'pendentes': pendentes,
+        }
+
+    turmas_da_prova = list(simulado.turmas.all().order_by('nome'))
+    turmas_out = []
+    for turma in turmas_da_prova:
+        alunos = Aluno.objects.filter(turma=turma).select_related('user')
+        alunos_out = [montar_aluno(aluno) for aluno in alunos]
+        turmas_out.append({
+            'turma_id': turma.id,
+            'turma_nome': turma.nome,
+            'alunos': alunos_out,
         })
 
     return Response({
         'simulado': {
             'id': simulado.id,
             'titulo': simulado.titulo,
-            'turma': turma.nome if turma else '',
+            'turmas': [t.nome for t in turmas_da_prova],
             'av_tipo': simulado.av_tipo,
             'area': simulado.area,
             'epoca': simulado.epoca,
             'total_questoes': simulado.questoes.count(),
         },
-        'alunos': alunos_out,
+        'turmas': turmas_out,
     })
 
 
@@ -750,7 +762,7 @@ def aluno_dashboard(request):
             ultima = avaliacoes.first()
             evolucao = round(float(ultima.calcular_media()) - media_geral, 2)
 
-    simulados = Simulado.objects.filter(turma_alvo=aluno.turma).select_related('autor')[:5]
+    simulados = Simulado.objects.filter(turmas=aluno.turma).select_related('autor')[:5]
     foto_url = None
     if aluno.foto:
         foto_url = request.build_absolute_uri(aluno.foto.url)
@@ -780,6 +792,9 @@ def aluno_dashboard(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def aluno_meu_feedback(request):
+    from .models import ResultadoSimulado
+    from .grading import consolidar_notas
+
     aluno = _get_aluno(request)
     if not aluno:
         return Response({'detail': 'Acesso negado.'}, status=403)
@@ -804,24 +819,32 @@ def aluno_meu_feedback(request):
     if aluno.foto:
         foto_url = request.build_absolute_uri(aluno.foto.url)
 
-    # Notas por matéria
-    notas_qs = NotaMateria.objects.filter(aluno=aluno).order_by('epoca', 'materia')
-    notas_por_epoca = {}
-    medias_por_materia = {}
-    for nota in notas_qs:
-        ep  = nota.get_epoca_display()
-        mat = nota.get_materia_display()
-        notas_por_epoca.setdefault(ep, {})[mat] = float(nota.nota)
-        medias_por_materia.setdefault(mat, []).append(float(nota.nota))
-
-    medias_materias = {
-        mat: round(sum(v) / len(v), 2)
-        for mat, v in medias_por_materia.items()
-    }
-    media_geral_materias = (
-        round(sum(medias_materias.values()) / len(medias_materias), 2)
-        if medias_materias else None
-    )
+    resultados_simulados = []
+    for r in (ResultadoSimulado.objects.filter(aluno=aluno)
+              .select_related('simulado')
+              .prefetch_related('respostas__questao')
+              .order_by('-enviado_em')):
+        pendentes = [
+            {'questao_enunciado': resp.questao.enunciado}
+            for resp in r.respostas.all()
+            if resp.questao.tipo != 'objetiva' and resp.pontos is None
+        ]
+        resultados_simulados.append({
+            'resultado_id': r.id,
+            'simulado_id': r.simulado_id,
+            'titulo': r.simulado.titulo or f'Simulado #{r.simulado_id}',
+            'av_tipo': r.simulado.av_tipo,
+            'av_tipo_display': r.simulado.get_av_tipo_display(),
+            'area': r.simulado.area,
+            'area_display': r.simulado.get_area_display(),
+            'epoca': r.simulado.epoca,
+            'epoca_display': r.simulado.get_epoca_display(),
+            'nota': float(r.nota) if r.nota is not None else None,
+            'status': r.status,
+            'status_display': r.get_status_display(),
+            'enviado_em': r.enviado_em,
+            'pendentes': pendentes,
+        })
 
     return Response({
         'aluno': {
@@ -837,21 +860,35 @@ def aluno_meu_feedback(request):
         },
         'media_geral': round(media_geral, 2),
         'avaliacoes': AvaliacaoSerializer(avaliacoes, many=True).data,
-        'notas_por_epoca': notas_por_epoca,
-        'medias_materias': medias_materias,
-        'media_geral_materias': media_geral_materias,
+        'consolidado': consolidar_notas(aluno),
+        'resultados_simulados': resultados_simulados,
     })
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def aluno_meus_simulados(request):
+    from .models import ResultadoSimulado
+
     aluno = _get_aluno(request)
     if not aluno:
         return Response({'detail': 'Acesso negado.'}, status=403)
 
-    simulados = Simulado.objects.filter(turma_alvo=aluno.turma).select_related('autor')
-    return Response(SimuladoSerializer(simulados, many=True, context={'request': request}).data)
+    simulados = Simulado.objects.filter(turmas=aluno.turma).select_related('autor')
+    resultados = {
+        r.simulado_id: r
+        for r in ResultadoSimulado.objects.filter(aluno=aluno, simulado__in=simulados)
+    }
+
+    data = SimuladoSerializer(simulados, many=True, context={'request': request}).data
+    for item in data:
+        r = resultados.get(item['id'])
+        item['meu_resultado'] = None if not r else {
+            'resultado_id': r.id,
+            'status': r.status,
+            'nota': float(r.nota) if r.nota is not None else None,
+        }
+    return Response(data)
 
 
 @api_view(['GET'])
@@ -862,7 +899,7 @@ def aluno_visualizar_simulado(request, simulado_id):
         return Response({'detail': 'Acesso negado.'}, status=403)
 
     simulado = get_object_or_404(Simulado, id=simulado_id)
-    if simulado.turma_alvo != aluno.turma:
+    if not simulado.turmas.filter(id=aluno.turma_id).exists():
         return Response({'detail': 'Sem acesso a este simulado.'}, status=403)
 
     return Response(SimuladoSerializer(simulado, context={'request': request}).data)
@@ -885,7 +922,7 @@ def aluno_enviar_simulado(request, simulado_id):
         return Response({'detail': 'Acesso negado.'}, status=403)
 
     simulado = get_object_or_404(Simulado, id=simulado_id)
-    if simulado.turma_alvo != aluno.turma:
+    if not simulado.turmas.filter(id=aluno.turma_id).exists():
         return Response({'detail': 'Sem acesso a este simulado.'}, status=403)
 
     if ResultadoSimulado.objects.filter(simulado=simulado, aluno=aluno).exists():
@@ -918,25 +955,6 @@ def aluno_enviar_simulado(request, simulado_id):
 
     corrigir_resultado(resultado)
     return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data, status=201)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def aluno_minhas_notas(request):
-    """Notas consolidadas do próprio aluno por bimestre × disciplina."""
-    from .grading import consolidar_notas
-
-    aluno = _get_aluno(request)
-    if not aluno:
-        return Response({'detail': 'Acesso negado.'}, status=403)
-
-    return Response({
-        'aluno': {
-            'nome': aluno.user.get_full_name() or aluno.user.username,
-            'turma': aluno.turma.nome if aluno.turma else '',
-        },
-        'notas': consolidar_notas(aluno),
-    })
 
 
 @api_view(['POST'])

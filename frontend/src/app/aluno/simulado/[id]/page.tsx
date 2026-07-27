@@ -29,7 +29,7 @@ interface QuestaoSimulado {
 interface SimuladoDetalhe {
   id: number;
   titulo: string;
-  turma_nome: string;
+  turma_nomes: string[];
   autor_nome: string;
   total_questoes: number;
   data_criacao: string;
@@ -252,6 +252,8 @@ export default function VisualizarSimuladoPage() {
     </ProtectedRoute>
   );
 
+  const turmaLabel = simulado.turma_nomes.join(', ');
+
   // ─── INFO ──────────────────────────────────────────────────────────────────
   if (fase === 'info') return (
     <ProtectedRoute tipo="aluno">
@@ -273,10 +275,10 @@ export default function VisualizarSimuladoPage() {
         <div className="sim-hero">
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.3rem', marginBottom: '0.5rem' }}>Simulado</p>
           <h1 style={{ color: 'white', fontSize: '2.6rem', marginBottom: '0.6rem' }}>
-            {simulado.titulo || `Simulado — ${simulado.turma_nome}`}
+            {simulado.titulo || `Simulado — ${turmaLabel}`}
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '1.4rem', marginBottom: '2rem' }}>
-            Prof. {simulado.autor_nome} · {simulado.turma_nome}
+            Prof. {simulado.autor_nome} · {turmaLabel}
           </p>
           <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
             <span className="sim-pill"><span className="material-icons-outlined" style={{ fontSize: '1.6rem', verticalAlign: 'middle' }}>quiz</span> {simulado.total_questoes} questões</span>
@@ -368,7 +370,7 @@ export default function VisualizarSimuladoPage() {
           <span className="material-icons-outlined" style={{ fontSize: '6rem', color: 'var(--color-primary)', marginBottom: '1.2rem', display: 'block' }}>sports_score</span>
           <h2 style={{ fontSize: '2.8rem', marginBottom: '0.8rem' }}>Tudo pronto?</h2>
           <p style={{ fontSize: '1.6rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2rem' }}>
-            Você está prestes a iniciar <strong>{simulado.titulo || `Simulado — ${simulado.turma_nome}`}</strong>
+            Você está prestes a iniciar <strong>{simulado.titulo || `Simulado — ${turmaLabel}`}</strong>
             {simulado.tempo_limite
               ? <> com <strong>{simulado.tempo_limite} minutos</strong> de tempo limite.</>
               : <> sem limite de tempo.</>

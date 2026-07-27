@@ -38,6 +38,5 @@ urlpatterns = [
     path('aluno/meus-simulados/', api_views.aluno_meus_simulados, name='api_aluno_simulados'),
     path('aluno/simulado/<int:simulado_id>/', api_views.aluno_visualizar_simulado, name='api_aluno_simulado'),
     path('aluno/simulado/<int:simulado_id>/enviar/', api_views.aluno_enviar_simulado, name='api_aluno_enviar_simulado'),
-    path('aluno/minhas-notas/', api_views.aluno_minhas_notas, name='api_aluno_minhas_notas'),
     path('aluno/assiduidade/', api_views.aluno_assiduidade, name='api_aluno_assiduidade'),
 ]

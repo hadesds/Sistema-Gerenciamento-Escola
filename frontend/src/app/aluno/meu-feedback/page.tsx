@@ -7,6 +7,36 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Loading from '@/components/Loading';
 import NotaBadge from '@/components/NotaBadge';
 
+interface LinhaNota {
+  sigla: string;
+  nome: string;
+  av1: number | null;
+  av2: number | null;
+  av3: number | null;
+  final: number;
+}
+
+interface PendenteQuestao {
+  questao_enunciado: string;
+}
+
+interface ResultadoSimuladoFeedback {
+  resultado_id: number;
+  simulado_id: number;
+  titulo: string;
+  av_tipo: string;
+  av_tipo_display: string;
+  area: string;
+  area_display: string;
+  epoca: string;
+  epoca_display: string;
+  nota: number | null;
+  status: 'pendente_correcao' | 'corrigido';
+  status_display: string;
+  enviado_em: string | null;
+  pendentes: PendenteQuestao[];
+}
+
 interface FeedbackData {
   aluno: { id: number; nome: string; foto_url: string | null };
   medias: {
@@ -25,9 +55,8 @@ interface FeedbackData {
     media: number;
     data: string;
   }>;
-  notas_por_epoca: Record<string, Record<string, number>>;
-  medias_materias: Record<string, number>;
-  media_geral_materias: number | null;
+  consolidado: Record<string, LinhaNota[]>;
+  resultados_simulados: ResultadoSimuladoFeedback[];
 }
 
 const CRITERIOS = [
@@ -37,7 +66,12 @@ const CRITERIOS = [
   { key: 'sociabilidade'    as const, label: 'Sociabilidade' },
 ];
 
-const EPOCAS_ORDER = ['1° Bimestre', '2° Bimestre', '3° Bimestre', '4° Bimestre'];
+const EPOCAS = [
+  { key: '1B', label: '1° Bimestre' },
+  { key: '2B', label: '2° Bimestre' },
+  { key: '3B', label: '3° Bimestre' },
+  { key: '4B', label: '4° Bimestre' },
+];
 
 function notaColor(nota: number) {
   if (nota >= 7) return 'var(--color-success)';
@@ -45,10 +79,15 @@ function notaColor(nota: number) {
   return 'var(--color-danger)';
 }
 
+function fmt(v: number | null) {
+  return v == null ? '–' : v.toFixed(1);
+}
+
 export default function MeuFeedbackPage() {
   const [data, setData] = useState<FeedbackData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [abaAtiva, setAbaAtiva] = useState<'comportamento' | 'notas'>('comportamento');
+  const [abaAtiva, setAbaAtiva] = useState<'comportamento' | 'notas' | 'simulados'>('comportamento');
+  const [bimestre, setBimestre] = useState('1B');
 
   useEffect(() => {
     apiFetch<FeedbackData>('/aluno/meu-feedback/')
@@ -56,11 +95,37 @@ export default function MeuFeedbackPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const linhasBimestre = data?.consolidado[bimestre] ?? [];
+
+  // Média geral de notas (0-10) considerando todas as disciplinas com alguma nota lançada.
+  const mediaGeralNotas = (() => {
+    if (!data) return null;
+    const finais: number[] = [];
+    Object.values(data.consolidado).forEach(linhas => {
+      linhas.forEach(l => {
+        if (l.av1 != null || l.av2 != null || l.av3 != null) finais.push(l.final);
+      });
+    });
+    return finais.length ? finais.reduce((a, b) => a + b, 0) / finais.length : null;
+  })();
+
+  const pendentesTotal = data?.resultados_simulados.filter(r => r.status === 'pendente_correcao').length ?? 0;
+
   return (
     <ProtectedRoute tipo="aluno">
       <Navbar />
       <main className="container fade-in">
-        <h1>Meu Feedback</h1>
+        <style>{`
+          .bim-tabs { display:flex; gap:0.8rem; flex-wrap:wrap; margin-bottom:2rem; }
+          .table-scroll { overflow-x:auto; border-radius:1.2rem; }
+          .sim-fb-card { border:1px solid var(--border-light); border-left:4px solid var(--color-primary); border-radius:1rem; padding:1.5rem; margin-bottom:1.2rem; }
+          .sim-fb-header { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
+          .sim-fb-badges { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem; }
+          .sim-fb-badge { padding:0.3rem 0.8rem; border-radius:2rem; font-size:1.15rem; font-weight:600; background:var(--bg-tab); color:var(--text-secondary); }
+          .sim-fb-pendente { display:inline-flex; align-items:center; gap:0.4rem; background:#fff3cd; color:#856404; padding:0.5rem 1rem; border-radius:0.8rem; font-size:1.3rem; font-weight:600; }
+        `}</style>
+
+        <h1>Meu Feedback e Notas</h1>
 
         {loading ? <Loading /> : !data ? null : (
           <>
@@ -70,12 +135,12 @@ export default function MeuFeedbackPage() {
               <div style={{ display: 'flex', justifyContent: 'space-around', gap: '1.5rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <span style={{ fontSize: '4rem', fontWeight: 700, lineHeight: 1, marginBottom: '0.5rem' }}>{data.media_geral.toFixed(2)}</span>
-                  <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>Média Geral (Max: 5.0)</span>
+                  <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>Média Comportamental (Max: 5.0)</span>
                 </div>
-                {data.media_geral_materias !== null && (
+                {mediaGeralNotas !== null && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ fontSize: '4rem', fontWeight: 700, lineHeight: 1, marginBottom: '0.5rem' }}>{data.media_geral_materias.toFixed(2)}</span>
-                    <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>Média Matérias (Max: 10.0)</span>
+                    <span style={{ fontSize: '4rem', fontWeight: 700, lineHeight: 1, marginBottom: '0.5rem' }}>{mediaGeralNotas.toFixed(2)}</span>
+                    <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>Média Geral de Notas (Max: 10.0)</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -86,7 +151,7 @@ export default function MeuFeedbackPage() {
             </div>
 
             {/* Abas */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
               <button
                 className={`btn ${abaAtiva === 'comportamento' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setAbaAtiva('comportamento')}
@@ -100,6 +165,18 @@ export default function MeuFeedbackPage() {
               >
                 <span className="material-icons-outlined">school</span>
                 Notas por Matéria
+              </button>
+              <button
+                className={`btn ${abaAtiva === 'simulados' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setAbaAtiva('simulados')}
+              >
+                <span className="material-icons-outlined">quiz</span>
+                Simulados
+                {pendentesTotal > 0 && (
+                  <span style={{ background: '#f39c12', color: 'white', borderRadius: '10rem', padding: '0.1rem 0.7rem', fontSize: '1.2rem', marginLeft: '0.4rem' }}>
+                    {pendentesTotal}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -153,105 +230,91 @@ export default function MeuFeedbackPage() {
               </>
             )}
 
-            {/* Aba Notas por Matéria */}
+            {/* Aba Notas por Matéria (AV1/AV2/AV3 por bimestre) */}
             {abaAtiva === 'notas' && (
               <>
-                {Object.keys(data.notas_por_epoca).length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>menu_book</span></div>
-                    <h2>Nenhuma nota lançada ainda</h2>
-                    <p>Aguarde seu professor lançar as notas por matéria.</p>
-                  </div>
-                ) : (() => {
-                  const epocasPresentes = EPOCAS_ORDER.filter(e => data.notas_por_epoca[e]);
-                  const materias = Object.keys(data.medias_materias);
-                  return (
-                    <>
-                      {/* Tabela geral */}
-                      <div className="card mb-2">
-                        <h2>Notas por Bimestre</h2>
-                        <div style={{ overflowX: 'auto' }}>
-                          <table className="feedback-table">
-                            <thead>
-                              <tr>
-                                <th>Matéria</th>
-                                {epocasPresentes.map(e => <th key={e}>{e}</th>)}
-                                <th>Média</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {materias.map(mat => (
-                                <tr key={mat}>
-                                  <td><strong>{mat}</strong></td>
-                                  {epocasPresentes.map(e => {
-                                    const nota = data.notas_por_epoca[e]?.[mat];
-                                    return (
-                                      <td key={e}>
-                                        {nota !== undefined
-                                          ? <span style={{ fontWeight: 600, color: notaColor(nota) }}>{nota.toFixed(1)}</span>
-                                          : <span style={{ color: 'var(--text-secondary)' }}>–</span>}
-                                      </td>
-                                    );
-                                  })}
-                                  <td>
-                                    <span style={{ fontWeight: 700, color: notaColor(data.medias_materias[mat]) }}>
-                                      {data.medias_materias[mat].toFixed(2)}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
-                              <tr style={{ background: 'var(--bg-card-add)' }}>
-                                <td><strong>Média Geral</strong></td>
-                                {epocasPresentes.map(e => {
-                                  const vals = Object.values(data.notas_por_epoca[e] || {}) as number[];
-                                  const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-                                  return (
-                                    <td key={e}>
-                                      {avg !== null
-                                        ? <strong style={{ color: notaColor(avg) }}>{avg.toFixed(2)}</strong>
-                                        : '–'}
-                                    </td>
-                                  );
-                                })}
-                                <td>
-                                  {data.media_geral_materias !== null && (
-                                    <strong style={{ color: notaColor(data.media_geral_materias) }}>
-                                      {data.media_geral_materias.toFixed(2)}
-                                    </strong>
-                                  )}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                <div className="bim-tabs">
+                  {EPOCAS.map((ep) => (
+                    <button
+                      key={ep.key}
+                      className={`btn${bimestre === ep.key ? ' btn-primary' : ' btn-secondary'}`}
+                      onClick={() => setBimestre(ep.key)}
+                    >
+                      {ep.label}
+                    </button>
+                  ))}
+                </div>
 
-                      {/* Cards por bimestre */}
-                      {epocasPresentes.map(ep => (
-                        <div key={ep} className="card mb-2">
-                          <h2>{ep}</h2>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
-                            {Object.entries(data.notas_por_epoca[ep]).map(([mat, nota]) => (
-                              <div key={mat} style={{ padding: '1.5rem', borderRadius: '1.2rem', background: 'var(--bg-tab)', textAlign: 'center' }}>
-                                <p style={{ margin: 0, marginBottom: '0.8rem', fontWeight: 600 }}>{mat}</p>
-                                <div style={{ fontSize: '2.8rem', fontWeight: 700, color: notaColor(nota) }}>
-                                  {(nota as number).toFixed(1)}
-                                </div>
-                                <div className="progress-bar" style={{ marginTop: '0.8rem' }}>
-                                  <div className="progress-fill" style={{
-                                    width: `${((nota as number) / 10) * 100}%`,
-                                    background: notaColor(nota),
-                                  }} />
-                                </div>
-                              </div>
-                            ))}
+                <div className="card">
+                  <p style={{ fontSize: '1.3rem', color: 'var(--text-secondary)', marginBottom: '1.2rem' }}>
+                    AV1/AV2 são geradas automaticamente pelos simulados. AV3 é a nota qualitativa da disciplina.
+                    Média final por disciplina = (AV1 + AV2 + AV3) ÷ 3. Nota ausente conta como 0.
+                  </p>
+                  <div className="table-scroll">
+                    <table className="feedback-table">
+                      <thead>
+                        <tr>
+                          <th>Disciplina</th>
+                          <th>AV1</th>
+                          <th>AV2</th>
+                          <th>AV3</th>
+                          <th>Média Final</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {linhasBimestre.map((l) => (
+                          <tr key={l.sigla}>
+                            <td><strong>{l.nome}</strong></td>
+                            <td>{fmt(l.av1)}</td>
+                            <td>{fmt(l.av2)}</td>
+                            <td>{fmt(l.av3)}</td>
+                            <td>
+                              <strong style={{ color: notaColor(l.final), fontSize: '1.5rem' }}>
+                                {l.final.toFixed(2)}
+                              </strong>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Aba Simulados */}
+            {abaAtiva === 'simulados' && (
+              <div className="card">
+                {data.resultados_simulados.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon"><span className="material-icons-outlined" style={{ fontSize: '5rem' }}>quiz</span></div>
+                    <p>Você ainda não respondeu nenhum simulado.</p>
+                  </div>
+                ) : (
+                  data.resultados_simulados.map(r => (
+                    <div key={r.resultado_id} className="sim-fb-card">
+                      <div className="sim-fb-header">
+                        <div>
+                          <strong style={{ fontSize: '1.5rem' }}>{r.titulo}</strong>
+                          <div className="sim-fb-badges">
+                            {r.av_tipo_display && <span className="sim-fb-badge">{r.av_tipo_display}</span>}
+                            {r.area_display && <span className="sim-fb-badge">{r.area_display}</span>}
+                            {r.epoca_display && <span className="sim-fb-badge">{r.epoca_display}</span>}
                           </div>
                         </div>
-                      ))}
-                    </>
-                  );
-                })()}
-              </>
+                        {r.status === 'corrigido' && r.nota !== null ? (
+                          <strong style={{ fontSize: '2rem', color: notaColor(r.nota) }}>{r.nota.toFixed(2)}</strong>
+                        ) : (
+                          <span className="sim-fb-pendente">
+                            <span className="material-icons-outlined" style={{ fontSize: '1.6rem' }}>pending_actions</span>
+                            Aguardando correção{r.pendentes.length > 0 ? ` (${r.pendentes.length} questão${r.pendentes.length > 1 ? 'ões' : ''})` : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             )}
           </>
         )}

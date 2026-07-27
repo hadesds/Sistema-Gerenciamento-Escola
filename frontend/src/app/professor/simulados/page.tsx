@@ -15,7 +15,7 @@ interface Questao {
 
 interface Simulado {
   id: number;
-  turma_nome: string;
+  turma_nomes: string[];
   autor_nome: string;
   data_criacao: string;
   total_questoes: number;
@@ -58,18 +58,19 @@ export default function ListaSimuladosPage() {
             {simulados.map(s => {
               const preview = s.questoes?.slice(0, 3) ?? [];
               const extra = s.total_questoes - preview.length;
+              const turmasLabel = s.turma_nomes.length > 0 ? s.turma_nomes.join(', ') : 'Sem turma';
               return (
                 <div key={s.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: '4px solid var(--color-secondary)' }}>
 
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.75rem', borderBottom: '2px solid var(--border-light)' }}>
-                    <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>Simulado - {s.turma_nome}</h3>
+                    <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>Simulado - {turmasLabel}</h3>
                     <span className="badge">{s.total_questoes} questões</span>
                   </div>
 
                   {/* Info */}
                   <div>
-                    <p style={{ margin: '0.5rem 0' }}><strong>Turma:</strong> {s.turma_nome}</p>
+                    <p style={{ margin: '0.5rem 0' }}><strong>Turmas:</strong> {turmasLabel}</p>
                     <p style={{ margin: '0.5rem 0' }}><strong>Criação:</strong> {new Date(s.data_criacao).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
 

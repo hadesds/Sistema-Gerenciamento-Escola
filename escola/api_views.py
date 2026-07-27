@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, ProvaIndividual, SimuladoQuestao
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, SimuladoQuestao
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
@@ -263,30 +263,6 @@ def professor_registrar_avaliacao(request, aluno_id):
         }, status=201)
     except Exception as e:
         return Response({'detail': str(e)}, status=400)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def professor_provas_aluno(request, aluno_id):
-    """Retorna as provas individuais de um aluno por matéria e época."""
-    professor = _get_professor(request)
-    if not professor:
-        return Response({'detail': 'Acesso negado.'}, status=403)
-
-    aluno = get_object_or_404(Aluno, pk=aluno_id)
-    materia_id = request.query_params.get('materia_id')
-    if not materia_id:
-        return Response({'detail': 'materia_id é obrigatório.'}, status=400)
-
-    provas = ProvaIndividual.objects.filter(
-        aluno=aluno, materia_id=materia_id
-    ).order_by('epoca', 'numero')
-
-    result = {'1B': [], '2B': [], '3B': [], '4B': []}
-    for p in provas:
-        result[p.epoca].append(float(p.nota))
-
-    return Response(result)
 
 
 @api_view(['GET', 'POST'])
@@ -660,27 +636,6 @@ def professor_relatorio_aluno(request, aluno_id):
         if medias_materias else None
     )
 
-    # Provas individuais agrupadas por matéria e época
-    provas_qs = ProvaIndividual.objects.filter(aluno=aluno).select_related('materia').order_by('materia__nome', 'epoca', 'numero')
-    provas_por_materia: dict = {}
-    for p in provas_qs:
-        mat = p.materia.nome
-        if mat not in provas_por_materia:
-            provas_por_materia[mat] = {'1B': [], '2B': [], '3B': [], '4B': []}
-        provas_por_materia[mat][p.epoca].append(float(p.nota))
-
-    # Médias por matéria a partir das provas individuais
-    medias_provas: dict = {}
-    for mat, epocas in provas_por_materia.items():
-        todas = [n for lista in epocas.values() for n in lista]
-        if todas:
-            medias_provas[mat] = round(sum(todas) / len(todas), 2)
-
-    media_geral_provas = (
-        round(sum(medias_provas.values()) / len(medias_provas), 2)
-        if medias_provas else None
-    )
-
     return Response({
         'aluno': {
             'id': aluno.user.id,
@@ -706,10 +661,6 @@ def professor_relatorio_aluno(request, aluno_id):
         'notas_por_epoca': notas_por_epoca,
         'medias_materias': medias_materias,
         'media_geral_materias': media_geral_materias,
-        # provas individuais agrupadas (legado)
-        'provas_por_materia': provas_por_materia,
-        'medias_provas': medias_provas,
-        'media_geral_provas': media_geral_provas,
         # novo sistema: notas consolidadas por bimestre × disciplina
         'consolidado': consolidar_notas(aluno),
         # resultados por simulado (com status de pendência de correção)

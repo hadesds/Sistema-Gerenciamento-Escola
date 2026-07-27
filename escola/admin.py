@@ -588,14 +588,14 @@ admin.site.register(User, CustomUserAdmin)
 
 # Ordem das seções e dos models dentro de cada uma (por object_name do model).
 _SECOES = [
-    ('area-aluno', '👨‍🎓 Área do Aluno', [
+    ('area-aluno', 'Área do Aluno', [
         'Aluno', 'Avaliacao', 'ResultadoSimulado', 'NotaArea', 'NotaQualitativa',
         'PerfilTurma', 'RegistroAssiduidade', 'NotaMateria', 'ProvaIndividual',
     ]),
-    ('area-professor', '👩‍🏫 Área do Professor', [
+    ('area-professor', 'Área do Professor', [
         'Professor', 'Turma', 'Materia', 'Questao', 'Simulado',
     ]),
-    ('area-admin', '🛠️ Administração', [
+    ('area-admin', 'Administração', [
         'Administrador', 'User', 'Group',
     ]),
 ]

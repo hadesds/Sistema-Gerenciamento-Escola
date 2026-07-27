@@ -49,21 +49,21 @@ const AREAS_ENEM = [
     label: "Ciências da Natureza",
     icon: "science",
     cor: "#27ae60",
-    siglas: ["CNC"],
+    siglas: ["CNC", "BIO", "FSC", "QMC"],
   },
   {
     label: "Ciências Humanas",
     icon: "public",
     cor: "#e67e22",
-    siglas: ["GGF", "FIL"],
+    siglas: ['GGF', 'HST', 'SOC', 'FIL'],
   },
   {
     label: "Linguagens",
     icon: "menu_book",
     cor: "#9b59b6",
-    siglas: ["PRT", "ING", "ART", "EDF"],
+    siglas: ['PRT', 'LPR', 'ART', 'EDF', 'ING', 'ESP'],
   },
-  { label: "Matemática", icon: "calculate", cor: "#2980b9", siglas: ["MTM"] },
+  { label: "Matemática", icon: "calculate", cor: "#2980b9", siglas: ["MTM", "LMT"] },
 ];
 
 // Novo sistema de notas — espelha escola/grade_config.py

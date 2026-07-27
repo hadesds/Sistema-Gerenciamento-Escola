@@ -744,12 +744,13 @@ export default function CriarSimuladoPage() {
                                 questoesSelecionadas.find((s) => s.id === q.id)
                                   ?.valor ?? 1
                               }
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const valor = parseFloat(e.target.value);
                                 setValorQuestao(
                                   q.id,
-                                  parseFloat(e.target.value),
-                                )
-                              }
+                                  Number.isNaN(valor) ? 0 : valor,
+                                );
+                              }}
                               style={{
                                 width: "8rem",
                                 padding: "0.4rem 0.8rem",

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import date
+from decimal import Decimal
 
 from .grade_config import AV_TIPOS, AREA_CHOICES, EPOCAS as GRADE_EPOCAS
 
@@ -48,19 +49,19 @@ class Avaliacao(models.Model):
     
     assiduidade = models.DecimalField(
         max_digits=3, decimal_places=1, default=3.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('5'))]
     )
     participacao = models.DecimalField(
         max_digits=3, decimal_places=1, default=3.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('5'))]
     )
     responsabilidade = models.DecimalField(
         max_digits=3, decimal_places=1, default=3.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('5'))]
     )
     sociabilidade = models.DecimalField(
         max_digits=3, decimal_places=1, default=3.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('5'))]
     )
 
     materia    = models.ForeignKey('Materia', on_delete=models.SET_NULL, null=True, blank=True, related_name='avaliacoes')
@@ -104,7 +105,7 @@ class NotaMateria(models.Model):
     professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name='notas_dadas')
     materia   = models.CharField(max_length=20, choices=MATERIAS)
     nota      = models.DecimalField(max_digits=4, decimal_places=2,
-                    validators=[MinValueValidator(0), MaxValueValidator(10)])
+                    validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('10'))])
     epoca     = models.CharField(max_length=2, choices=EPOCAS)
     data      = models.DateField(auto_now_add=True)
 
@@ -191,7 +192,7 @@ class ProvaIndividual(models.Model):
     epoca     = models.CharField(max_length=2, choices=EPOCAS)
     numero    = models.PositiveSmallIntegerField()
     nota      = models.DecimalField(max_digits=4, decimal_places=2,
-                    validators=[MinValueValidator(0), MaxValueValidator(10)])
+                    validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('10'))])
     data      = models.DateField(auto_now_add=True)
 
     class Meta:
@@ -238,7 +239,8 @@ class Questao(models.Model):
 
 class AlternativaQuestao(models.Model):
     questao = models.ForeignKey(Questao, on_delete=models.CASCADE, related_name='alternativas')
-    texto   = models.CharField(max_length=500)
+    texto   = models.CharField(max_length=500, blank=True, default='')
+    imagem  = models.ImageField(upload_to='alternativas_imagens/', blank=True, null=True)
     correta = models.BooleanField(default=False)
     ordem   = models.PositiveSmallIntegerField(default=0)
 
@@ -299,7 +301,7 @@ class ResultadoSimulado(models.Model):
     iniciado_em = models.DateTimeField(auto_now_add=True)
     enviado_em  = models.DateTimeField(null=True, blank=True)
     nota        = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True,
-                      validators=[MinValueValidator(0), MaxValueValidator(10)])
+                      validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('10'))])
     status      = models.CharField(max_length=20, choices=STATUS, default='pendente_correcao')
     cancelado   = models.BooleanField(default=False)
 
@@ -343,7 +345,7 @@ class NotaArea(models.Model):
     av_tipo      = models.CharField(max_length=3, choices=AV_TIPOS)
     area         = models.CharField(max_length=4, choices=AREA_CHOICES)
     nota         = models.DecimalField(max_digits=4, decimal_places=2,
-                       validators=[MinValueValidator(0), MaxValueValidator(10)])
+                       validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('10'))])
     origem       = models.CharField(max_length=6, choices=ORIGEM, default='auto')
     resultado    = models.ForeignKey(ResultadoSimulado, on_delete=models.SET_NULL, null=True, blank=True,
                        related_name='notas_geradas')
@@ -365,7 +367,7 @@ class NotaQualitativa(models.Model):
     epoca     = models.CharField(max_length=2, choices=GRADE_EPOCAS)
     materia   = models.ForeignKey('Materia', on_delete=models.CASCADE, related_name='notas_qualitativas')
     nota      = models.DecimalField(max_digits=4, decimal_places=2,
-                    validators=[MinValueValidator(0), MaxValueValidator(10)])
+                    validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('10'))])
     professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name='notas_qualitativas_dadas')
     atualizado_em = models.DateTimeField(auto_now=True)
 

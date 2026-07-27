@@ -12,6 +12,7 @@ interface Alternativa {
   texto: string;
   correta: boolean;
   ordem: number;
+  imagem_url: string | null;
 }
 
 interface Questao {
@@ -464,6 +465,11 @@ export default function DetalheSimuladoPage() {
                                       <div className="q-alt-letter">{String.fromCharCode(65 + i)}</div>
                                       <div className="q-alt-text" style={{ color: alt.correta ? '#1a7a47' : 'inherit', fontWeight: alt.correta ? 700 : 400 }}>
                                         {alt.texto}
+                                        {alt.imagem_url && (
+                                          /* eslint-disable-next-line @next/next/no-img-element */
+                                          <img src={alt.imagem_url} alt={`Alternativa ${String.fromCharCode(65 + i)}`}
+                                            style={{ display: 'block', maxHeight: '120px', maxWidth: '100%', borderRadius: '0.6rem', marginTop: '0.4rem', objectFit: 'contain', border: '1px solid var(--border-light)' }} />
+                                        )}
                                       </div>
                                     </div>
                                   ))}

@@ -10,7 +10,7 @@ import Loading from '@/components/Loading';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Alternativa { id: number; texto: string; correta: boolean; ordem: number; }
+interface Alternativa { id: number; texto: string; correta: boolean; ordem: number; imagem_url: string | null; }
 
 interface QuestaoSimulado {
   id: number;
@@ -479,6 +479,11 @@ export default function VisualizarSimuladoPage() {
                     <p style={{ margin: '0.3rem 0', color: escolhida.correta ? '#1a7a47' : '#c0392b', fontWeight: 600 }}>
                       Sua resposta:{' '}
                       {String.fromCharCode(65 + q.alternativas.indexOf(escolhida))}) {escolhida.texto}
+                      {escolhida.imagem_url && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={escolhida.imagem_url} alt="Sua resposta"
+                          style={{ display: 'block', maxHeight: '120px', maxWidth: '100%', borderRadius: '0.6rem', marginTop: '0.4rem', objectFit: 'contain', border: '1px solid #e2e8f0' }} />
+                      )}
                     </p>
                   ) : (
                     <p style={{ margin: '0.3rem 0', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Não respondida.</p>
@@ -486,6 +491,11 @@ export default function VisualizarSimuladoPage() {
                   {!escolhida?.correta && correta && (
                     <p style={{ margin: '0.3rem 0', color: '#1a7a47', fontWeight: 700 }}>
                       Gabarito: {String.fromCharCode(65 + q.alternativas.indexOf(correta))}) {correta.texto}
+                      {correta.imagem_url && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={correta.imagem_url} alt="Gabarito"
+                          style={{ display: 'block', maxHeight: '120px', maxWidth: '100%', borderRadius: '0.6rem', marginTop: '0.4rem', objectFit: 'contain', border: '1px solid #e2e8f0' }} />
+                      )}
                     </p>
                   )}
                 </div>
@@ -687,8 +697,14 @@ export default function VisualizarSimuladoPage() {
                       <span className="alt-circle" style={{ color: sel ? 'var(--color-primary)' : '#bbb' }}>
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <span style={{ flex: 1, wordBreak: 'break-word', textAlign: 'left', paddingTop: '0.2rem' }}>
-                        {alt.texto}
+                      <span style={{ flex: 1, wordBreak: 'break-word', textAlign: 'left', paddingTop: '0.2rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {alt.texto && <span>{alt.texto}</span>}
+                        {alt.imagem_url && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={alt.imagem_url} alt={`Alternativa ${String.fromCharCode(65 + i)}`}
+                            style={{ maxHeight: '160px', maxWidth: '100%', borderRadius: '0.8rem', objectFit: 'contain', border: '1px solid #e2e8f0' }}
+                          />
+                        )}
                       </span>
                     </button>
                   );

@@ -331,6 +331,13 @@ def professor_banco_questoes(request):
                             correta=bool(alt.get('correta', False)),
                             ordem=i,
                         )
+            from .activity_log import registrar_atividade
+            nome_professor = professor.user.get_full_name() or professor.user.username
+            materia_desc = f' ({materia.nome})' if materia else ''
+            registrar_atividade(
+                professor.user,
+                f'{nome_professor} (Professor) criou uma questão {questao.get_tipo_display().lower()}{materia_desc} no banco de questões.'
+            )
             return Response(QuestaoSerializer(questao, context={'request': request}).data, status=201)
         except Exception as e:
             return Response({'detail': str(e)}, status=400)
@@ -346,6 +353,36 @@ def professor_banco_questoes(request):
         'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
         'materia_filtro': materia_filtro
     })
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def professor_excluir_questao_banco(request, questao_id):
+    """Exclui uma questão do banco. Bloqueado se a questão já foi usada em algum simulado,
+    para não apagar retroativamente as respostas dos alunos que a responderam."""
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    questao = get_object_or_404(Questao, id=questao_id, autor=professor)
+
+    if questao.simulado_questoes.exists():
+        return Response(
+            {'detail': 'Esta questão já foi usada em um ou mais simulados e não pode ser excluída do banco.'},
+            status=400,
+        )
+
+    from .activity_log import registrar_atividade
+    nome_professor = professor.user.get_full_name() or professor.user.username
+    materia_desc = f' ({questao.materia.nome})' if questao.materia else ''
+    tipo_desc = questao.get_tipo_display().lower()
+    questao.delete()
+
+    registrar_atividade(
+        professor.user,
+        f'{nome_professor} (Professor) excluiu uma questão {tipo_desc}{materia_desc} do banco de questões.'
+    )
+    return Response(status=204)
 
 
 @api_view(['GET'])
@@ -397,6 +434,14 @@ def professor_criar_simulado(request):
     simulado.area = request.data.get('area', '') or ''
     simulado.epoca = request.data.get('epoca', '') or ''
     simulado.save()
+
+    from .activity_log import registrar_atividade
+    nome_professor = professor.user.get_full_name() or professor.user.username
+    turmas_desc = ', '.join(t.nome for t in turmas)
+    registrar_atividade(
+        professor.user,
+        f'{nome_professor} (Professor) criou o simulado "{simulado.titulo or f"#{simulado.id}"}" para a(s) turma(s) {turmas_desc}.'
+    )
 
     return Response(SimuladoSerializer(simulado, context={'request': request}).data, status=201)
 
@@ -454,7 +499,14 @@ def professor_detalhe_simulado(request, simulado_id):
         return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'DELETE':
+        from .activity_log import registrar_atividade
+        nome_professor = professor.user.get_full_name() or professor.user.username
+        titulo_desc = simulado.titulo or f'#{simulado.id}'
         simulado.delete()
+        registrar_atividade(
+            professor.user,
+            f'{nome_professor} (Professor) excluiu o simulado "{titulo_desc}".'
+        )
         return Response(status=204)
 
 
@@ -954,6 +1006,15 @@ def aluno_enviar_simulado(request, simulado_id):
         )
 
     corrigir_resultado(resultado)
+
+    from .activity_log import registrar_atividade
+    nome_aluno = aluno.user.get_full_name() or aluno.user.username
+    titulo_desc = simulado.titulo or f'#{simulado.id}'
+    registrar_atividade(
+        aluno.user,
+        f'{nome_aluno} (Aluno) respondeu o simulado "{titulo_desc}".'
+    )
+
     return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data, status=201)
 
 
@@ -987,6 +1048,16 @@ def professor_corrigir_discursivas(request, resultado_id):
                 continue
 
     corrigir_resultado(resultado)
+
+    from .activity_log import registrar_atividade
+    nome_professor = professor.user.get_full_name() or professor.user.username
+    nome_aluno = resultado.aluno.user.get_full_name() or resultado.aluno.user.username
+    titulo_desc = resultado.simulado.titulo or f'#{resultado.simulado_id}'
+    registrar_atividade(
+        professor.user,
+        f'{nome_professor} (Professor) corrigiu as questões discursivas de {nome_aluno} no simulado "{titulo_desc}".'
+    )
+
     return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data)
 
 

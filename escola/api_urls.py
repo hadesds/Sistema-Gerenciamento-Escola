@@ -15,6 +15,7 @@ urlpatterns = [
     path('professor/turma/<int:turma_id>/', api_views.professor_turma_carometro, name='api_professor_carometro'),
     path('professor/avaliar/<int:aluno_id>/', api_views.professor_registrar_avaliacao, name='api_professor_avaliar'),
     path('professor/banco-questoes/', api_views.professor_banco_questoes, name='api_banco_questoes'),
+    path('professor/banco-questoes/<int:questao_id>/', api_views.professor_excluir_questao_banco, name='api_excluir_questao_banco'),
     path('professor/materias/', api_views.professor_materias, name='api_professor_materias'),
     path('professor/criar-simulado/data/', api_views.professor_criar_simulado_data, name='api_criar_simulado_data'),
     path('professor/criar-simulado/', api_views.professor_criar_simulado, name='api_criar_simulado'),

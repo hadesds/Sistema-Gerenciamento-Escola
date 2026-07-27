@@ -91,6 +91,8 @@ export default function BancoQuestoesPage() {
   const [altPreviews, setAltPreviews] = useState<Record<number, string>>({});
   const [alert, setAlert]             = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [submitting, setSubmitting]   = useState(false);
+  const [deletingId, setDeletingId]   = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   function fetchData(materia = '') {
     setLoading(true);
@@ -215,6 +217,27 @@ export default function BancoQuestoesPage() {
       setAlert({ type: 'error', message: 'Erro ao cadastrar questão. Verifique os campos e tente novamente.' });
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleExcluirQuestao(id: number) {
+    setDeletingId(id);
+    try {
+      await apiFetch(`/professor/banco-questoes/${id}/`, { method: 'DELETE' });
+      setAlert({ type: 'success', message: 'Questão excluída com sucesso.' });
+      fetchData(materiaFiltro);
+    } catch (err: unknown) {
+      let msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed?.detail) msg = parsed.detail;
+      } catch {
+        // mantém a mensagem original se não for JSON
+      }
+      setAlert({ type: 'error', message: msg });
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
     }
   }
 
@@ -423,6 +446,26 @@ export default function BancoQuestoesPage() {
             .tipo-btn { font-size: 1.35rem; padding: 1rem; }
             .alt-row  { gap: 0.6rem; }
           }
+
+          /* ── Excluir questão ── */
+          .questao-del-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #e74c3c;
+            display: flex;
+            align-items: center;
+            padding: 0.3rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+          }
+          .questao-del-btn:hover { opacity: 1; }
+          .questao-del-btn .material-icons-outlined { font-size: 2rem; }
+          .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:200; }
+          .modal-box { background:white; border-radius:1.6rem; padding:3rem; max-width:44rem; width:90%; text-align:center; }
+          .modal-box h3 { font-size:2rem; margin-bottom:1rem; }
+          .modal-box p { color:var(--text-secondary); margin-bottom:2rem; font-size:1.5rem; }
+          .modal-actions { display:flex; gap:1rem; justify-content:center; }
         `}</style>
 
         {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
@@ -703,9 +746,19 @@ export default function BancoQuestoesPage() {
                       </span>
                     )}
                   </div>
-                  <span style={{ fontSize: '1.3rem', color: 'var(--text-secondary)', flexShrink: 0 }}>
-                    #{idx + 1} · {new Date(q.data_criacao).toLocaleDateString('pt-BR')}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+                    <span style={{ fontSize: '1.3rem', color: 'var(--text-secondary)' }}>
+                      #{idx + 1} · {new Date(q.data_criacao).toLocaleDateString('pt-BR')}
+                    </span>
+                    <button
+                      type="button"
+                      className="questao-del-btn"
+                      title="Excluir questão"
+                      onClick={() => setConfirmDeleteId(q.id)}
+                    >
+                      <span className="material-icons-outlined">delete_outline</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Enunciado + imagem */}
@@ -764,6 +817,32 @@ export default function BancoQuestoesPage() {
           </>
         )}
       </main>
+
+      {confirmDeleteId !== null && (
+        <div className="modal-overlay" onClick={() => setConfirmDeleteId(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <span className="material-icons-outlined" style={{ fontSize: '4rem', color: '#e74c3c' }}>warning</span>
+            <h3>Excluir Questão?</h3>
+            <p>
+              Esta ação é irreversível. Questões já usadas em algum simulado não podem ser excluídas.
+            </p>
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setConfirmDeleteId(null)} style={{ background: 'var(--border-light)', color: 'var(--text-primary)' }}>
+                Cancelar
+              </button>
+              <button
+                className="btn"
+                onClick={() => handleExcluirQuestao(confirmDeleteId)}
+                disabled={deletingId === confirmDeleteId}
+                style={{ background: '#e74c3c', color: 'white' }}
+              >
+                {deletingId === confirmDeleteId ? 'Excluindo...' : 'Sim, excluir'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-secondary)', fontSize: '1.4rem' }}>
         <p>&copy; 2025 Sistema CARA - Gestão Escolar Inteligente</p>
       </footer>

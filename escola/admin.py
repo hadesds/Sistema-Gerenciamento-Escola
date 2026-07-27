@@ -6,7 +6,7 @@ from .models import (
     Professor, Aluno, Turma, Avaliacao, Questao, Simulado, SimuladoQuestao,
     Administrador, AlternativaQuestao, Materia, NotaMateria, ProvaIndividual,
     PerfilTurma, RegistroAssiduidade, PresencaAluno,
-    ResultadoSimulado, RespostaAluno, NotaArea, NotaQualitativa,
+    ResultadoSimulado, RespostaAluno, NotaArea, NotaQualitativa, LogAtividade,
 )
 
 
@@ -548,6 +548,27 @@ class AdministradorAdmin(admin.ModelAdmin):
     def get_email(self, obj):
         return obj.user.email
     get_email.short_description = 'Email'
+
+
+@admin.register(LogAtividade)
+class LogAtividadeAdmin(admin.ModelAdmin):
+    list_display = ['data_hora', 'get_usuario', 'descricao']
+    list_filter = ['data_hora']
+    search_fields = ['descricao', 'usuario__username', 'usuario__first_name', 'usuario__last_name']
+    date_hierarchy = 'data_hora'
+    ordering = ['-data_hora']
+
+    def get_usuario(self, obj):
+        if not obj.usuario:
+            return 'Sistema'
+        return obj.usuario.get_full_name() or obj.usuario.username
+    get_usuario.short_description = 'Usuário'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 # ─── User (com inline de Professor/Aluno conforme o vínculo) ─────────────────

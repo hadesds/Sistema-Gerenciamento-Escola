@@ -380,3 +380,19 @@ class NotaQualitativa(models.Model):
 
     def __str__(self):
         return f"{self.aluno} {self.epoca} {self.materia} (qualitativa): {self.nota}"
+
+
+class LogAtividade(models.Model):
+    """Registro de ações relevantes realizadas na plataforma, para auditoria no painel admin."""
+    usuario     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='logs_atividade')
+    descricao   = models.CharField(max_length=500)
+    data_hora   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-data_hora']
+        verbose_name = 'Log de Atividade'
+        verbose_name_plural = 'Logs de Atividade'
+
+    def __str__(self):
+        quem = self.usuario.get_full_name() or self.usuario.username if self.usuario else 'Sistema'
+        return f"[{self.data_hora:%d/%m/%Y %H:%M}] {quem}: {self.descricao}"

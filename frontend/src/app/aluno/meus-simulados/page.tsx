@@ -7,6 +7,12 @@ import Navbar from '@/components/Navbar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Loading from '@/components/Loading';
 
+interface MeuResultado {
+  resultado_id: number;
+  status: 'pendente_correcao' | 'corrigido';
+  nota: number | null;
+}
+
 interface Simulado {
   id: number;
   titulo: string;
@@ -17,6 +23,13 @@ interface Simulado {
   tempo_limite: number | null;
   area_conhecimento: string;
   questoes: Array<{ id: number; materia_sigla: string; materia_nome: string; }>;
+  meu_resultado: MeuResultado | null;
+}
+
+function notaColor(nota: number) {
+  if (nota >= 7) return 'var(--color-success)';
+  if (nota >= 5) return 'var(--color-warning)';
+  return 'var(--color-danger)';
 }
 
 export default function MeusSimuladosPage() {
@@ -41,6 +54,9 @@ export default function MeusSimuladosPage() {
           .sim-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.9rem; border-radius: 10rem; font-size: 1.2rem; font-weight: 600; }
           .sim-pills { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
           .mat-tag { display: inline-block; background: var(--color-secondary); color: white; padding: 0.3rem 0.8rem; border-radius: 10rem; font-size: 1.2rem; font-weight: 700; }
+          .sim-status { display: flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; padding: 1rem; border-radius: 1rem; font-size: 1.4rem; font-weight: 700; }
+          .sim-status.pendente { background: #fff3cd; color: #856404; }
+          .sim-status.corrigido { background: #e8f5e9; color: #1b5e20; }
         `}</style>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.4rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -107,14 +123,29 @@ export default function MeusSimuladosPage() {
                     )}
 
                     <div style={{ marginTop: 'auto' }}>
-                      <Link
-                        href={`/aluno/simulado/${s.id}`}
-                        className="btn btn-primary"
-                        style={{ width: '100%', textAlign: 'center', justifyContent: 'center', fontSize: '1.5rem' }}
-                      >
-                        <span className="material-icons-outlined">play_arrow</span>
-                        Fazer Simulado
-                      </Link>
+                      {s.meu_resultado === null ? (
+                        <Link
+                          href={`/aluno/simulado/${s.id}`}
+                          className="btn btn-primary"
+                          style={{ width: '100%', textAlign: 'center', justifyContent: 'center', fontSize: '1.5rem' }}
+                        >
+                          <span className="material-icons-outlined">play_arrow</span>
+                          Fazer Simulado
+                        </Link>
+                      ) : s.meu_resultado.status === 'pendente_correcao' ? (
+                        <div className="sim-status pendente">
+                          <span className="material-icons-outlined">pending_actions</span>
+                          Aguardando correção do professor
+                        </div>
+                      ) : (
+                        <div className="sim-status corrigido">
+                          <span className="material-icons-outlined">check_circle</span>
+                          Nota:{' '}
+                          <span style={{ color: notaColor(s.meu_resultado.nota ?? 0), fontSize: '1.7rem' }}>
+                            {s.meu_resultado.nota != null ? s.meu_resultado.nota.toFixed(2) : '–'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

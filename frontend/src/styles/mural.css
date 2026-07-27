@@ -1,0 +1,675 @@
+:root {
+  --mural-color-paper: #f6f4ef;
+  --mural-color-ink: #16223b;
+  --mural-color-ink-hover: #0f1830;
+  --mural-color-marigold: #e3a23a;
+  --mural-color-marigold-hover: #f0b354;
+  --mural-color-sage: #6e8f72;
+  --mural-color-cork: #c9a876;
+  --mural-color-slate: #3a3f4b;
+
+  --mural-font-display: "Fraunces", serif;
+  --mural-font-body: "IBM Plex Sans", sans-serif;
+  --mural-font-mono: "IBM Plex Mono", monospace;
+}
+
+/* ---------- Hero ---------- */
+
+.mural-hero {
+  background: var(--mural-color-ink);
+  color: var(--mural-color-paper);
+  padding: 8rem 2.4rem;
+  text-align: center;
+}
+
+.mural-hero__inner {
+  max-width: 76.8rem;
+  margin: 0 auto;
+}
+
+.mural-hero__eyebrow {
+  font-family: var(--mural-font-mono);
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--mural-color-marigold);
+}
+
+.mural-hero__title {
+  font-family: var(--mural-font-display);
+  font-size: 3.6rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 1.6rem;
+}
+
+.mural-hero__subtitle {
+  margin: 2rem auto 0;
+  max-width: 56rem;
+  font-size: 1.6rem;
+  color: rgba(246, 244, 239, 0.8);
+}
+
+.mural-hero__actions {
+  margin-top: 3.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.6rem;
+}
+
+.mural-btn {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 1.2rem 2.4rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-family: var(--mural-font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.mural-btn--primary {
+  background: var(--mural-color-marigold);
+  color: var(--mural-color-ink);
+}
+
+.mural-btn--primary:hover {
+  background: var(--mural-color-marigold-hover);
+}
+
+.mural-btn--outline {
+  background: transparent;
+  color: var(--mural-color-paper);
+  border: 1px solid rgba(246, 244, 239, 0.3);
+}
+
+.mural-btn--outline:hover {
+  border-color: rgba(246, 244, 239, 0.6);
+}
+
+@media (min-width: 640px) {
+  .mural-hero {
+    padding: 11.2rem 4rem;
+  }
+  .mural-hero__title {
+    font-size: 4.8rem;
+  }
+}
+
+/* ---------- Seção "Mural de novidades" (home) ---------- */
+
+.mural-section {
+  padding: 6.4rem 2.4rem;
+}
+
+.mural-section__inner {
+  max-width: 89.6rem;
+  margin: 0 auto;
+}
+
+.mural-section__header {
+  margin-bottom: 3.2rem;
+  text-align: center;
+}
+
+.mural-section__eyebrow {
+  font-family: var(--mural-font-mono);
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--mural-color-sage);
+}
+
+.mural-section__title {
+  margin-top: 0.8rem;
+  font-family: var(--mural-font-display);
+  font-size: 3rem;
+  font-weight: 600;
+  color: var(--mural-color-ink);
+}
+
+@media (min-width: 640px) {
+  .mural-section {
+    padding: 8rem 4rem;
+  }
+}
+
+/* ---------- Carrossel ---------- */
+
+.mural-carousel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.6rem;
+  background: var(--mural-color-cork);
+  padding: 4rem 1.6rem;
+  transform: translateZ(0); /* corrige bug do Safari: overflow-hidden + rotate */
+}
+
+@media (min-width: 640px) {
+  .mural-carousel {
+    padding: 5.6rem 4rem;
+  }
+}
+
+.mural-carousel__texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.15;
+  background-image: radial-gradient(circle at 20% 30%, #00000030 0, transparent 2px),
+    radial-gradient(circle at 70% 60%, #00000030 0, transparent 2px),
+    radial-gradient(circle at 40% 80%, #00000030 0, transparent 2px);
+  background-size: 40px 40px;
+}
+
+.mural-carousel__viewport {
+  position: relative;
+  max-width: 76.8rem;
+  margin: 0 auto;
+  touch-action: pan-y;
+}
+
+.mural-carousel__track {
+  display: flex;
+  transition: transform 0.5s ease-out;
+}
+
+.mural-carousel__slide {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0 4rem;
+  transform: translateZ(0);
+}
+
+@media (min-width: 640px) {
+  .mural-carousel__slide {
+    padding: 0 5.6rem;
+  }
+}
+
+/* Slide que não está em foco: invisível pra clique/teclado, mas ainda
+   ocupa espaço no layout (a troca de slide é feita via translateX no track) */
+.mural-carousel__slide--inactive {
+  pointer-events: none;
+}
+
+.mural-carousel__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 10;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  border: none;
+  background: var(--mural-color-ink);
+  color: var(--mural-color-paper);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease;
+}
+
+.mural-carousel__arrow:hover {
+  background: var(--mural-color-ink-hover);
+}
+
+.mural-carousel__arrow:focus-visible {
+  outline: 2px solid var(--mural-color-marigold);
+  outline-offset: 2px;
+}
+
+.mural-carousel__arrow--prev {
+  left: 0.8rem;
+}
+
+.mural-carousel__arrow--next {
+  right: 0.8rem;
+}
+
+@media (min-width: 640px) {
+  .mural-carousel__arrow--prev {
+    left: 1.6rem;
+  }
+  .mural-carousel__arrow--next {
+    right: 1.6rem;
+  }
+}
+
+.mural-carousel__dots {
+  position: relative;
+  margin-top: 3.2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
+.mural-carousel__dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(22, 34, 59, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.mural-carousel__dot:focus-visible {
+  outline: 2px solid var(--mural-color-marigold);
+  outline-offset: 2px;
+}
+
+.mural-carousel__dot--active {
+  background: var(--mural-color-ink);
+  transform: scale(1.25);
+}
+
+/* ---------- Card (o aviso "pinado" no mural) ---------- */
+
+.mural-card {
+  position: relative;
+  margin: 0 auto;
+  display: flex;
+  max-width: 44.8rem;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.2rem;
+  background: var(--mural-color-paper);
+  box-shadow: 0 1rem 2.5rem -0.8rem rgba(0, 0, 0, 0.35);
+  transition: transform 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mural-card:hover {
+  transform: translateY(-0.4rem);
+}
+
+.mural-card__tape {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 2.4rem;
+  width: 8rem;
+  transform: translate(-50%, -50%) rotate(-3deg);
+  background: rgba(227, 162, 58, 0.7);
+}
+
+.mural-card__image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.mural-card__image-wrapper img {
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.mural-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 2rem;
+}
+
+.mural-card__title {
+  font-family: var(--mural-font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--mural-color-ink);
+}
+
+.mural-card__text {
+  font-size: 1.4rem;
+  line-height: 1.6;
+  color: var(--mural-color-slate);
+}
+
+.mural-card__link {
+  margin-top: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--mural-color-sage);
+}
+
+.mural-card:hover .mural-card__link {
+  text-decoration: underline;
+}
+
+/* ---------- Selo de categoria ---------- */
+
+.mural-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 1rem;
+  font-size: 1.2rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.mural-badge--matricula {
+  background: rgba(227, 162, 58, 0.25);
+  border-color: rgba(227, 162, 58, 0.5);
+  color: var(--mural-color-ink);
+}
+
+.mural-badge--evento {
+  background: rgba(110, 143, 114, 0.2);
+  border-color: rgba(110, 143, 114, 0.4);
+  color: var(--mural-color-ink);
+}
+
+.mural-badge--esporte {
+  background: rgba(201, 168, 118, 0.4);
+  border-color: rgba(201, 168, 118, 0.6);
+  color: var(--mural-color-ink);
+}
+
+.mural-badge--biblioteca {
+  background: rgba(22, 34, 59, 0.1);
+  border-color: rgba(22, 34, 59, 0.25);
+  color: var(--mural-color-ink);
+}
+
+/* ---------- Estado vazio ---------- */
+
+.mural-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  border-radius: 1.6rem;
+  border: 2px dashed var(--mural-color-cork);
+  background: var(--mural-color-paper);
+  padding: 4.8rem;
+  text-align: center;
+}
+
+.mural-empty__icon {
+  width: 3.2rem;
+  height: 3.2rem;
+  color: var(--mural-color-cork);
+}
+
+.mural-empty__title {
+  font-family: var(--mural-font-display);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--mural-color-ink);
+}
+
+.mural-empty__text {
+  max-width: 32rem;
+  font-size: 1.4rem;
+  color: var(--mural-color-slate);
+}
+
+/* ---------- Skeleton (loading) ---------- */
+
+@keyframes mural-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.mural-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.6rem;
+  background: var(--mural-color-cork);
+  padding: 4rem 1.6rem;
+}
+
+@media (min-width: 640px) {
+  .mural-skeleton {
+    padding: 5.6rem 4rem;
+  }
+}
+
+.mural-skeleton__card {
+  margin: 0 auto;
+  max-width: 44.8rem;
+  overflow: hidden;
+  border-radius: 0.2rem;
+  background: var(--mural-color-paper);
+  box-shadow: 0 1rem 2.5rem -0.8rem rgba(0, 0, 0, 0.35);
+  animation: mural-pulse 1.6s ease-in-out infinite;
+}
+
+.mural-skeleton__image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: rgba(22, 34, 59, 0.1);
+}
+
+.mural-skeleton__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding: 2rem;
+}
+
+.mural-skeleton__line {
+  border-radius: 0.4rem;
+  background: rgba(22, 34, 59, 0.1);
+}
+
+.mural-skeleton__dots {
+  position: relative;
+  margin-top: 3.2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
+.mural-skeleton__dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: rgba(22, 34, 59, 0.2);
+  animation: mural-pulse 1.6s ease-in-out infinite;
+}
+
+/* ---------- Página do artigo ---------- */
+
+.article-page {
+  background: var(--mural-color-paper);
+}
+
+.article {
+  margin: 0 auto;
+  max-width: 67.2rem;
+  padding: 5.6rem 2.4rem;
+}
+
+@media (min-width: 640px) {
+  .article {
+    padding: 5.6rem 4rem;
+  }
+}
+
+.article__back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--mural-color-sage);
+  text-decoration: none;
+}
+
+.article__back-link:hover {
+  text-decoration: underline;
+}
+
+.article__meta {
+  margin-top: 2.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.article__date {
+  font-family: var(--mural-font-mono);
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--mural-color-sage);
+}
+
+.article__title {
+  margin-top: 0.8rem;
+  font-family: var(--mural-font-display);
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--mural-color-ink);
+}
+
+@media (min-width: 640px) {
+  .article__title {
+    font-size: 3.6rem;
+  }
+}
+
+.article__cover {
+  position: relative;
+  margin-top: 3.2rem;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 1.2rem;
+}
+
+.article__cover img {
+  object-fit: cover;
+}
+
+.article__body {
+  margin-top: 3.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  font-size: 1.6rem;
+  line-height: 1.7;
+  color: var(--mural-color-slate);
+}
+
+.article__related {
+  border-top: 1px solid rgba(22, 34, 59, 0.1);
+  padding: 5.6rem 2.4rem;
+}
+
+@media (min-width: 640px) {
+  .article__related {
+    padding: 5.6rem 4rem;
+  }
+}
+
+.article__related-inner {
+  margin: 0 auto;
+  max-width: 67.2rem;
+}
+
+.article__related-title {
+  font-family: var(--mural-font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--mural-color-ink);
+}
+
+.article__related-grid {
+  margin-top: 2.4rem;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .article__related-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.article__related-card {
+  display: block;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.article__related-card:hover {
+  transform: translateY(-0.2rem);
+  box-shadow: 0 0.6rem 1.4rem rgba(0, 0, 0, 0.1);
+}
+
+.article__related-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.article__related-image img {
+  object-fit: cover;
+}
+
+.article__related-card-title {
+  padding: 1.2rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--mural-color-ink);
+}
+
+.article__related-card:hover .article__related-card-title {
+  text-decoration: underline;
+}
+
+/* ---------- Página de erro ---------- */
+
+.mural-error-page {
+  display: flex;
+  min-height: 60vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  background: var(--mural-color-paper);
+  padding: 2.4rem;
+  text-align: center;
+}
+
+.mural-error-page__title {
+  font-family: var(--mural-font-display);
+  font-size: 2.4rem;
+  font-weight: 600;
+  color: var(--mural-color-ink);
+}
+
+.mural-error-page__text {
+  max-width: 38.4rem;
+  font-size: 1.4rem;
+  color: var(--mural-color-slate);
+}

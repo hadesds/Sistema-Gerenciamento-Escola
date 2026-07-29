@@ -748,6 +748,15 @@ def professor_criar_simulado(request):
     if not turmas.exists():
         return Response({'detail': 'Selecione ao menos uma turma e pelo menos uma questão.'}, status=400)
 
+    av_tipo = (request.data.get('av_tipo', '') or '').strip()
+    area = (request.data.get('area', '') or '').strip()
+    epoca = (request.data.get('epoca', '') or '').strip()
+    if av_tipo in ('AV1', 'AV2') and not (area and epoca):
+        return Response(
+            {'detail': 'Selecione a área e o bimestre para que a nota seja lançada automaticamente.'},
+            status=400,
+        )
+
     simulado = Simulado.objects.create(autor=professor)
     simulado.turmas.set(turmas)
     for item in questoes_payload:
@@ -759,9 +768,9 @@ def professor_criar_simulado(request):
     simulado.titulo = request.data.get('titulo', '')
     simulado.tempo_limite = request.data.get('tempo_limite') or None
     simulado.area_conhecimento = request.data.get('area_conhecimento', '')
-    simulado.av_tipo = request.data.get('av_tipo', '') or ''
-    simulado.area = request.data.get('area', '') or ''
-    simulado.epoca = request.data.get('epoca', '') or ''
+    simulado.av_tipo = av_tipo
+    simulado.area = area
+    simulado.epoca = epoca
     simulado.save()
 
     from .activity_log import registrar_atividade
@@ -809,6 +818,8 @@ def professor_detalhe_simulado(request, simulado_id):
         return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'PATCH':
+        nota_alterada = any(campo in request.data for campo in ('av_tipo', 'area', 'epoca'))
+
         if 'titulo' in request.data:
             simulado.titulo = request.data['titulo']
         if 'tempo_limite' in request.data:
@@ -816,15 +827,29 @@ def professor_detalhe_simulado(request, simulado_id):
         if 'area_conhecimento' in request.data:
             simulado.area_conhecimento = request.data['area_conhecimento']
         if 'av_tipo' in request.data:
-            simulado.av_tipo = request.data['av_tipo'] or ''
+            simulado.av_tipo = (request.data['av_tipo'] or '').strip()
         if 'area' in request.data:
-            simulado.area = request.data['area'] or ''
+            simulado.area = (request.data['area'] or '').strip()
         if 'epoca' in request.data:
-            simulado.epoca = request.data['epoca'] or ''
+            simulado.epoca = (request.data['epoca'] or '').strip()
+
+        if nota_alterada and simulado.av_tipo in ('AV1', 'AV2') and not (simulado.area and simulado.epoca):
+            return Response(
+                {'detail': 'Selecione a área e o bimestre para que a nota seja lançada automaticamente.'},
+                status=400,
+            )
+
         if 'turmas' in request.data:
             turmas = Turma.objects.filter(id__in=request.data['turmas'])
             simulado.turmas.set(turmas)
         simulado.save()
+
+        if nota_alterada:
+            # backfill: alunos que já haviam sido corrigidos passam a ter a
+            # NotaArea consolidada agora que a área/bimestre está definido.
+            from .grading import recomputar_simulado
+            recomputar_simulado(simulado)
+
         return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'DELETE':

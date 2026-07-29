@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -35,16 +37,41 @@ class Professor(models.Model):
         return self.user.get_full_name() or self.user.username
 
 class Aluno(models.Model):
+    """O CPF é o código de matrícula do aluno (não há campo de matrícula separado).
+
+    Quando um Aluno é criado já com CPF e data de nascimento preenchidos, o
+    login (username) é automaticamente definido como o CPF (só dígitos) e a
+    senha como a data de nascimento no formato DD-MM-AAAA. Isso só acontece na
+    criação — edições posteriores não alteram usuário/senha já existentes.
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     foto = models.ImageField(upload_to='fotos_alunos/', blank=True, null=True)
     turma = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, blank=True, related_name="alunos")
-    matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    cpf = models.CharField(max_length=14, unique=True, null=True, blank=True)
+    cpf = models.CharField(
+        max_length=11, unique=True, null=True, blank=True,
+        help_text='Também é o código de matrícula e o login do aluno (só dígitos, sem pontos/traço).',
+    )
+    data_nascimento = models.DateField(
+        null=True, blank=True,
+        help_text='Ao criar o aluno com CPF preenchido, vira a senha inicial (formato DD-MM-AAAA).',
+    )
     telefone = models.CharField(max_length=20, blank=True, default='')
+    endereco = models.CharField(max_length=255, blank=True, default='')
     nome_mae = models.CharField(max_length=200, blank=True, default='')
+    email_mae = models.EmailField(blank=True, default='')
 
     def __str__(self):
         return self.user.get_full_name() or self.user.username
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        if self.cpf:
+            self.cpf = re.sub(r'\D', '', self.cpf)
+        super().save(*args, **kwargs)
+        if is_new and self.cpf and self.data_nascimento:
+            self.user.username = self.cpf
+            self.user.set_password(self.data_nascimento.strftime('%d-%m-%Y'))
+            self.user.save(update_fields=['username', 'password'])
 
 class Avaliacao(models.Model):
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name="avaliacoes")

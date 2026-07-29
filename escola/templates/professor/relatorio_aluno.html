@@ -14,7 +14,7 @@
             <div class="aluno-info">
                 <h1>Relatório de {{ aluno.user.get_full_name }}</h1>
                 <p><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
-                <p><strong>Matrícula:</strong> {{ aluno.matricula|default:"N/A" }}</p>
+                <p><strong>CPF:</strong> {{ aluno.cpf|default:"N/A" }}</p>
             </div>
         </div>
     </div>

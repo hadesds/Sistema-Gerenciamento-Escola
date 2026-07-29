@@ -210,7 +210,7 @@ def professor_turma_carometro(request, turma_id):
         alunos_info.append({
             'id': aluno.user.id,
             'nome': aluno.user.get_full_name() or aluno.user.username,
-            'matricula': aluno.matricula,
+            'cpf': aluno.cpf,
             'foto_url': foto_url,
             'media_geral': round(media, 2),
             'total_avaliacoes': avaliacoes.count(),
@@ -280,11 +280,12 @@ def professor_turma_relatorios(request, turma_id):
         alunos_info.append({
             'id': aluno.user.id,
             'nome': aluno.user.get_full_name() or aluno.user.username,
-            'matricula': aluno.matricula,
             'foto_url': foto_url,
             'cpf': aluno.cpf,
             'telefone': aluno.telefone,
+            'endereco': aluno.endereco,
             'nome_mae': aluno.nome_mae,
+            'email_mae': aluno.email_mae,
             'email': aluno.user.email,
             'notas': consolidar_notas(aluno),
             'frequencia_mensal': frequencia_mensal,
@@ -445,7 +446,7 @@ def professor_turma_relatorios_pdf(request, turma_id):
 
     # ── Relação Nominal ──────────────────────────────────────────────────────
     if alunos.exists() and tipo == 'nominal':
-        table_data = [['Nº', 'Foto', 'Nome', 'Matrícula']]
+        table_data = [['Nº', 'Foto', 'Nome', 'CPF']]
         row_heights = [0.9*cm]
         for idx, aluno in enumerate(alunos, start=1):
             foto_flowable = ''
@@ -460,7 +461,7 @@ def professor_turma_relatorios_pdf(request, turma_id):
                 except Exception:
                     foto_flowable = ''
             nome = aluno.user.get_full_name() or aluno.user.username
-            table_data.append([str(idx), foto_flowable, nome, aluno.matricula or '–'])
+            table_data.append([str(idx), foto_flowable, nome, aluno.cpf or '–'])
             row_heights.append(1.5*cm)
 
         nt = Table(table_data, colWidths=[1.2*cm, 2*cm, 9*cm, 3.5*cm], rowHeights=row_heights, repeatRows=1)
@@ -479,14 +480,15 @@ def professor_turma_relatorios_pdf(request, turma_id):
 
     # ── Dados dos Alunos ─────────────────────────────────────────────────────
     if alunos.exists() and tipo == 'dados':
-        table_data = [['Nome', 'Matrícula', 'CPF', 'E-mail', 'Telefone', 'Nome da Mãe']]
+        table_data = [['Nome', 'CPF', 'E-mail', 'Telefone', 'Endereço', 'Nome da Mãe', 'E-mail da Mãe']]
         for aluno in alunos:
             nome = aluno.user.get_full_name() or aluno.user.username
             table_data.append([
-                nome, aluno.matricula or '–', aluno.cpf or '–',
-                aluno.user.email or '–', aluno.telefone or '–', aluno.nome_mae or '–',
+                nome, aluno.cpf or '–',
+                aluno.user.email or '–', aluno.telefone or '–', aluno.endereco or '–',
+                aluno.nome_mae or '–', aluno.email_mae or '–',
             ])
-        dt = Table(table_data, colWidths=[4.5*cm, 2.3*cm, 3*cm, 5.5*cm, 3*cm, 4.5*cm], repeatRows=1)
+        dt = Table(table_data, colWidths=[3.4*cm, 2.8*cm, 4.5*cm, 2.5*cm, 4.4*cm, 3.4*cm, 4.5*cm], repeatRows=1)
         dt.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -1018,7 +1020,7 @@ def professor_relatorio_aluno(request, aluno_id):
         'aluno': {
             'id': aluno.user.id,
             'nome': aluno.user.get_full_name() or aluno.user.username,
-            'matricula': aluno.matricula,
+            'cpf': aluno.cpf,
             'turma': aluno.turma.nome if aluno.turma else '',
             'foto_url': foto_url,
         },
@@ -1152,7 +1154,7 @@ def aluno_dashboard(request):
         'aluno': {
             'id': aluno.user.id,
             'nome': aluno.user.get_full_name() or aluno.user.username,
-            'matricula': aluno.matricula,
+            'cpf': aluno.cpf,
             'turma': aluno.turma.nome if aluno.turma else '',
             'foto_url': foto_url,
         },
@@ -1565,7 +1567,7 @@ def aluno_assiduidade(request):
             {
                 'id': a.user.pk,
                 'nome': a.user.get_full_name() or a.user.username,
-                'matricula': a.matricula,
+                'cpf': a.cpf,
                 'presente': True,
             }
             for a in Aluno.objects.filter(turma=turma).select_related('user').order_by('user__first_name')
@@ -1691,10 +1693,10 @@ def professor_relatorio_pdf(request, aluno_id):
     story.append(Paragraph('Identificação', section_style))
     nome = aluno.user.get_full_name() or aluno.user.username
     turma_nome = aluno.turma.nome if aluno.turma else '–'
-    matricula = aluno.matricula or '–'
+    cpf = aluno.cpf or '–'
     id_data = [
         ['Nome', nome, 'Turma', turma_nome],
-        ['Matrícula', matricula, 'Total de Avaliações', str(avaliacoes.count())],
+        ['CPF', cpf, 'Total de Avaliações', str(avaliacoes.count())],
     ]
     id_table = Table(id_data, colWidths=[3.5*cm, 7*cm, 3*cm, 3.5*cm])
     id_table.setStyle(TableStyle([

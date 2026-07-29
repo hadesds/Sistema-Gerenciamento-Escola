@@ -313,7 +313,7 @@ export default function LoginPage() {
 
             {/* Usuário */}
             <div className="login-field">
-              <label htmlFor="username" className="login-label">Usuário</label>
+              <label htmlFor="username" className="login-label">Usuário ou CPF</label>
               <div className={`login-input-wrap${userFocus ? ' focused' : ''}`}>
                 <span className="material-icons-outlined icon">person_outline</span>
                 <input
@@ -323,7 +323,7 @@ export default function LoginPage() {
                   onChange={e => setUsername(e.target.value)}
                   onFocus={() => setUserFocus(true)}
                   onBlur={() => setUserFocus(false)}
-                  placeholder="Digite seu usuário"
+                  placeholder="Usuário ou CPF (alunos)"
                   required
                   autoComplete="username"
                 />
@@ -342,7 +342,7 @@ export default function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   onFocus={() => setPassFocus(true)}
                   onBlur={() => setPassFocus(false)}
-                  placeholder="Digite sua senha"
+                  placeholder="Senha ou data de nascimento (alunos)"
                   required
                   autoComplete="current-password"
                 />
@@ -357,6 +357,9 @@ export default function LoginPage() {
                   </span>
                 </button>
               </div>
+              <span style={{ fontSize: '1.2rem', color: '#94a3b8' }}>
+                Alunos: use o CPF (só números) como usuário e a data de nascimento no formato DD-MM-AAAA como senha.
+              </span>
             </div>
 
             <button type="submit" className="login-btn" disabled={loading}>

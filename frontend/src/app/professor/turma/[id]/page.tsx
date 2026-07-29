@@ -14,7 +14,7 @@ import NotaBadge from '@/components/NotaBadge';
 interface AlunoInfo {
   id: number;
   nome: string;
-  matricula: string | null;
+  cpf: string | null;
   foto_url: string | null;
   media_geral: number;
   total_avaliacoes: number;
@@ -247,7 +247,7 @@ export default function CarometroPage() {
                       </span>
                     )}
                     <h3>{aluno.nome}</h3>
-                    {aluno.matricula && <p>Matrícula: {aluno.matricula}</p>}
+                    {aluno.cpf && <p>CPF: {aluno.cpf}</p>}
                     <div style={{ margin: '1rem 0' }}>
                       <NotaBadge nota={aluno.media_geral} />
                       <p style={{ marginTop: '0.5rem' }}>{aluno.total_avaliacoes} avaliações</p>

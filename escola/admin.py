@@ -83,13 +83,13 @@ class ResultadoSimuladoInline(admin.TabularInline):
 
 @admin.register(Aluno)
 class AlunoAdmin(admin.ModelAdmin):
-    list_display = ['get_nome_completo', 'matricula', 'turma', 'get_email',
+    list_display = ['get_nome_completo', 'cpf', 'turma', 'get_email',
                     'total_avaliacoes', 'total_resultados', 'total_notas_area', 'total_qualitativas']
     list_filter = ['turma']
-    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'matricula', 'cpf']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'cpf']
     fieldsets = [
-        ('Identificação', {'fields': ['user', 'foto', 'turma', 'matricula']}),
-        ('Dados Cadastrais', {'fields': ['cpf', 'telefone', 'nome_mae']}),
+        ('Identificação', {'fields': ['user', 'foto', 'turma', 'cpf', 'data_nascimento']}),
+        ('Dados Cadastrais', {'fields': ['endereco', 'telefone', 'nome_mae', 'email_mae']}),
     ]
     inlines = [AvaliacaoInline, NotaAreaInline, NotaQualitativaInline,
                ResultadoSimuladoInline]
@@ -546,7 +546,7 @@ class AlunoInline(admin.StackedInline):
     model = Aluno
     can_delete = False
     verbose_name_plural = 'Dados de Aluno'
-    fields = ('foto', 'turma', 'matricula')
+    fields = ('foto', 'turma', 'cpf', 'data_nascimento', 'endereco', 'telefone', 'nome_mae', 'email_mae')
 
 
 class CustomUserAdmin(UserAdmin):

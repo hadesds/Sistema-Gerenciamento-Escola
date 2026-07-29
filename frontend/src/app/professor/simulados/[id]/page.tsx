@@ -40,6 +40,9 @@ interface Simulado {
   data_criacao: string;
   tempo_limite: number | null;
   area_conhecimento: string;
+  av_tipo: string;
+  area: string;
+  epoca: string;
   total_questoes: number;
   questoes: Questao[];
 }
@@ -83,6 +86,28 @@ const DIF_COLOR: Record<string, string> = {
   dificil: '#e74c3c',
 };
 
+// Novo sistema de notas — espelha escola/grade_config.py
+const AV_TIPOS = [
+  { codigo: 'AV1', nome: 'AV1' },
+  { codigo: 'AV2', nome: 'AV2' },
+  { codigo: 'AV3', nome: 'AV3 (Qualitativa)' },
+];
+
+const AREAS_NOTA = [
+  { codigo: 'PRT', nome: 'Português', avs: ['AV1'] },
+  { codigo: 'MTM', nome: 'Matemática', avs: ['AV1', 'AV2'] },
+  { codigo: 'LING', nome: 'Linguagens e Códigos', avs: ['AV1', 'AV2'] },
+  { codigo: 'HUM', nome: 'Ciências Humanas', avs: ['AV1', 'AV2'] },
+  { codigo: 'NAT', nome: 'Ciências da Natureza', avs: ['AV1', 'AV2'] },
+];
+
+const BIMESTRES = [
+  { codigo: '1B', nome: '1° Bimestre' },
+  { codigo: '2B', nome: '2° Bimestre' },
+  { codigo: '3B', nome: '3° Bimestre' },
+  { codigo: '4B', nome: '4° Bimestre' },
+];
+
 export default function DetalheSimuladoPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -102,6 +127,9 @@ export default function DetalheSimuladoPage() {
   const [usarTempo, setUsarTempo] = useState(false);
   const [tempo, setTempo] = useState('');
   const [area, setArea] = useState('');
+  const [avTipo, setAvTipo] = useState('');
+  const [areaNota, setAreaNota] = useState('');
+  const [bimestre, setBimestre] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   // andamento / resultados
@@ -146,6 +174,9 @@ export default function DetalheSimuladoPage() {
         setUsarTempo(!!s.tempo_limite);
         setTempo(s.tempo_limite ? String(s.tempo_limite) : '');
         setArea(s.area_conhecimento || '');
+        setAvTipo(s.av_tipo || '');
+        setAreaNota(s.area || '');
+        setBimestre(s.epoca || '');
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
@@ -194,6 +225,10 @@ export default function DetalheSimuladoPage() {
   }
 
   async function handleSave() {
+    if ((avTipo === 'AV1' || avTipo === 'AV2') && (!areaNota || !bimestre)) {
+      showToast('Selecione a área e o bimestre para que a nota seja lançada automaticamente.', false);
+      return;
+    }
     setSaving(true);
     try {
       const updated = await apiFetch<Simulado>(`/professor/simulado/${id}/`, {
@@ -203,6 +238,9 @@ export default function DetalheSimuladoPage() {
           turmas: turmaIds.map(Number),
           tempo_limite: usarTempo && tempo ? Number(tempo) : null,
           area_conhecimento: area,
+          av_tipo: avTipo,
+          area: avTipo === 'AV3' ? '' : areaNota,
+          epoca: bimestre,
         }),
       });
       setSimulado(updated);
@@ -271,7 +309,10 @@ export default function DetalheSimuladoPage() {
     titulo !== (simulado.titulo || '') ||
     !turmasIguais ||
     (usarTempo ? Number(tempo) : null) !== simulado.tempo_limite ||
-    area !== (simulado.area_conhecimento || '');
+    area !== (simulado.area_conhecimento || '') ||
+    avTipo !== (simulado.av_tipo || '') ||
+    (avTipo === 'AV3' ? '' : areaNota) !== (simulado.area || '') ||
+    bimestre !== (simulado.epoca || '');
 
   return (
     <ProtectedRoute tipo="professor">
@@ -401,6 +442,40 @@ export default function DetalheSimuladoPage() {
                   )}
                   {!usarTempo && <span style={{ color: 'var(--text-secondary)', fontSize: '1.4rem' }}>Sem limite de tempo</span>}
                 </div>
+              </div>
+
+              <div className="det-field">
+                <label>Avaliação (lança nota automaticamente)</label>
+                <select
+                  value={avTipo}
+                  onChange={e => { setAvTipo(e.target.value); setAreaNota(''); }}
+                  style={{ marginBottom: '1rem' }}
+                >
+                  <option value="">Nenhuma (sem nota)</option>
+                  {AV_TIPOS.map(a => <option key={a.codigo} value={a.codigo}>{a.nome}</option>)}
+                </select>
+
+                {avTipo && avTipo !== 'AV3' && (
+                  <select value={areaNota} onChange={e => setAreaNota(e.target.value)} style={{ marginBottom: '1rem' }}>
+                    <option value="">Selecione a área...</option>
+                    {AREAS_NOTA.filter(a => a.avs.includes(avTipo)).map(a => (
+                      <option key={a.codigo} value={a.codigo}>{a.nome}</option>
+                    ))}
+                  </select>
+                )}
+
+                {avTipo && (
+                  <select value={bimestre} onChange={e => setBimestre(e.target.value)}>
+                    <option value="">Selecione o bimestre...</option>
+                    {BIMESTRES.map(b => <option key={b.codigo} value={b.codigo}>{b.nome}</option>)}
+                  </select>
+                )}
+
+                {avTipo && avTipo !== 'AV3' && (!areaNota || !bimestre) && (
+                  <p style={{ fontSize: '1.25rem', color: 'var(--color-danger)', marginTop: '0.6rem' }}>
+                    Selecione a área e o bimestre — sem isso, a nota não chega automaticamente na tabela de notas do aluno.
+                  </p>
+                )}
               </div>
 
               <div style={{ marginTop: '2rem', borderTop: '2px solid var(--border-light)', paddingTop: '2rem' }}>

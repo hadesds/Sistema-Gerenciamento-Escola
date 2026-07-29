@@ -297,6 +297,286 @@ def professor_turma_relatorios(request, turma_id):
     })
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_turma_relatorios_pdf(request, turma_id):
+    """Gera em PDF (ReportLab) o relatório da turma para a área selecionada:
+    relação nominal (com foto), dados cadastrais, notas por disciplina ou
+    frequência mensal — de acordo com os parâmetros de query informados."""
+    from io import BytesIO
+    from datetime import date
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image as RLImage,
+    )
+    from reportlab.lib.enums import TA_CENTER
+    from .grading import consolidar_notas
+    from .grade_config import DISCIPLINAS, EPOCAS as GRADE_EPOCAS
+
+    professor = _get_professor(request)
+    if not professor:
+        return HttpResponse('Acesso negado.', status=403)
+
+    turma = get_object_or_404(Turma, id=turma_id)
+    if turma not in professor.turmas.all():
+        return HttpResponse('Sem permissão para ver esta turma.', status=403)
+
+    tipo = request.GET.get('tipo', 'nominal')
+    if tipo not in ('nominal', 'dados', 'notas', 'frequencia'):
+        return HttpResponse('Tipo de relatório inválido.', status=400)
+
+    alunos = turma.alunos.all().select_related('user').order_by('user__first_name', 'user__last_name')
+
+    PRIMARY = colors.HexColor('#0d2d6b')
+    SUCCESS = colors.HexColor('#27ae60')
+    WARNING = colors.HexColor('#f39c12')
+    DANGER = colors.HexColor('#e74c3c')
+
+    def nota_color(n):
+        if n is None:
+            return colors.grey
+        if n >= 7:
+            return SUCCESS
+        if n >= 5:
+            return WARNING
+        return DANGER
+
+    def freq_color(pct):
+        if pct >= 75:
+            return SUCCESS
+        if pct >= 50:
+            return WARNING
+        return DANGER
+
+    # ── Resolve filtros específicos de cada tipo (antes de montar o cabeçalho) ──
+    filtro_label = None
+    bimestre = nota_tipo = None
+    por_aluno_freq: dict = {}
+    chave_mes = None
+
+    if tipo == 'notas':
+        epocas_validas = [c for c, _ in GRADE_EPOCAS]
+        bimestre = request.GET.get('bimestre', '1B')
+        if bimestre not in epocas_validas:
+            bimestre = '1B'
+        nota_tipo = request.GET.get('nota', 'final')
+        if nota_tipo not in ('av1', 'av2', 'av3', 'final'):
+            nota_tipo = 'final'
+        epoca_label = dict(GRADE_EPOCAS)[bimestre]
+        nota_label = {'av1': 'AV1', 'av2': 'AV2', 'av3': 'AV3', 'final': 'Média Bimestral'}[nota_tipo]
+        filtro_label = f'{nota_label} — {epoca_label}'
+
+    elif tipo == 'frequencia':
+        meses_disponiveis = set()
+        for aluno in alunos:
+            presencas = (PresencaAluno.objects
+                         .filter(aluno=aluno, registro__turma=turma)
+                         .select_related('registro'))
+            por_mes: dict = {}
+            for p in presencas:
+                chave = (p.registro.data.year, p.registro.data.month)
+                d = por_mes.setdefault(chave, {'presentes': 0, 'faltas': 0, 'total': 0})
+                d['total'] += 1
+                if p.presente:
+                    d['presentes'] += 1
+                else:
+                    d['faltas'] += 1
+                meses_disponiveis.add(chave)
+            por_aluno_freq[aluno.pk] = por_mes
+
+        mes_param = request.GET.get('mes')  # 'YYYY-MM'
+        if mes_param:
+            ano_str, mes_str = mes_param.split('-')
+            chave_mes = (int(ano_str), int(mes_str))
+        elif meses_disponiveis:
+            chave_mes = max(meses_disponiveis)
+
+        mes_label = f'{_MESES_PT[chave_mes[1]]}/{chave_mes[0]}' if chave_mes else '–'
+        filtro_label = f'Mês de referência: {mes_label}'
+
+    # ── Configuração do documento ────────────────────────────────────────────
+    landscape_types = ('dados', 'notas', 'frequencia')
+    pagesize = landscape(A4) if tipo in landscape_types else A4
+    margin = 1.3*cm if tipo == 'notas' else 2*cm
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=pagesize,
+        leftMargin=margin, rightMargin=margin, topMargin=1.6*cm, bottomMargin=1.6*cm,
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Title'], fontSize=15, spaceAfter=2, alignment=TA_CENTER)
+    turma_style = ParagraphStyle('Turma', parent=styles['Normal'], fontSize=11, alignment=TA_CENTER,
+                                  fontName='Helvetica-Bold', textColor=PRIMARY, spaceAfter=4)
+    filtro_style = ParagraphStyle('Filtro', parent=styles['Normal'], fontSize=10, alignment=TA_CENTER,
+                                   fontName='Helvetica-Bold', textColor=colors.HexColor('#555555'), spaceAfter=4)
+    subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=9, textColor=colors.grey,
+                                     alignment=TA_CENTER, spaceAfter=12)
+    body_style = ParagraphStyle('Body', parent=styles['Normal'], fontSize=9, leading=13)
+
+    titulos = {
+        'nominal': 'Relação Nominal',
+        'dados': 'Dados dos Alunos',
+        'notas': 'Notas por Disciplina',
+        'frequencia': 'Frequência Mensal',
+    }
+
+    story = [
+        Paragraph(f'Sistema CARA – {titulos[tipo]}', title_style),
+        Paragraph(
+            turma.nome + (f' · {turma.serie}' if turma.serie else '') +
+            f' · {turma.get_turno_display()}' + (f' · Sala {turma.sala}' if turma.sala else ''),
+            turma_style,
+        ),
+    ]
+    if filtro_label:
+        story.append(Paragraph(filtro_label, filtro_style))
+    story.append(Paragraph(f'Gerado em {date.today().strftime("%d/%m/%Y")} · {alunos.count()} aluno(s)', subtitle_style))
+    story.append(HRFlowable(width='100%', thickness=1, color=PRIMARY))
+    story.append(Spacer(1, 0.4*cm))
+
+    if not alunos.exists():
+        story.append(Paragraph('Nenhum aluno nesta turma.', body_style))
+
+    # ── Relação Nominal ──────────────────────────────────────────────────────
+    if alunos.exists() and tipo == 'nominal':
+        table_data = [['Nº', 'Foto', 'Nome', 'Matrícula']]
+        row_heights = [0.9*cm]
+        for idx, aluno in enumerate(alunos, start=1):
+            foto_flowable = ''
+            if aluno.foto:
+                try:
+                    aluno.foto.open('rb')
+                    try:
+                        img_bytes = aluno.foto.read()
+                    finally:
+                        aluno.foto.close()
+                    foto_flowable = RLImage(BytesIO(img_bytes), width=1.3*cm, height=1.3*cm)
+                except Exception:
+                    foto_flowable = ''
+            nome = aluno.user.get_full_name() or aluno.user.username
+            table_data.append([str(idx), foto_flowable, nome, aluno.matricula or '–'])
+            row_heights.append(1.5*cm)
+
+        nt = Table(table_data, colWidths=[1.2*cm, 2*cm, 9*cm, 3.5*cm], rowHeights=row_heights, repeatRows=1)
+        nt.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f8ff')]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('PADDING', (0, 0), (-1, -1), 5),
+        ]))
+        story.append(nt)
+
+    # ── Dados dos Alunos ─────────────────────────────────────────────────────
+    if alunos.exists() and tipo == 'dados':
+        table_data = [['Nome', 'Matrícula', 'CPF', 'E-mail', 'Telefone', 'Nome da Mãe']]
+        for aluno in alunos:
+            nome = aluno.user.get_full_name() or aluno.user.username
+            table_data.append([
+                nome, aluno.matricula or '–', aluno.cpf or '–',
+                aluno.user.email or '–', aluno.telefone or '–', aluno.nome_mae or '–',
+            ])
+        dt = Table(table_data, colWidths=[4.5*cm, 2.3*cm, 3*cm, 5.5*cm, 3*cm, 4.5*cm], repeatRows=1)
+        dt.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8.5),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f8ff')]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('PADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(dt)
+
+    # ── Notas por Disciplina ─────────────────────────────────────────────────
+    if alunos.exists() and tipo == 'notas':
+        header = ['Nome'] + [sigla for sigla, _ in DISCIPLINAS]
+        table_data = [header]
+        cell_colors = []
+        for aluno in alunos:
+            nome = aluno.user.get_full_name() or aluno.user.username
+            consolidado = consolidar_notas(aluno)
+            linhas = {l['sigla']: l for l in consolidado.get(bimestre, [])}
+            row = [nome]
+            row_colors = []
+            for sigla, _ in DISCIPLINAS:
+                linha = linhas.get(sigla)
+                valor = linha[nota_tipo] if linha else None
+                row.append(f'{valor:.1f}' if valor is not None else '–')
+                row_colors.append(nota_color(valor))
+            table_data.append(row)
+            cell_colors.append(row_colors)
+
+        col_w = [3.8*cm] + [1.4*cm] * len(DISCIPLINAS)
+        nt2 = Table(table_data, colWidths=col_w, repeatRows=1)
+        estilo = [
+            ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 7.5),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f8ff')]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('PADDING', (0, 0), (-1, -1), 3),
+        ]
+        for i, row_colors in enumerate(cell_colors, start=1):
+            for j, c in enumerate(row_colors, start=1):
+                estilo.append(('TEXTCOLOR', (j, i), (j, i), c))
+        nt2.setStyle(TableStyle(estilo))
+        story.append(nt2)
+
+    # ── Frequência Mensal ────────────────────────────────────────────────────
+    if alunos.exists() and tipo == 'frequencia':
+        table_data = [['Nome', 'Presenças', 'Faltas', 'Dias Registrados', '% Frequência']]
+        row_colors = []
+        for aluno in alunos:
+            nome = aluno.user.get_full_name() or aluno.user.username
+            d = por_aluno_freq.get(aluno.pk, {}).get(chave_mes) if chave_mes else None
+            if d:
+                pct = round(d['presentes'] / d['total'] * 100, 1) if d['total'] else 0
+                table_data.append([nome, str(d['presentes']), str(d['faltas']), str(d['total']), f'{pct:.1f}%'])
+                row_colors.append(freq_color(pct))
+            else:
+                table_data.append([nome, '–', '–', '–', '–'])
+                row_colors.append(colors.grey)
+
+        ft = Table(table_data, colWidths=[6*cm, 3*cm, 3*cm, 4*cm, 3.5*cm], repeatRows=1)
+        estilo = [
+            ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f8ff')]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('PADDING', (0, 0), (-1, -1), 5),
+        ]
+        for i, c in enumerate(row_colors, start=1):
+            estilo.append(('TEXTCOLOR', (4, i), (4, i), c))
+        ft.setStyle(TableStyle(estilo))
+        story.append(ft)
+
+    doc.build(story)
+    buffer.seek(0)
+    nome_arquivo = f'turma_{turma.nome.replace(" ", "_")}_{tipo}_{date.today().strftime("%Y%m%d")}.pdf'
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
+    return response
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def professor_registrar_avaliacao(request, aluno_id):
@@ -468,6 +748,15 @@ def professor_criar_simulado(request):
     if not turmas.exists():
         return Response({'detail': 'Selecione ao menos uma turma e pelo menos uma questão.'}, status=400)
 
+    av_tipo = (request.data.get('av_tipo', '') or '').strip()
+    area = (request.data.get('area', '') or '').strip()
+    epoca = (request.data.get('epoca', '') or '').strip()
+    if av_tipo in ('AV1', 'AV2') and not (area and epoca):
+        return Response(
+            {'detail': 'Selecione a área e o bimestre para que a nota seja lançada automaticamente.'},
+            status=400,
+        )
+
     simulado = Simulado.objects.create(autor=professor)
     simulado.turmas.set(turmas)
     for item in questoes_payload:
@@ -479,9 +768,9 @@ def professor_criar_simulado(request):
     simulado.titulo = request.data.get('titulo', '')
     simulado.tempo_limite = request.data.get('tempo_limite') or None
     simulado.area_conhecimento = request.data.get('area_conhecimento', '')
-    simulado.av_tipo = request.data.get('av_tipo', '') or ''
-    simulado.area = request.data.get('area', '') or ''
-    simulado.epoca = request.data.get('epoca', '') or ''
+    simulado.av_tipo = av_tipo
+    simulado.area = area
+    simulado.epoca = epoca
     simulado.save()
 
     from .activity_log import registrar_atividade
@@ -529,6 +818,8 @@ def professor_detalhe_simulado(request, simulado_id):
         return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'PATCH':
+        nota_alterada = any(campo in request.data for campo in ('av_tipo', 'area', 'epoca'))
+
         if 'titulo' in request.data:
             simulado.titulo = request.data['titulo']
         if 'tempo_limite' in request.data:
@@ -536,15 +827,29 @@ def professor_detalhe_simulado(request, simulado_id):
         if 'area_conhecimento' in request.data:
             simulado.area_conhecimento = request.data['area_conhecimento']
         if 'av_tipo' in request.data:
-            simulado.av_tipo = request.data['av_tipo'] or ''
+            simulado.av_tipo = (request.data['av_tipo'] or '').strip()
         if 'area' in request.data:
-            simulado.area = request.data['area'] or ''
+            simulado.area = (request.data['area'] or '').strip()
         if 'epoca' in request.data:
-            simulado.epoca = request.data['epoca'] or ''
+            simulado.epoca = (request.data['epoca'] or '').strip()
+
+        if nota_alterada and simulado.av_tipo in ('AV1', 'AV2') and not (simulado.area and simulado.epoca):
+            return Response(
+                {'detail': 'Selecione a área e o bimestre para que a nota seja lançada automaticamente.'},
+                status=400,
+            )
+
         if 'turmas' in request.data:
             turmas = Turma.objects.filter(id__in=request.data['turmas'])
             simulado.turmas.set(turmas)
         simulado.save()
+
+        if nota_alterada:
+            # backfill: alunos que já haviam sido corrigidos passam a ter a
+            # NotaArea consolidada agora que a área/bimestre está definido.
+            from .grading import recomputar_simulado
+            recomputar_simulado(simulado)
+
         return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'DELETE':
@@ -1301,6 +1606,8 @@ def aluno_assiduidade(request):
         presente = presencas_data.get(str(a.user.pk), True)
         PresencaAluno.objects.create(registro=registro, aluno=a, presente=bool(presente))
 
+    return Response({'detail': 'Assiduidade registrada!', 'id': registro.id}, status=201)
+
 
 # ==========================================
 # RELATÓRIO PDF
@@ -1531,5 +1838,3 @@ def professor_relatorio_pdf(request, aluno_id):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
     return response
-
-    return Response({'detail': 'Assiduidade registrada!', 'id': registro.id}, status=201)

@@ -205,6 +205,14 @@ export default function CriarSimuladoPage() {
       });
       return;
     }
+    if ((avTipo === "AV1" || avTipo === "AV2") && (!areaNota || !bimestre)) {
+      setAlert({
+        type: "error",
+        message:
+          "Selecione a área e o bimestre para que a nota seja lançada automaticamente — sem isso, a nota do simulado não chega na tabela de notas do aluno.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       await apiFetch("/professor/criar-simulado/", {
@@ -481,10 +489,13 @@ export default function CriarSimuladoPage() {
 
                   {avTipo && avTipo !== "AV3" && (
                     <div>
-                      <label style={{ fontSize: "1.3rem" }}>Área</label>
+                      <label style={{ fontSize: "1.3rem" }}>
+                        Área <span style={{ color: "var(--color-danger)" }}>*</span>
+                      </label>
                       <select
                         value={areaNota}
                         onChange={(e) => setAreaNota(e.target.value)}
+                        required
                       >
                         <option value="">Selecione a área...</option>
                         {AREAS_NOTA.filter((a) => a.avs.includes(avTipo)).map(
@@ -500,10 +511,16 @@ export default function CriarSimuladoPage() {
 
                   {avTipo && (
                     <div>
-                      <label style={{ fontSize: "1.3rem" }}>Bimestre</label>
+                      <label style={{ fontSize: "1.3rem" }}>
+                        Bimestre{" "}
+                        {avTipo !== "AV3" && (
+                          <span style={{ color: "var(--color-danger)" }}>*</span>
+                        )}
+                      </label>
                       <select
                         value={bimestre}
                         onChange={(e) => setBimestre(e.target.value)}
+                        required={avTipo !== "AV3"}
                       >
                         <option value="">Selecione o bimestre...</option>
                         {BIMESTRES.map((b) => (

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, API_URL } from '@/lib/api';
+import Cookies from 'js-cookie';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
@@ -93,6 +94,35 @@ export default function RelatoriosTurmaPage() {
   const [bimestre, setBimestre] = useState('1B');
   const [tipoNota, setTipoNota] = useState<TipoNota>('final');
   const [mes, setMes] = useState('');
+  const [exportando, setExportando] = useState(false);
+
+  async function exportarPDF() {
+    setExportando(true);
+    try {
+      const query = new URLSearchParams({ tipo: aba });
+      if (aba === 'notas') {
+        query.set('bimestre', bimestre);
+        query.set('nota', tipoNota);
+      }
+      if (aba === 'frequencia' && mes) {
+        query.set('mes', mes);
+      }
+      const res = await fetch(
+        `${API_URL}/api/professor/turma/${turmaId}/relatorios/pdf/?${query.toString()}`,
+        { headers: { Authorization: `Bearer ${Cookies.get('access_token') ?? ''}` } },
+      );
+      if (!res.ok) throw new Error('Erro ao gerar PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `turma_${data?.turma.nome ?? turmaId}_${aba}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportando(false);
+    }
+  }
 
   useEffect(() => {
     apiFetch<TurmaRelatoriosData>(`/professor/turma/${turmaId}/relatorios/`)
@@ -166,9 +196,9 @@ export default function RelatoriosTurmaPage() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }} className="no-print">
-            <button className="btn btn-secondary" onClick={() => window.print()}>
-              <span className="material-icons-outlined">print</span>
-              Imprimir
+            <button className="btn btn-primary" onClick={exportarPDF} disabled={exportando}>
+              <span className="material-icons-outlined">picture_as_pdf</span>
+              {exportando ? 'Gerando…' : 'Exportar PDF'}
             </button>
             <Link href={`/professor/turma/${turmaId}`} className="btn btn-secondary">← Voltar</Link>
           </div>

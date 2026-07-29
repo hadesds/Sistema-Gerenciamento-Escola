@@ -1,6 +1,11 @@
+import re
+
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.utils.crypto import get_random_string
 from django.utils.html import format_html
 from .models import (
     Professor, Aluno, Turma, Avaliacao, Questao, Simulado, SimuladoQuestao,
@@ -81,6 +86,41 @@ class ResultadoSimuladoInline(admin.TabularInline):
         return False
 
 
+class AlunoCreationForm(forms.ModelForm):
+    """Formulário usado ao criar um Aluno novo: coleta nome/e-mail e cria o
+    User automaticamente (login = CPF, senha inicial = data de nascimento),
+    dispensando o passo separado de criar o User primeiro."""
+
+    first_name = forms.CharField(label='Nome', max_length=150)
+    last_name = forms.CharField(label='Sobrenome', max_length=150, required=False)
+    email = forms.EmailField(label='E-mail', required=False)
+    cpf = forms.CharField(
+        label='CPF', max_length=14,
+        help_text='Também é o código de matrícula e o login do aluno (pode digitar com pontos/traço).',
+    )
+
+    class Meta:
+        model = Aluno
+        fields = ['foto', 'turma', 'cpf', 'data_nascimento',
+                  'endereco', 'telefone', 'nome_mae', 'email_mae']
+
+    def clean_cpf(self):
+        cpf = re.sub(r'\D', '', self.cleaned_data.get('cpf') or '')
+        if not cpf:
+            raise ValidationError('Informe o CPF: ele será usado como usuário de login do aluno.')
+        if len(cpf) != 11:
+            raise ValidationError('O CPF deve ter 11 dígitos.')
+        if User.objects.filter(username=cpf).exists():
+            raise ValidationError('Já existe um usuário com esse CPF.')
+        return cpf
+
+    def clean_data_nascimento(self):
+        data_nascimento = self.cleaned_data.get('data_nascimento')
+        if not data_nascimento:
+            raise ValidationError('Informe a data de nascimento: ela será usada como senha inicial do aluno.')
+        return data_nascimento
+
+
 @admin.register(Aluno)
 class AlunoAdmin(admin.ModelAdmin):
     list_display = ['get_nome_completo', 'cpf', 'turma', 'get_email',
@@ -91,8 +131,41 @@ class AlunoAdmin(admin.ModelAdmin):
         ('Identificação', {'fields': ['user', 'foto', 'turma', 'cpf', 'data_nascimento']}),
         ('Dados Cadastrais', {'fields': ['endereco', 'telefone', 'nome_mae', 'email_mae']}),
     ]
+    add_fieldsets = [
+        ('Identificação (cria o usuário automaticamente)', {
+            'fields': ['first_name', 'last_name', 'email', 'foto', 'turma', 'cpf', 'data_nascimento'],
+        }),
+        ('Dados Cadastrais', {'fields': ['endereco', 'telefone', 'nome_mae', 'email_mae']}),
+    ]
     inlines = [AvaliacaoInline, NotaAreaInline, NotaQualitativaInline,
                ResultadoSimuladoInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is None:
+            kwargs['form'] = AlunoCreationForm
+        return super().get_form(request, obj, **kwargs)
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return self.add_fieldsets
+        return super().get_fieldsets(request, obj)
+
+    def get_inline_instances(self, request, obj=None):
+        if obj is None:
+            return []
+        return super().get_inline_instances(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            user = User.objects.create_user(
+                username=form.cleaned_data['cpf'],
+                password=get_random_string(32),
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data.get('last_name', ''),
+                email=form.cleaned_data.get('email', ''),
+            )
+            obj.user = user
+        super().save_model(request, obj, form, change)
 
     def get_nome_completo(self, obj):
         return obj.user.get_full_name() or obj.user.username

@@ -86,7 +86,11 @@ class AlunoAdmin(admin.ModelAdmin):
     list_display = ['get_nome_completo', 'matricula', 'turma', 'get_email',
                     'total_avaliacoes', 'total_resultados', 'total_notas_area', 'total_qualitativas']
     list_filter = ['turma']
-    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'matricula']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'matricula', 'cpf']
+    fieldsets = [
+        ('Identificação', {'fields': ['user', 'foto', 'turma', 'matricula']}),
+        ('Dados Cadastrais', {'fields': ['cpf', 'telefone', 'nome_mae']}),
+    ]
     inlines = [AvaliacaoInline, NotaAreaInline, NotaQualitativaInline,
                ResultadoSimuladoInline]
 

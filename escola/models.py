@@ -39,6 +39,9 @@ class Aluno(models.Model):
     foto = models.ImageField(upload_to='fotos_alunos/', blank=True, null=True)
     turma = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, blank=True, related_name="alunos")
     matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    cpf = models.CharField(max_length=14, unique=True, null=True, blank=True)
+    telefone = models.CharField(max_length=20, blank=True, default='')
+    nome_mae = models.CharField(max_length=200, blank=True, default='')
 
     def __str__(self):
         return self.user.get_full_name() or self.user.username

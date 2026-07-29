@@ -105,9 +105,13 @@ export default function ListaTurmasPage() {
                 )}
 
                 {/* Action */}
-                <div style={{ marginTop: 'auto' }}>
-                  <Link href={`/professor/turma/${turma.id}`} className="btn btn-primary" style={{ display: 'block', textAlign: 'center' }}>
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <Link href={`/professor/turma/${turma.id}`} className="btn btn-primary" style={{ display: 'flex', justifyContent: 'center' }}>
                     Ver Carômetro e Avaliar
+                  </Link>
+                  <Link href={`/professor/turma/${turma.id}/relatorios`} className="btn btn-secondary" style={{ display: 'flex', justifyContent: 'center' }}>
+                    <span className="material-icons-outlined">summarize</span>
+                    Relatórios
                   </Link>
                 </div>
               </div>

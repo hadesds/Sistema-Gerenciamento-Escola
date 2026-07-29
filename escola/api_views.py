@@ -224,6 +224,79 @@ def professor_turma_carometro(request, turma_id):
     })
 
 
+_MESES_PT = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro',
+}
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_turma_relatorios(request, turma_id):
+    """Dados para os relatórios da turma: relação nominal, dados cadastrais,
+    notas por disciplina (AV1/AV2/AV3/bimestral) e frequência mensal."""
+    from .grading import consolidar_notas
+    from .grade_config import DISCIPLINAS
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    turma = get_object_or_404(Turma, id=turma_id)
+    if turma not in professor.turmas.all():
+        return Response({'detail': 'Sem permissão para ver esta turma.'}, status=403)
+
+    alunos = turma.alunos.all().select_related('user').order_by('user__first_name', 'user__last_name')
+
+    alunos_info = []
+    for aluno in alunos:
+        foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else None
+
+        presencas = (PresencaAluno.objects
+                     .filter(aluno=aluno, registro__turma=turma)
+                     .select_related('registro')
+                     .order_by('registro__data'))
+        por_mes: dict = {}
+        for p in presencas:
+            chave = (p.registro.data.year, p.registro.data.month)
+            d = por_mes.setdefault(chave, {'presentes': 0, 'faltas': 0, 'total': 0})
+            d['total'] += 1
+            if p.presente:
+                d['presentes'] += 1
+            else:
+                d['faltas'] += 1
+
+        frequencia_mensal = []
+        for (ano, mes), d in sorted(por_mes.items()):
+            frequencia_mensal.append({
+                'mes': f'{ano}-{mes:02d}',
+                'mes_label': f'{_MESES_PT[mes]}/{ano}',
+                'presentes': d['presentes'],
+                'faltas': d['faltas'],
+                'total': d['total'],
+                'percentual': round(d['presentes'] / d['total'] * 100, 1) if d['total'] else 0,
+            })
+
+        alunos_info.append({
+            'id': aluno.user.id,
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'matricula': aluno.matricula,
+            'foto_url': foto_url,
+            'cpf': aluno.cpf,
+            'telefone': aluno.telefone,
+            'nome_mae': aluno.nome_mae,
+            'email': aluno.user.email,
+            'notas': consolidar_notas(aluno),
+            'frequencia_mensal': frequencia_mensal,
+        })
+
+    return Response({
+        'turma': TurmaSerializer(turma).data,
+        'disciplinas': [{'sigla': sigla, 'nome': nome} for sigla, nome in DISCIPLINAS],
+        'alunos': alunos_info,
+    })
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def professor_registrar_avaliacao(request, aluno_id):

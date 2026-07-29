@@ -1581,6 +1581,8 @@ def aluno_assiduidade(request):
         presente = presencas_data.get(str(a.user.pk), True)
         PresencaAluno.objects.create(registro=registro, aluno=a, presente=bool(presente))
 
+    return Response({'detail': 'Assiduidade registrada!', 'id': registro.id}, status=201)
+
 
 # ==========================================
 # RELATÓRIO PDF

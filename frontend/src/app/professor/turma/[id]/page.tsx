@@ -200,7 +200,13 @@ export default function CarometroPage() {
                 <h1>{data.turma.nome}</h1>
                 <p>{data.turma.serie} · {data.turma.turno_display} · Sala {data.turma.sala}</p>
               </div>
-              <Link href="/professor/turmas" className="btn btn-secondary">← Voltar</Link>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <Link href={`/professor/turma/${turmaId}/relatorios`} className="btn btn-secondary">
+                  <span className="material-icons-outlined">summarize</span>
+                  Relatórios da Turma
+                </Link>
+                <Link href="/professor/turmas" className="btn btn-secondary">← Voltar</Link>
+              </div>
             </div>
 
             <div className="card mb-2">

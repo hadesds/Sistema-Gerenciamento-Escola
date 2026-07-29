@@ -39,6 +39,9 @@ class Aluno(models.Model):
     foto = models.ImageField(upload_to='fotos_alunos/', blank=True, null=True)
     turma = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, blank=True, related_name="alunos")
     matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    cpf = models.CharField(max_length=14, unique=True, null=True, blank=True)
+    telefone = models.CharField(max_length=20, blank=True, default='')
+    nome_mae = models.CharField(max_length=200, blank=True, default='')
 
     def __str__(self):
         return self.user.get_full_name() or self.user.username
@@ -177,32 +180,6 @@ class Materia(models.Model):
 
     def __str__(self):
         return f"{self.nome} ({self.sigla})"
-
-
-class ProvaIndividual(models.Model):
-    EPOCAS = [
-        ('1B', '1° Bimestre'),
-        ('2B', '2° Bimestre'),
-        ('3B', '3° Bimestre'),
-        ('4B', '4° Bimestre'),
-    ]
-    aluno     = models.ForeignKey(Aluno,     on_delete=models.CASCADE,  related_name='provas_individuais')
-    professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, related_name='provas_aplicadas')
-    materia   = models.ForeignKey('Materia', on_delete=models.CASCADE,  related_name='provas_individuais')
-    epoca     = models.CharField(max_length=2, choices=EPOCAS)
-    numero    = models.PositiveSmallIntegerField()
-    nota      = models.DecimalField(max_digits=4, decimal_places=2,
-                    validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('10'))])
-    data      = models.DateField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('aluno', 'materia', 'epoca', 'numero')
-        ordering = ['epoca', 'numero']
-        verbose_name = 'Prova Individual'
-        verbose_name_plural = 'Provas Individuais'
-
-    def __str__(self):
-        return f"{self.aluno} – {self.materia} ({self.epoca}) Prova {self.numero}: {self.nota}"
 
 
 class Questao(models.Model):
@@ -380,3 +357,19 @@ class NotaQualitativa(models.Model):
 
     def __str__(self):
         return f"{self.aluno} {self.epoca} {self.materia} (qualitativa): {self.nota}"
+
+
+class LogAtividade(models.Model):
+    """Registro de ações relevantes realizadas na plataforma, para auditoria no painel admin."""
+    usuario     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='logs_atividade')
+    descricao   = models.CharField(max_length=500)
+    data_hora   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-data_hora']
+        verbose_name = 'Log de Atividade'
+        verbose_name_plural = 'Logs de Atividade'
+
+    def __str__(self):
+        quem = self.usuario.get_full_name() or self.usuario.username if self.usuario else 'Sistema'
+        return f"[{self.data_hora:%d/%m/%Y %H:%M}] {quem}: {self.descricao}"

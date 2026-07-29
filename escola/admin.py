@@ -4,9 +4,9 @@ from django.contrib.auth.models import User
 from django.utils.html import format_html
 from .models import (
     Professor, Aluno, Turma, Avaliacao, Questao, Simulado, SimuladoQuestao,
-    Administrador, AlternativaQuestao, Materia, NotaMateria, ProvaIndividual,
+    Administrador, AlternativaQuestao, Materia, NotaMateria,
     PerfilTurma, RegistroAssiduidade, PresencaAluno,
-    ResultadoSimulado, RespostaAluno, NotaArea, NotaQualitativa,
+    ResultadoSimulado, RespostaAluno, NotaArea, NotaQualitativa, LogAtividade,
 )
 
 
@@ -81,25 +81,18 @@ class ResultadoSimuladoInline(admin.TabularInline):
         return False
 
 
-class ProvaIndividualInline(admin.TabularInline):
-    model = ProvaIndividual
-    extra = 0
-    fields = ['materia', 'epoca', 'numero', 'nota', 'professor', 'data']
-    readonly_fields = ['data']
-    ordering = ['materia', 'epoca', 'numero']
-    classes = ['collapse']
-    verbose_name = 'Prova Individual (legado)'
-    verbose_name_plural = 'Provas Individuais (legado)'
-
-
 @admin.register(Aluno)
 class AlunoAdmin(admin.ModelAdmin):
     list_display = ['get_nome_completo', 'matricula', 'turma', 'get_email',
                     'total_avaliacoes', 'total_resultados', 'total_notas_area', 'total_qualitativas']
     list_filter = ['turma']
-    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'matricula']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'matricula', 'cpf']
+    fieldsets = [
+        ('Identificação', {'fields': ['user', 'foto', 'turma', 'matricula']}),
+        ('Dados Cadastrais', {'fields': ['cpf', 'telefone', 'nome_mae']}),
+    ]
     inlines = [AvaliacaoInline, NotaAreaInline, NotaQualitativaInline,
-               ResultadoSimuladoInline, ProvaIndividualInline]
+               ResultadoSimuladoInline]
 
     def get_nome_completo(self, obj):
         return obj.user.get_full_name() or obj.user.username
@@ -501,37 +494,6 @@ class NotaMateriaAdmin(admin.ModelAdmin):
     get_nota_colorida.admin_order_field = 'nota'
 
 
-@admin.register(ProvaIndividual)
-class ProvaIndividualAdmin(admin.ModelAdmin):
-    list_display = ['aluno', 'get_turma', 'materia', 'get_epoca', 'get_numero_prova', 'get_nota_colorida', 'professor', 'data']
-    list_filter = ['materia', 'epoca', 'aluno__turma', 'professor']
-    search_fields = [
-        'aluno__user__first_name', 'aluno__user__last_name',
-        'materia__nome', 'professor__user__first_name',
-    ]
-    date_hierarchy = 'data'
-    ordering = ['aluno', 'materia', 'epoca', 'numero']
-
-    def get_turma(self, obj):
-        return _turma_de(obj.aluno)
-    get_turma.short_description = 'Turma'
-
-    def get_epoca(self, obj):
-        return obj.get_epoca_display()
-    get_epoca.short_description = 'Bimestre'
-    get_epoca.admin_order_field = 'epoca'
-
-    def get_numero_prova(self, obj):
-        return f'P{obj.numero}'
-    get_numero_prova.short_description = 'Nº Prova'
-    get_numero_prova.admin_order_field = 'numero'
-
-    def get_nota_colorida(self, obj):
-        return _nota_html(obj.nota)
-    get_nota_colorida.short_description = 'Nota'
-    get_nota_colorida.admin_order_field = 'nota'
-
-
 # ═════════════════════════════════════════════════════════════════════════════
 # ADMINISTRAÇÃO
 # ═════════════════════════════════════════════════════════════════════════════
@@ -548,6 +510,27 @@ class AdministradorAdmin(admin.ModelAdmin):
     def get_email(self, obj):
         return obj.user.email
     get_email.short_description = 'Email'
+
+
+@admin.register(LogAtividade)
+class LogAtividadeAdmin(admin.ModelAdmin):
+    list_display = ['data_hora', 'get_usuario', 'descricao']
+    list_filter = ['data_hora']
+    search_fields = ['descricao', 'usuario__username', 'usuario__first_name', 'usuario__last_name']
+    date_hierarchy = 'data_hora'
+    ordering = ['-data_hora']
+
+    def get_usuario(self, obj):
+        if not obj.usuario:
+            return 'Sistema'
+        return obj.usuario.get_full_name() or obj.usuario.username
+    get_usuario.short_description = 'Usuário'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 # ─── User (com inline de Professor/Aluno conforme o vínculo) ─────────────────
@@ -590,13 +573,13 @@ admin.site.register(User, CustomUserAdmin)
 _SECOES = [
     ('area-aluno', 'Área do Aluno', [
         'Aluno', 'Avaliacao', 'ResultadoSimulado', 'NotaArea', 'NotaQualitativa',
-        'PerfilTurma', 'RegistroAssiduidade', 'NotaMateria', 'ProvaIndividual',
+        'PerfilTurma', 'RegistroAssiduidade', 'NotaMateria',
     ]),
     ('area-professor', 'Área do Professor', [
         'Professor', 'Turma', 'Materia', 'Questao', 'Simulado',
     ]),
     ('area-admin', 'Administração', [
-        'Administrador', 'User', 'Group',
+        'Administrador', 'User', 'Group', 'LogAtividade',
     ]),
 ]
 

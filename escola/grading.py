@@ -120,8 +120,13 @@ def consolidar_notas(aluno):
         if nq.materia:
             qualis[(nq.epoca, nq.materia.sigla)] = float(nq.nota)
 
-    # id da Materia por sigla (para edição da AV3)
-    materia_por_sigla = {m.sigla: m.id for m in Materia.objects.all()}
+    # id da Materia por sigla (para edição da AV3) — garante que as disciplinas
+    # oficiais existam mesmo que a seed de dados não tenha rodado no ambiente.
+    materia_por_sigla = {m.sigla: m.id for m in Materia.objects.filter(sigla__in=[s for s, _ in DISCIPLINAS])}
+    for sigla, nome in DISCIPLINAS:
+        if sigla not in materia_por_sigla:
+            materia, _ = Materia.objects.get_or_create(sigla=sigla, defaults={'nome': nome})
+            materia_por_sigla[sigla] = materia.id
 
     resultado = {}
     for epoca_cod, _epoca_nome in EPOCAS:

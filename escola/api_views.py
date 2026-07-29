@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, ProvaIndividual, SimuladoQuestao
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, SimuladoQuestao
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
@@ -224,6 +224,79 @@ def professor_turma_carometro(request, turma_id):
     })
 
 
+_MESES_PT = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro',
+}
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def professor_turma_relatorios(request, turma_id):
+    """Dados para os relatórios da turma: relação nominal, dados cadastrais,
+    notas por disciplina (AV1/AV2/AV3/bimestral) e frequência mensal."""
+    from .grading import consolidar_notas
+    from .grade_config import DISCIPLINAS
+
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    turma = get_object_or_404(Turma, id=turma_id)
+    if turma not in professor.turmas.all():
+        return Response({'detail': 'Sem permissão para ver esta turma.'}, status=403)
+
+    alunos = turma.alunos.all().select_related('user').order_by('user__first_name', 'user__last_name')
+
+    alunos_info = []
+    for aluno in alunos:
+        foto_url = request.build_absolute_uri(aluno.foto.url) if aluno.foto else None
+
+        presencas = (PresencaAluno.objects
+                     .filter(aluno=aluno, registro__turma=turma)
+                     .select_related('registro')
+                     .order_by('registro__data'))
+        por_mes: dict = {}
+        for p in presencas:
+            chave = (p.registro.data.year, p.registro.data.month)
+            d = por_mes.setdefault(chave, {'presentes': 0, 'faltas': 0, 'total': 0})
+            d['total'] += 1
+            if p.presente:
+                d['presentes'] += 1
+            else:
+                d['faltas'] += 1
+
+        frequencia_mensal = []
+        for (ano, mes), d in sorted(por_mes.items()):
+            frequencia_mensal.append({
+                'mes': f'{ano}-{mes:02d}',
+                'mes_label': f'{_MESES_PT[mes]}/{ano}',
+                'presentes': d['presentes'],
+                'faltas': d['faltas'],
+                'total': d['total'],
+                'percentual': round(d['presentes'] / d['total'] * 100, 1) if d['total'] else 0,
+            })
+
+        alunos_info.append({
+            'id': aluno.user.id,
+            'nome': aluno.user.get_full_name() or aluno.user.username,
+            'matricula': aluno.matricula,
+            'foto_url': foto_url,
+            'cpf': aluno.cpf,
+            'telefone': aluno.telefone,
+            'nome_mae': aluno.nome_mae,
+            'email': aluno.user.email,
+            'notas': consolidar_notas(aluno),
+            'frequencia_mensal': frequencia_mensal,
+        })
+
+    return Response({
+        'turma': TurmaSerializer(turma).data,
+        'disciplinas': [{'sigla': sigla, 'nome': nome} for sigla, nome in DISCIPLINAS],
+        'alunos': alunos_info,
+    })
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def professor_registrar_avaliacao(request, aluno_id):
@@ -263,30 +336,6 @@ def professor_registrar_avaliacao(request, aluno_id):
         }, status=201)
     except Exception as e:
         return Response({'detail': str(e)}, status=400)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def professor_provas_aluno(request, aluno_id):
-    """Retorna as provas individuais de um aluno por matéria e época."""
-    professor = _get_professor(request)
-    if not professor:
-        return Response({'detail': 'Acesso negado.'}, status=403)
-
-    aluno = get_object_or_404(Aluno, pk=aluno_id)
-    materia_id = request.query_params.get('materia_id')
-    if not materia_id:
-        return Response({'detail': 'materia_id é obrigatório.'}, status=400)
-
-    provas = ProvaIndividual.objects.filter(
-        aluno=aluno, materia_id=materia_id
-    ).order_by('epoca', 'numero')
-
-    result = {'1B': [], '2B': [], '3B': [], '4B': []}
-    for p in provas:
-        result[p.epoca].append(float(p.nota))
-
-    return Response(result)
 
 
 @api_view(['GET', 'POST'])
@@ -331,6 +380,13 @@ def professor_banco_questoes(request):
                             correta=bool(alt.get('correta', False)),
                             ordem=i,
                         )
+            from .activity_log import registrar_atividade
+            nome_professor = professor.user.get_full_name() or professor.user.username
+            materia_desc = f' ({materia.nome})' if materia else ''
+            registrar_atividade(
+                professor.user,
+                f'{nome_professor} (Professor) criou uma questão {questao.get_tipo_display().lower()}{materia_desc} no banco de questões.'
+            )
             return Response(QuestaoSerializer(questao, context={'request': request}).data, status=201)
         except Exception as e:
             return Response({'detail': str(e)}, status=400)
@@ -346,6 +402,36 @@ def professor_banco_questoes(request):
         'materias': MateriaSerializer(Materia.objects.all(), many=True).data,
         'materia_filtro': materia_filtro
     })
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def professor_excluir_questao_banco(request, questao_id):
+    """Exclui uma questão do banco. Bloqueado se a questão já foi usada em algum simulado,
+    para não apagar retroativamente as respostas dos alunos que a responderam."""
+    professor = _get_professor(request)
+    if not professor:
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    questao = get_object_or_404(Questao, id=questao_id, autor=professor)
+
+    if questao.simulado_questoes.exists():
+        return Response(
+            {'detail': 'Esta questão já foi usada em um ou mais simulados e não pode ser excluída do banco.'},
+            status=400,
+        )
+
+    from .activity_log import registrar_atividade
+    nome_professor = professor.user.get_full_name() or professor.user.username
+    materia_desc = f' ({questao.materia.nome})' if questao.materia else ''
+    tipo_desc = questao.get_tipo_display().lower()
+    questao.delete()
+
+    registrar_atividade(
+        professor.user,
+        f'{nome_professor} (Professor) excluiu uma questão {tipo_desc}{materia_desc} do banco de questões.'
+    )
+    return Response(status=204)
 
 
 @api_view(['GET'])
@@ -397,6 +483,14 @@ def professor_criar_simulado(request):
     simulado.area = request.data.get('area', '') or ''
     simulado.epoca = request.data.get('epoca', '') or ''
     simulado.save()
+
+    from .activity_log import registrar_atividade
+    nome_professor = professor.user.get_full_name() or professor.user.username
+    turmas_desc = ', '.join(t.nome for t in turmas)
+    registrar_atividade(
+        professor.user,
+        f'{nome_professor} (Professor) criou o simulado "{simulado.titulo or f"#{simulado.id}"}" para a(s) turma(s) {turmas_desc}.'
+    )
 
     return Response(SimuladoSerializer(simulado, context={'request': request}).data, status=201)
 
@@ -454,7 +548,14 @@ def professor_detalhe_simulado(request, simulado_id):
         return Response(SimuladoSerializer(simulado, context={'request': request}).data)
 
     if request.method == 'DELETE':
+        from .activity_log import registrar_atividade
+        nome_professor = professor.user.get_full_name() or professor.user.username
+        titulo_desc = simulado.titulo or f'#{simulado.id}'
         simulado.delete()
+        registrar_atividade(
+            professor.user,
+            f'{nome_professor} (Professor) excluiu o simulado "{titulo_desc}".'
+        )
         return Response(status=204)
 
 
@@ -608,27 +709,6 @@ def professor_relatorio_aluno(request, aluno_id):
         if medias_materias else None
     )
 
-    # Provas individuais agrupadas por matéria e época
-    provas_qs = ProvaIndividual.objects.filter(aluno=aluno).select_related('materia').order_by('materia__nome', 'epoca', 'numero')
-    provas_por_materia: dict = {}
-    for p in provas_qs:
-        mat = p.materia.nome
-        if mat not in provas_por_materia:
-            provas_por_materia[mat] = {'1B': [], '2B': [], '3B': [], '4B': []}
-        provas_por_materia[mat][p.epoca].append(float(p.nota))
-
-    # Médias por matéria a partir das provas individuais
-    medias_provas: dict = {}
-    for mat, epocas in provas_por_materia.items():
-        todas = [n for lista in epocas.values() for n in lista]
-        if todas:
-            medias_provas[mat] = round(sum(todas) / len(todas), 2)
-
-    media_geral_provas = (
-        round(sum(medias_provas.values()) / len(medias_provas), 2)
-        if medias_provas else None
-    )
-
     return Response({
         'aluno': {
             'id': aluno.user.id,
@@ -654,10 +734,6 @@ def professor_relatorio_aluno(request, aluno_id):
         'notas_por_epoca': notas_por_epoca,
         'medias_materias': medias_materias,
         'media_geral_materias': media_geral_materias,
-        # provas individuais agrupadas (legado)
-        'provas_por_materia': provas_por_materia,
-        'medias_provas': medias_provas,
-        'media_geral_provas': media_geral_provas,
         # novo sistema: notas consolidadas por bimestre × disciplina
         'consolidado': consolidar_notas(aluno),
         # resultados por simulado (com status de pendência de correção)
@@ -954,6 +1030,15 @@ def aluno_enviar_simulado(request, simulado_id):
         )
 
     corrigir_resultado(resultado)
+
+    from .activity_log import registrar_atividade
+    nome_aluno = aluno.user.get_full_name() or aluno.user.username
+    titulo_desc = simulado.titulo or f'#{simulado.id}'
+    registrar_atividade(
+        aluno.user,
+        f'{nome_aluno} (Aluno) respondeu o simulado "{titulo_desc}".'
+    )
+
     return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data, status=201)
 
 
@@ -987,6 +1072,16 @@ def professor_corrigir_discursivas(request, resultado_id):
                 continue
 
     corrigir_resultado(resultado)
+
+    from .activity_log import registrar_atividade
+    nome_professor = professor.user.get_full_name() or professor.user.username
+    nome_aluno = resultado.aluno.user.get_full_name() or resultado.aluno.user.username
+    titulo_desc = resultado.simulado.titulo or f'#{resultado.simulado_id}'
+    registrar_atividade(
+        professor.user,
+        f'{nome_professor} (Professor) corrigiu as questões discursivas de {nome_aluno} no simulado "{titulo_desc}".'
+    )
+
     return Response(ResultadoSimuladoSerializer(resultado, context={'request': request}).data)
 
 

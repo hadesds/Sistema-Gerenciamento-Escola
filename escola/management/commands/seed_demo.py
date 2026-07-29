@@ -62,7 +62,7 @@ class Command(BaseCommand):
                 first_name="Lucas",
                 last_name="Santos",
                 email="aluno.demo@cara.local",
-                matricula="DEMO-001",
+                cpf="00000000001",
                 turma=turma,
                 password=password,
             ),
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                 first_name="Ana",
                 last_name="Costa",
                 email="lider.demo@cara.local",
-                matricula="DEMO-002",
+                cpf="00000000002",
                 turma=turma,
                 password=password,
             ),
@@ -160,7 +160,7 @@ class Command(BaseCommand):
         user.save()
         return user
 
-    def _create_aluno(self, username, first_name, last_name, email, matricula, turma, password):
+    def _create_aluno(self, username, first_name, last_name, email, cpf, turma, password):
         user = self._upsert_user(
             username=username,
             password=password,
@@ -170,7 +170,7 @@ class Command(BaseCommand):
         )
         aluno, _ = Aluno.objects.update_or_create(
             user=user,
-            defaults={"matricula": matricula, "turma": turma},
+            defaults={"cpf": cpf, "turma": turma},
         )
         return aluno
 

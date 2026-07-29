@@ -10,7 +10,7 @@ import Alert from '@/components/Alert';
 interface AlunoPresenca {
   id: number;
   nome: string;
-  matricula: string | null;
+  cpf: string | null;
   presente: boolean;
 }
 
@@ -139,7 +139,7 @@ export default function AssiduidadePage() {
                       />
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '1.5rem' }}>{aluno.nome}</div>
-                        {aluno.matricula && <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>{aluno.matricula}</div>}
+                        {aluno.cpf && <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>{aluno.cpf}</div>}
                       </div>
                       <span className="material-icons-outlined" style={{ marginLeft: 'auto', fontSize: '2rem', color: presencas[aluno.id] ? 'var(--color-success)' : 'var(--color-danger)' }}>
                         {presencas[aluno.id] ? 'check_circle' : 'cancel'}

@@ -13,7 +13,7 @@ interface AlunoDashboard {
   aluno: {
     id: number;
     nome: string;
-    matricula: string | null;
+    cpf: string | null;
     turma: string;
     foto_url: string | null;
   };
@@ -192,8 +192,8 @@ export default function AlunoDashboardPage() {
                 )}
                 <div className="aluno-perfil-info">
                   <h2>Olá, {data.aluno.nome}!</h2>
-                  {data.aluno.matricula && (
-                    <p><strong>Matrícula:</strong> {data.aluno.matricula}</p>
+                  {data.aluno.cpf && (
+                    <p><strong>CPF:</strong> {data.aluno.cpf}</p>
                   )}
                   <p><strong>Turma:</strong> {data.aluno.turma}</p>
                   {data.evolucao !== 0 && (

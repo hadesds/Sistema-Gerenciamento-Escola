@@ -39,11 +39,12 @@ interface FrequenciaMes {
 interface AlunoRelatorio {
   id: number;
   nome: string;
-  matricula: string | null;
   foto_url: string | null;
   cpf: string | null;
   telefone: string;
+  endereco: string;
   nome_mae: string;
+  email_mae: string;
   email: string;
   notas: Record<string, LinhaNota[]>;
   frequencia_mensal: FrequenciaMes[];
@@ -229,7 +230,7 @@ export default function RelatoriosTurmaPage() {
               <div className="table-scroll">
                 <table className="feedback-table rel-table">
                   <thead>
-                    <tr><th>#</th><th>Foto</th><th>Nome</th><th>Matrícula</th></tr>
+                    <tr><th>#</th><th>Foto</th><th>Nome</th><th>CPF</th></tr>
                   </thead>
                   <tbody>
                     {alunos.map((a, idx) => (
@@ -243,7 +244,7 @@ export default function RelatoriosTurmaPage() {
                           )}
                         </td>
                         <td><strong>{a.nome}</strong></td>
-                        <td>{a.matricula || '–'}</td>
+                        <td>{a.cpf || '–'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -263,17 +264,21 @@ export default function RelatoriosTurmaPage() {
               <div className="table-scroll">
                 <table className="feedback-table rel-table">
                   <thead>
-                    <tr><th>Nome</th><th>Matrícula</th><th>CPF</th><th>E-mail</th><th>Telefone</th><th>Nome da Mãe</th></tr>
+                    <tr>
+                      <th>Nome</th><th>CPF</th><th>E-mail</th><th>Telefone</th>
+                      <th>Endereço</th><th>Nome da Mãe</th><th>E-mail da Mãe</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {alunos.map(a => (
                       <tr key={a.id}>
                         <td><strong>{a.nome}</strong></td>
-                        <td>{a.matricula || '–'}</td>
                         <td>{a.cpf || '–'}</td>
                         <td>{a.email || '–'}</td>
                         <td>{a.telefone || '–'}</td>
+                        <td>{a.endereco || '–'}</td>
                         <td>{a.nome_mae || '–'}</td>
+                        <td>{a.email_mae || '–'}</td>
                       </tr>
                     ))}
                   </tbody>

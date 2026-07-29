@@ -23,7 +23,7 @@ class AlunoBasicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Aluno
-        fields = ['user', 'matricula', 'turma', 'foto_url', 'nome_completo']
+        fields = ['user', 'cpf', 'turma', 'foto_url', 'nome_completo']
 
     def get_nome_completo(self, obj):
         return obj.user.get_full_name() or obj.user.username

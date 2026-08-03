@@ -1,12 +1,13 @@
 :root {
-  --mural-color-paper: #f6f4ef;
-  --mural-color-ink: #16223b;
-  --mural-color-ink-hover: #0f1830;
-  --mural-color-marigold: #e3a23a;
-  --mural-color-marigold-hover: #f0b354;
-  --mural-color-sage: #6e8f72;
-  --mural-color-cork: #c9a876;
-  --mural-color-slate: #3a3f4b;
+  --mural-color-paper: #ffffff;
+  --mural-color-ink: #0d2d6b;
+  --mural-color-ink-hover: #08204f;
+  --mural-color-marigold: #1a73c7;
+  --mural-color-marigold-hover: #3b9fe8;
+  --mural-color-sage: #1a4fa0;
+  --mural-color-cork: #a8c4e8;
+  --mural-color-slate: #4a6080;
+  --mural-color-sky: #8fc1f5;
 
   --mural-font-display: "Fraunces", serif;
   --mural-font-body: "IBM Plex Sans", sans-serif;
@@ -32,7 +33,7 @@
   font-size: 1.2rem;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: var(--mural-color-marigold);
+  color: var(--mural-color-sky);
 }
 
 .mural-hero__title {
@@ -74,7 +75,7 @@
 
 .mural-btn--primary {
   background: var(--mural-color-marigold);
-  color: var(--mural-color-ink);
+  color: var(--mural-color-paper);
 }
 
 .mural-btn--primary:hover {
@@ -298,7 +299,7 @@
   height: 2.4rem;
   width: 8rem;
   transform: translate(-50%, -50%) rotate(-3deg);
-  background: rgba(227, 162, 58, 0.7);
+  background: rgba(26, 115, 199, 0.65);
 }
 
 .mural-card__image-wrapper {
@@ -362,26 +363,26 @@
 }
 
 .mural-badge--matricula {
-  background: rgba(227, 162, 58, 0.25);
-  border-color: rgba(227, 162, 58, 0.5);
+  background: rgba(26, 115, 199, 0.15);
+  border-color: rgba(26, 115, 199, 0.4);
   color: var(--mural-color-ink);
 }
 
 .mural-badge--evento {
-  background: rgba(110, 143, 114, 0.2);
-  border-color: rgba(110, 143, 114, 0.4);
+  background: rgba(26, 79, 160, 0.12);
+  border-color: rgba(26, 79, 160, 0.35);
   color: var(--mural-color-ink);
 }
 
 .mural-badge--esporte {
-  background: rgba(201, 168, 118, 0.4);
-  border-color: rgba(201, 168, 118, 0.6);
+  background: rgba(168, 196, 232, 0.5);
+  border-color: rgba(168, 196, 232, 0.8);
   color: var(--mural-color-ink);
 }
 
 .mural-badge--biblioteca {
-  background: rgba(22, 34, 59, 0.1);
-  border-color: rgba(22, 34, 59, 0.25);
+  background: rgba(13, 45, 107, 0.1);
+  border-color: rgba(13, 45, 107, 0.25);
   color: var(--mural-color-ink);
 }
 

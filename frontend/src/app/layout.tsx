@@ -28,8 +28,10 @@ const plexMono = IBM_Plex_Mono({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-br">
+    <html
+      lang="pt-br"
       className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable}`}
+    >
       <body>
         <AuthProvider>
           {children}

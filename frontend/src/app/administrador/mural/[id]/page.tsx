@@ -13,6 +13,7 @@ import type { CarouselCategory } from '@/types/carousel-types';
 import {
   deleteAdminAviso, fetchAdminAviso, updateAdminAviso, updateAdminAvisoCapa, type Aviso,
 } from '@/lib/avisos-api';
+import { getApiBaseUrl } from '@/lib/api';
 
 const CATEGORIAS: CarouselCategory[] = ['matricula', 'evento', 'esporte', 'biblioteca'];
 
@@ -137,7 +138,7 @@ export default function AdminAvisoEditorPage() {
             <div className="admin-editor-capa" onClick={() => capaInputRef.current?.click()}>
               {aviso.imagem_capa_url && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={aviso.imagem_capa_url} alt={aviso.imagem_capa_alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={`${getApiBaseUrl()}${aviso.imagem_capa_url}`} alt={aviso.imagem_capa_alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               )}
               <div className="admin-editor-capa-overlay">
                 <span className="material-icons-outlined">photo_camera</span>

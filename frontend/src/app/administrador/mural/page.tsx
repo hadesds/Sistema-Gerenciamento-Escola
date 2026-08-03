@@ -9,6 +9,7 @@ import Alert from '@/components/Alert';
 import { CATEGORY_META } from '@/lib/carousel-lib';
 import type { CarouselCategory } from '@/types/carousel-types';
 import { deleteAdminAviso, fetchAdminAvisos, createAdminAviso, type Aviso } from '@/lib/avisos-api';
+import { getApiBaseUrl } from '@/lib/api';
 
 const CATEGORIAS: CarouselCategory[] = ['matricula', 'evento', 'esporte', 'biblioteca'];
 
@@ -112,7 +113,7 @@ export default function AdminMuralPage() {
                 <div className="admin-mural-card__image">
                   {aviso.imagem_capa_url && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={aviso.imagem_capa_url} alt={aviso.imagem_capa_alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={`${getApiBaseUrl()}${aviso.imagem_capa_url}`} alt={aviso.imagem_capa_alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   )}
                 </div>
                 <div className="admin-mural-card__body">

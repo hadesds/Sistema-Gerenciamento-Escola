@@ -246,10 +246,10 @@ class AvisoSerializer(serializers.ModelSerializer):
         ]
 
     def get_imagem_capa_url(self, obj):
-        request = self.context.get('request')
-        if obj.imagem_capa and request:
-            return request.build_absolute_uri(obj.imagem_capa.url)
-        return None
+        # Caminho relativo (ex.: /media/avisos/capas/x.jpg): o front monta a
+        # URL absoluta com a base certa pra cada contexto (navegador vs. SSR),
+        # em vez de depender do header Host da requisição que gerou a resposta.
+        return obj.imagem_capa.url if obj.imagem_capa else None
 
     def get_autor_nome(self, obj):
         if obj.autor:

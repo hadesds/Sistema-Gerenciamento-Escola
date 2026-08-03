@@ -16,6 +16,20 @@ export function getApiBaseUrl(): string {
   return API_URL || SERVER_API_URL;
 }
 
+// Base para montar a URL final de imagens de mídia (capas de aviso etc.).
+// O otimizador de imagens do next/image sempre busca os bytes originais a
+// partir do processo do servidor Next.js — mesmo quando o componente que
+// monta a URL roda no navegador — então essa base tem que ser alcançável
+// pelo próprio container do frontend, nunca uma URL relativa nem "localhost".
+const MEDIA_SERVER_BASE_URL = API_URL || SERVER_API_URL;
+
+/** Monta a URL absoluta de uma mídia para uso em `next/image` (src). */
+export function resolveMediaUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+  return `${MEDIA_SERVER_BASE_URL}${path}`;
+}
+
 // Em produção (HTTPS), cookies cross-origin precisam de SameSite=None; Secure
 const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
 

@@ -1,4 +1,4 @@
-import { apiFetch, apiUpload, getApiBaseUrl } from '@/lib/api';
+import { apiFetch, apiUpload, getApiBaseUrl, resolveMediaUrl } from '@/lib/api';
 import type { CarouselCategory, CarouselItem } from '@/types/carousel-types';
 
 /** Formato bruto devolvido pela API do backend. */
@@ -24,7 +24,7 @@ export function avisoToCarouselItem(aviso: Aviso): CarouselItem {
   return {
     id: aviso.id,
     slug: aviso.slug,
-    imageUrl: aviso.imagem_capa_url ?? '',
+    imageUrl: resolveMediaUrl(aviso.imagem_capa_url),
     imageAlt: aviso.imagem_capa_alt || aviso.titulo,
     title: aviso.titulo,
     text: aviso.descricao_curta,

@@ -35,10 +35,16 @@ export function avisoToCarouselItem(aviso: Aviso): CarouselItem {
   };
 }
 
+async function throwWithDiagnostics(res: Response, mensagem: string): Promise<never> {
+  const corpo = await res.text().catch(() => '');
+  console.error(`${mensagem} [${res.status} ${res.statusText}] ${res.url}\n${corpo.slice(0, 500)}`);
+  throw new Error(`${mensagem} (HTTP ${res.status})`);
+}
+
 /** Lista pública de avisos publicados — usada no carrossel da landing page. */
 export async function fetchAvisosPublicos(): Promise<CarouselItem[]> {
   const res = await fetch(`${getApiBaseUrl()}/api/avisos/`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Falha ao carregar o mural de novidades.');
+  if (!res.ok) return throwWithDiagnostics(res, 'Falha ao carregar o mural de novidades.');
   const avisos: Aviso[] = await res.json();
   return avisos.map(avisoToCarouselItem);
 }
@@ -47,7 +53,7 @@ export async function fetchAvisosPublicos(): Promise<CarouselItem[]> {
 export async function fetchAvisoPublicoPorSlug(slug: string): Promise<CarouselItem | null> {
   const res = await fetch(`${getApiBaseUrl()}/api/avisos/${encodeURIComponent(slug)}/`, { cache: 'no-store' });
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error('Falha ao carregar a notícia.');
+  if (!res.ok) return throwWithDiagnostics(res, 'Falha ao carregar a notícia.');
   const aviso: Aviso = await res.json();
   return avisoToCarouselItem(aviso);
 }

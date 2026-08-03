@@ -7,8 +7,11 @@ export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:543
 // Fetches feitos pelo servidor Next.js (Server Components, generateMetadata)
 // não têm window.location para resolver uma URL relativa, então quando
 // API_URL está vazio (proxy via nginx) usamos o endereço do Django direto
-// na rede interna do Docker Compose.
-const SERVER_API_URL = (process.env.INTERNAL_API_URL ?? 'http://cara_app:5433').replace(/\/$/, '');
+// na rede interna do Docker Compose: o nome do SERVIÇO ("web", igual ao
+// upstream do nginx), não o container_name ("cara_app") — hostname com
+// underscore não é um Host HTTP válido (RFC 1034/1035) e o Django rejeita
+// com DisallowedHost antes até de checar ALLOWED_HOSTS.
+const SERVER_API_URL = (process.env.INTERNAL_API_URL ?? 'http://web:5433').replace(/\/$/, '');
 
 /** Base URL a usar em fetches: relativa no navegador, absoluta no servidor. */
 export function getApiBaseUrl(): string {

@@ -25,7 +25,7 @@ const nextConfig = {
       },
       {
         protocol: 'http',
-        hostname: 'cara_app',
+        hostname: 'web',
         port: '5433',
         pathname: '/media/**',
       },

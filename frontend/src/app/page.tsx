@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { API_URL } from '@/lib/api';
+import { CarouselMural } from '@/components/carousel-mural';
+import { mockCarouselItems } from '@/data/mock-carousel';
+import { getVisibleCarouselItems } from '@/lib/carousel-lib';
 
 const C = {
   primary:   '#0d2d6b',
@@ -35,6 +38,9 @@ export default function Home() {
   if (loading) return null;
   const redirecting = user && (user.tipo === 'professor' || user.tipo === 'aluno');
   if (redirecting) return null;
+
+  // Itens do mural de novidades (hoje vêm do mock; depois trocar por fetch da API)
+  const muralItems = getVisibleCarouselItems(mockCarouselItems);
 
   const features = [
     { icon: 'assessment',        color: C.primary,   title: 'Avaliações Comportamentais',
@@ -322,6 +328,17 @@ export default function Home() {
               <span className="material-icons-outlined" style={{ fontSize: '2rem' }}>expand_more</span>
             </a>
           </div>
+        </div>
+      </section>
+
+      {/* ── Mural de novidades ── */}
+      <section id="mural" className="mural-section" style={{ background: C.bg }}>
+        <div className="mural-section__inner">
+          <div className="mural-section__header">
+            <p className="mural-section__eyebrow">Fica de olho</p>
+            <h2 className="mural-section__title">Mural de novidades</h2>
+          </div>
+          <CarouselMural items={muralItems} />
         </div>
       </section>
 

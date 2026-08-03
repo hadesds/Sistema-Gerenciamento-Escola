@@ -18,18 +18,18 @@ const COOKIE_OPTS_REFRESH: Cookies.CookieAttributes = {
   secure:   isSecure,
 };
 
-export async function apiUpload<T>(path: string, body: FormData): Promise<T> {
+export async function apiUpload<T>(path: string, body: FormData, method: string = 'POST'): Promise<T> {
   const token = Cookies.get('access_token');
   const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const res = await fetch(`${API_URL}/api${path}`, { method: 'POST', headers, body });
+  const res = await fetch(`${API_URL}/api${path}`, { method, headers, body });
 
   if (res.status === 401) {
     const refreshed = await tryRefreshToken();
     if (refreshed) {
       const newToken = Cookies.get('access_token');
       const retryHeaders: HeadersInit = newToken ? { Authorization: `Bearer ${newToken}` } : {};
-      const retryRes = await fetch(`${API_URL}/api${path}`, { method: 'POST', headers: retryHeaders, body });
+      const retryRes = await fetch(`${API_URL}/api${path}`, { method, headers: retryHeaders, body });
       if (!retryRes.ok) throw new Error(await retryRes.text());
       return retryRes.json();
     } else {

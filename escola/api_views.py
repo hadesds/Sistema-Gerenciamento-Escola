@@ -1,16 +1,17 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg
+from django.utils import timezone
 from datetime import datetime, timedelta
 
-from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, SimuladoQuestao
+from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, SimuladoQuestao, Aviso
 from .serializers import (
     TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
-    MateriaSerializer
+    MateriaSerializer, AvisoSerializer
 )
 
 SIGLA_TO_NOTA_MATERIA = {
@@ -1840,3 +1841,105 @@ def professor_relatorio_pdf(request, aluno_id):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
     return response
+
+
+# ==========================================
+# MURAL DE NOVIDADES (público + admin)
+# ==========================================
+
+def _is_admin(request):
+    return request.user.is_superuser
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def avisos_publicos(request):
+    """Avisos visíveis no carrossel da landing page: publicados e já na data."""
+    avisos = Aviso.objects.filter(ativo=True, publicar_em__lte=timezone.now())
+    serializer = AvisoSerializer(avisos, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def aviso_publico_detalhe(request, slug):
+    aviso = get_object_or_404(Aviso, slug=slug, ativo=True, publicar_em__lte=timezone.now())
+    serializer = AvisoSerializer(aviso, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_avisos(request):
+    if not _is_admin(request):
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    if request.method == 'POST':
+        titulo = request.data.get('titulo', '').strip()
+        descricao_curta = request.data.get('descricao_curta', '').strip()
+        imagem_capa = request.FILES.get('imagem_capa')
+
+        if not titulo or not descricao_curta or not imagem_capa:
+            return Response(
+                {'detail': 'Categoria, título, descrição rápida e imagem de capa são obrigatórios.'},
+                status=400,
+            )
+
+        aviso = Aviso.objects.create(
+            categoria=request.data.get('categoria', 'evento'),
+            titulo=titulo,
+            descricao_curta=descricao_curta,
+            imagem_capa=imagem_capa,
+            imagem_capa_alt=request.data.get('imagem_capa_alt', titulo),
+            autor=request.user,
+        )
+        serializer = AvisoSerializer(aviso, context={'request': request})
+        return Response(serializer.data, status=201)
+
+    avisos = Aviso.objects.all()
+    serializer = AvisoSerializer(avisos, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_aviso_detalhe(request, aviso_id):
+    if not _is_admin(request):
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    aviso = get_object_or_404(Aviso, id=aviso_id)
+
+    if request.method == 'GET':
+        return Response(AvisoSerializer(aviso, context={'request': request}).data)
+
+    if request.method == 'DELETE':
+        aviso.delete()
+        return Response(status=204)
+
+    # PATCH
+    for campo in ['categoria', 'titulo', 'descricao_curta', 'imagem_capa_alt', 'conteudo']:
+        if campo in request.data:
+            setattr(aviso, campo, request.data.get(campo))
+    if 'ativo' in request.data:
+        aviso.ativo = str(request.data.get('ativo')).lower() in ('true', '1')
+    if request.FILES.get('imagem_capa'):
+        aviso.imagem_capa = request.FILES.get('imagem_capa')
+    aviso.save()
+    return Response(AvisoSerializer(aviso, context={'request': request}).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_aviso_upload_imagem(request):
+    """Upload de imagem para inserir no meio do texto do artigo, pelo editor rico."""
+    if not _is_admin(request):
+        return Response({'detail': 'Acesso negado.'}, status=403)
+
+    arquivo = request.FILES.get('imagem')
+    if not arquivo:
+        return Response({'detail': 'Nenhuma imagem enviada.'}, status=400)
+
+    from django.core.files.storage import default_storage
+    caminho = default_storage.save(f'avisos/conteudo/{arquivo.name}', arquivo)
+    url = request.build_absolute_uri(default_storage.url(caminho))
+    return Response({'url': url}, status=201)

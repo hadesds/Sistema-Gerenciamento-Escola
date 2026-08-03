@@ -3,6 +3,8 @@ import re
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+from django.utils.text import slugify
 from datetime import date
 from decimal import Decimal
 
@@ -400,3 +402,52 @@ class LogAtividade(models.Model):
     def __str__(self):
         quem = self.usuario.get_full_name() or self.usuario.username if self.usuario else 'Sistema'
         return f"[{self.data_hora:%d/%m/%Y %H:%M}] {quem}: {self.descricao}"
+
+
+class Aviso(models.Model):
+    """Item do mural de novidades da landing page, alimentado pelo admin."""
+    CATEGORIA_CHOICES = [
+        ('matricula', 'Matrícula'),
+        ('evento', 'Evento'),
+        ('esporte', 'Esporte'),
+        ('biblioteca', 'Biblioteca'),
+    ]
+
+    categoria        = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='evento')
+    titulo           = models.CharField(max_length=200)
+    slug             = models.SlugField(max_length=220, unique=True, blank=True)
+    descricao_curta  = models.CharField(max_length=300)
+    imagem_capa      = models.ImageField(upload_to='avisos/capas/')
+    imagem_capa_alt  = models.CharField(max_length=200, blank=True, default='')
+    conteudo         = models.TextField(
+        blank=True, default='',
+        help_text='HTML gerado pelo editor rico do admin, com imagens embutidas.',
+    )
+    publicar_em      = models.DateTimeField(default=timezone.now)
+    ativo            = models.BooleanField(
+        default=False,
+        help_text='Só aparece no mural público quando marcado (publicado).',
+    )
+    ordem            = models.IntegerField(default=0)
+    autor            = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='avisos_criados')
+    criado_em        = models.DateTimeField(auto_now_add=True)
+    atualizado_em    = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['ordem', '-publicar_em']
+        verbose_name = 'Aviso do Mural'
+        verbose_name_plural = 'Avisos do Mural'
+
+    def __str__(self):
+        return self.titulo
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.titulo)[:200] or 'aviso'
+            slug = base
+            i = 1
+            while Aviso.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                i += 1
+                slug = f"{base}-{i}"
+            self.slug = slug
+        super().save(*args, **kwargs)

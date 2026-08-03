@@ -41,4 +41,13 @@ urlpatterns = [
     path('aluno/simulado/<int:simulado_id>/', api_views.aluno_visualizar_simulado, name='api_aluno_simulado'),
     path('aluno/simulado/<int:simulado_id>/enviar/', api_views.aluno_enviar_simulado, name='api_aluno_enviar_simulado'),
     path('aluno/assiduidade/', api_views.aluno_assiduidade, name='api_aluno_assiduidade'),
+
+    # Mural de novidades (público)
+    path('avisos/', api_views.avisos_publicos, name='api_avisos_publicos'),
+    path('avisos/<slug:slug>/', api_views.aviso_publico_detalhe, name='api_aviso_publico_detalhe'),
+
+    # Mural de novidades (admin)
+    path('admin/avisos/', api_views.admin_avisos, name='api_admin_avisos'),
+    path('admin/avisos/upload-imagem/', api_views.admin_aviso_upload_imagem, name='api_admin_aviso_upload_imagem'),
+    path('admin/avisos/<int:aviso_id>/', api_views.admin_aviso_detalhe, name='api_admin_aviso_detalhe'),
 ]

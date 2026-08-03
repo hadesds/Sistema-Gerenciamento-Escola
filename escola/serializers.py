@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, SimuladoQuestao, NotaMateria, PerfilTurma, AlternativaQuestao, Materia, ResultadoSimulado, RespostaAluno
+from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, SimuladoQuestao, NotaMateria, PerfilTurma, AlternativaQuestao, Materia, ResultadoSimulado, RespostaAluno, Aviso
 
 class TurmaSerializer(serializers.ModelSerializer):
     turno_display = serializers.CharField(source='get_turno_display', read_only=True)
@@ -228,4 +228,30 @@ class MeSerializer(serializers.ModelSerializer):
                 return obj.aluno.perfil_turma.papel
             except Exception:
                 pass
+        return None
+
+
+class AvisoSerializer(serializers.ModelSerializer):
+    categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
+    imagem_capa_url   = serializers.SerializerMethodField()
+    autor_nome        = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Aviso
+        fields = [
+            'id', 'categoria', 'categoria_display', 'titulo', 'slug',
+            'descricao_curta', 'imagem_capa_url', 'imagem_capa_alt',
+            'conteudo', 'publicar_em', 'ativo', 'ordem',
+            'autor_nome', 'criado_em', 'atualizado_em',
+        ]
+
+    def get_imagem_capa_url(self, obj):
+        request = self.context.get('request')
+        if obj.imagem_capa and request:
+            return request.build_absolute_uri(obj.imagem_capa.url)
+        return None
+
+    def get_autor_nome(self, obj):
+        if obj.autor:
+            return obj.autor.get_full_name() or obj.autor.username
         return None

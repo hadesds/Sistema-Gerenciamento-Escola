@@ -14,7 +14,9 @@ export default function Navbar() {
 
   const close = () => setOpen(false);
 
-  const homeHref = user.tipo === 'professor' ? '/professor/dashboard' : '/aluno/dashboard';
+  const homeHref =
+    user.tipo === 'professor' ? '/professor/dashboard' :
+    user.tipo === 'admin'     ? '/admin/mural'          : '/aluno/dashboard';
 
   const professorLinks = [
     { href: '/professor/dashboard',      icon: 'home',          label: 'Início' },
@@ -33,10 +35,17 @@ export default function Navbar() {
       : []),
   ];
 
-  const links = user.tipo === 'professor' ? professorLinks : alunoLinks;
+  const adminLinks = [
+    { href: '/admin/mural', icon: 'campaign', label: 'Mural de Novidades' },
+  ];
+
+  const links =
+    user.tipo === 'professor' ? professorLinks :
+    user.tipo === 'admin'     ? adminLinks     : alunoLinks;
 
   const roleLabel =
     user.tipo === 'professor' ? 'Professor'      :
+    user.tipo === 'admin'     ? 'Administrador'  :
     user.papel === 'lider'    ? 'Líder de Turma' :
     user.papel === 'vice'     ? 'Vice-Líder'     : 'Aluno';
 

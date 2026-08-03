@@ -4,6 +4,35 @@ import Cookies from 'js-cookie';
 // Valor explícito (ex.: http://localhost:5433) → acesso direto sem nginx
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5433').replace(/\/$/, '');
 
+// Fetches feitos pelo servidor Next.js (Server Components, generateMetadata)
+// não têm window.location para resolver uma URL relativa, então quando
+// API_URL está vazio (proxy via nginx) usamos o endereço do Django direto
+// na rede interna do Docker Compose: o nome do SERVIÇO ("web", igual ao
+// upstream do nginx), não o container_name ("cara_app") — hostname com
+// underscore não é um Host HTTP válido (RFC 1034/1035) e o Django rejeita
+// com DisallowedHost antes até de checar ALLOWED_HOSTS.
+const SERVER_API_URL = (process.env.INTERNAL_API_URL ?? 'http://web:5433').replace(/\/$/, '');
+
+/** Base URL a usar em fetches: relativa no navegador, absoluta no servidor. */
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') return API_URL;
+  return API_URL || SERVER_API_URL;
+}
+
+// Base para montar a URL final de imagens de mídia (capas de aviso etc.).
+// O otimizador de imagens do next/image sempre busca os bytes originais a
+// partir do processo do servidor Next.js — mesmo quando o componente que
+// monta a URL roda no navegador — então essa base tem que ser alcançável
+// pelo próprio container do frontend, nunca uma URL relativa nem "localhost".
+const MEDIA_SERVER_BASE_URL = API_URL || SERVER_API_URL;
+
+/** Monta a URL absoluta de uma mídia para uso em `next/image` (src). */
+export function resolveMediaUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+  return `${MEDIA_SERVER_BASE_URL}${path}`;
+}
+
 // Em produção (HTTPS), cookies cross-origin precisam de SameSite=None; Secure
 const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
@@ -18,18 +47,18 @@ const COOKIE_OPTS_REFRESH: Cookies.CookieAttributes = {
   secure:   isSecure,
 };
 
-export async function apiUpload<T>(path: string, body: FormData): Promise<T> {
+export async function apiUpload<T>(path: string, body: FormData, method: string = 'POST'): Promise<T> {
   const token = Cookies.get('access_token');
   const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const res = await fetch(`${API_URL}/api${path}`, { method: 'POST', headers, body });
+  const res = await fetch(`${API_URL}/api${path}`, { method, headers, body });
 
   if (res.status === 401) {
     const refreshed = await tryRefreshToken();
     if (refreshed) {
       const newToken = Cookies.get('access_token');
       const retryHeaders: HeadersInit = newToken ? { Authorization: `Bearer ${newToken}` } : {};
-      const retryRes = await fetch(`${API_URL}/api${path}`, { method: 'POST', headers: retryHeaders, body });
+      const retryRes = await fetch(`${API_URL}/api${path}`, { method, headers: retryHeaders, body });
       if (!retryRes.ok) throw new Error(await retryRes.text());
       return retryRes.json();
     } else {

@@ -29,6 +29,9 @@ services:
     environment:
       - DEBUG=True
       - POSTGRES_HOST=db
+      # cara_app: o frontend Next.js (SSR) chama o Django direto por esse
+      # nome de host na rede do Docker Compose, sem passar pelo nginx.
+      - ALLOWED_HOSTS=*
       # Com nginx na frente, CORS e FRONTEND_URL apontam para localhost:80
       - CORS_ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
       - FRONTEND_URL=

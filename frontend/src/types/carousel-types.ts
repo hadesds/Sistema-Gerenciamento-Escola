@@ -1,7 +1,7 @@
 export type CarouselCategory = "matricula" | "evento" | "esporte" | "biblioteca";
 
 export interface CarouselItem {
-  id: string;
+  id: number;
   /** Usado na URL do artigo: /novidades/[slug] */
   slug: string;
   imageUrl: string;
@@ -10,16 +10,16 @@ export interface CarouselItem {
   /** Texto curto exibido no card do carrossel */
   text: string;
   /**
-   * Corpo completo do artigo, escrito pelo admin. Cada string do array
-   * vira um parágrafo.
+   * Corpo completo do artigo, em HTML gerado pelo editor rico do admin
+   * (pode conter imagens embutidas em qualquer ponto do texto).
    */
-  content: string[];
+  content: string;
   category: CarouselCategory;
   /**
    * Data/hora ISO de publicação. Se estiver no futuro, o item fica
    * agendado: não aparece no carrossel nem é acessível pela URL ainda.
    */
   publishAt: string;
-  /** Controlado pelo admin depois; por enquanto só ordena o mock */
+  /** Ordem manual definida pelo admin. */
   order: number;
 }

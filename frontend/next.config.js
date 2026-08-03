@@ -19,9 +19,19 @@ const nextConfig = {
       },
       {
         protocol: 'http',
-        hostname: 'cara_app',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'web',
         port: '5433',
         pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
       },
     ],
   },

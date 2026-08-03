@@ -48,6 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/professor/dashboard');
     } else if (userData.tipo === 'aluno') {
       router.push('/aluno/dashboard');
+    } else if (userData.tipo === 'admin') {
+      router.push('/administrador/mural');
     } else {
       router.push('/login');
     }

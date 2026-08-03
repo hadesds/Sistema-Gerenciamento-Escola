@@ -12,6 +12,7 @@ from .models import (
     Administrador, AlternativaQuestao, Materia, NotaMateria,
     PerfilTurma, RegistroAssiduidade, PresencaAluno,
     ResultadoSimulado, RespostaAluno, NotaArea, NotaQualitativa, LogAtividade,
+    Aviso,
 )
 
 
@@ -604,6 +605,15 @@ class LogAtividadeAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Aviso)
+class AvisoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'categoria', 'ativo', 'publicar_em', 'autor', 'atualizado_em')
+    list_filter = ('categoria', 'ativo')
+    search_fields = ('titulo', 'descricao_curta', 'conteudo')
+    prepopulated_fields = {'slug': ('titulo',)}
+    readonly_fields = ('criado_em', 'atualizado_em')
 
 
 # ─── User (com inline de Professor/Aluno conforme o vínculo) ─────────────────

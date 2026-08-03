@@ -2,16 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { mockCarouselItems } from "@/data/mock-carousel";
-import { CATEGORY_META, getRandomItems, getVisibleCarouselItems, isPublished } from "@/lib/carousel-lib";
+import { fetchAvisoPublicoPorSlug, fetchAvisosPublicos } from "@/lib/avisos-api";
+import { CATEGORY_META, getRandomItems, getVisibleCarouselItems } from "@/lib/carousel-lib";
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
-}
-
-// Pré-gera as páginas dos artigos do mock em build time.
-export function generateStaticParams() {
-  return mockCarouselItems.map((item) => ({ slug: item.slug }));
 }
 
 function formatDate(iso: string) {
@@ -25,8 +20,8 @@ function formatDate(iso: string) {
 // SEO por artigo: título, descrição e preview de link (WhatsApp/Facebook/etc)
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
-  const item = mockCarouselItems.find((i) => i.slug === slug);
-  if (!item || !isPublished(item)) return {};
+  const item = await fetchAvisoPublicoPorSlug(slug);
+  if (!item) return {};
 
   return {
     title: item.title,
@@ -43,16 +38,14 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params;
-  const item = mockCarouselItems.find((i) => i.slug === slug);
+  const item = await fetchAvisoPublicoPorSlug(slug);
 
-  // Agendamento: se ainda não chegou a data de publicação, trata como
+  // Agendamento/rascunho: se o backend não devolve o item, trata como
   // se a página não existisse.
-  if (!item || !isPublished(item)) notFound();
+  if (!item) notFound();
 
-  const otherPublished = getVisibleCarouselItems(mockCarouselItems).filter(
-    (i) => i.slug !== item.slug
-  );
-  const related = getRandomItems(otherPublished, 3);
+  const allPublished = getVisibleCarouselItems(await fetchAvisosPublicos());
+  const related = getRandomItems(allPublished.filter((i) => i.slug !== item.slug), 3);
 
   return (
     <main className="article-page">
@@ -80,11 +73,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           />
         </div>
 
-        <div className="article__body">
-          {item.content.map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
-        </div>
+        <div className="article__body" dangerouslySetInnerHTML={{ __html: item.content }} />
       </article>
 
       {related.length > 0 && (

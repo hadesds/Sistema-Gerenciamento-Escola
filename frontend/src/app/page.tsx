@@ -7,8 +7,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { API_URL } from '@/lib/api';
 import { CarouselMural } from '@/components/carousel-mural';
-import { mockCarouselItems } from '@/data/mock-carousel';
+import { CarouselMuralSkeleton } from '@/components/carousel-mural-skeleton';
+import { fetchAvisosPublicos } from '@/lib/avisos-api';
 import { getVisibleCarouselItems } from '@/lib/carousel-lib';
+import type { CarouselItem } from '@/types/carousel-types';
 
 const C = {
   primary:   '#0d2d6b',
@@ -29,18 +31,24 @@ export default function Home() {
     if (!loading && user) {
       if (user.tipo === 'professor') router.push('/professor/dashboard');
       else if (user.tipo === 'aluno') router.push('/aluno/dashboard');
+      else if (user.tipo === 'admin') router.push('/administrador/mural');
     }
   }, [user, loading, router]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
-  if (loading) return null;
-  const redirecting = user && (user.tipo === 'professor' || user.tipo === 'aluno');
-  if (redirecting) return null;
+  const [muralItems, setMuralItems] = useState<CarouselItem[] | null>(null);
 
-  // Itens do mural de novidades (hoje vêm do mock; depois trocar por fetch da API)
-  const muralItems = getVisibleCarouselItems(mockCarouselItems);
+  useEffect(() => {
+    fetchAvisosPublicos()
+      .then(items => setMuralItems(getVisibleCarouselItems(items)))
+      .catch(() => setMuralItems([]));
+  }, []);
+
+  if (loading) return null;
+  const redirecting = user && (user.tipo === 'professor' || user.tipo === 'aluno' || user.tipo === 'admin');
+  if (redirecting) return null;
 
   const features = [
     { icon: 'assessment',        color: C.primary,   title: 'Avaliações Comportamentais',
@@ -338,7 +346,7 @@ export default function Home() {
             <p className="mural-section__eyebrow">Fica de olho</p>
             <h2 className="mural-section__title">Mural de novidades</h2>
           </div>
-          <CarouselMural items={muralItems} />
+          {muralItems === null ? <CarouselMuralSkeleton /> : <CarouselMural items={muralItems} />}
         </div>
       </section>
 

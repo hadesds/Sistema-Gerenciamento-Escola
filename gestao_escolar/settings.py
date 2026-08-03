@@ -45,7 +45,11 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', ['*'] if DEBUG else [])
+# Em DEBUG, sempre aceita qualquer host: o Next.js chama o Django direto
+# pelo nome do container (ex.: cara_app:5433) na rede do Docker Compose, e
+# um ALLOWED_HOSTS restrito herdado do .env (pensado pra produção) barraria
+# essa chamada com DisallowedHost mesmo com DEBUG ligado.
+ALLOWED_HOSTS = ['*'] if DEBUG else env_list('ALLOWED_HOSTS', [])
 
 # CORS
 CORS_ALLOWED_ORIGINS = env_origin_list('CORS_ALLOWED_ORIGINS', [

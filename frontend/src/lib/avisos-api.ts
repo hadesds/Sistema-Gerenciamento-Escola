@@ -1,4 +1,4 @@
-import { API_URL, apiFetch, apiUpload } from '@/lib/api';
+import { apiFetch, apiUpload, getApiBaseUrl } from '@/lib/api';
 import type { CarouselCategory, CarouselItem } from '@/types/carousel-types';
 
 /** Formato bruto devolvido pela API do backend. */
@@ -37,7 +37,7 @@ export function avisoToCarouselItem(aviso: Aviso): CarouselItem {
 
 /** Lista pública de avisos publicados — usada no carrossel da landing page. */
 export async function fetchAvisosPublicos(): Promise<CarouselItem[]> {
-  const res = await fetch(`${API_URL}/api/avisos/`, { cache: 'no-store' });
+  const res = await fetch(`${getApiBaseUrl()}/api/avisos/`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Falha ao carregar o mural de novidades.');
   const avisos: Aviso[] = await res.json();
   return avisos.map(avisoToCarouselItem);
@@ -45,7 +45,7 @@ export async function fetchAvisosPublicos(): Promise<CarouselItem[]> {
 
 /** Artigo público por slug — usado na página /novidades/[slug]. */
 export async function fetchAvisoPublicoPorSlug(slug: string): Promise<CarouselItem | null> {
-  const res = await fetch(`${API_URL}/api/avisos/${encodeURIComponent(slug)}/`, { cache: 'no-store' });
+  const res = await fetch(`${getApiBaseUrl()}/api/avisos/${encodeURIComponent(slug)}/`, { cache: 'no-store' });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Falha ao carregar a notícia.');
   const aviso: Aviso = await res.json();

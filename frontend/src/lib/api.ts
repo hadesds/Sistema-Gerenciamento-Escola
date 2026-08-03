@@ -4,6 +4,18 @@ import Cookies from 'js-cookie';
 // Valor explícito (ex.: http://localhost:5433) → acesso direto sem nginx
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5433').replace(/\/$/, '');
 
+// Fetches feitos pelo servidor Next.js (Server Components, generateMetadata)
+// não têm window.location para resolver uma URL relativa, então quando
+// API_URL está vazio (proxy via nginx) usamos o endereço do Django direto
+// na rede interna do Docker Compose.
+const SERVER_API_URL = (process.env.INTERNAL_API_URL ?? 'http://cara_app:5433').replace(/\/$/, '');
+
+/** Base URL a usar em fetches: relativa no navegador, absoluta no servidor. */
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') return API_URL;
+  return API_URL || SERVER_API_URL;
+}
+
 // Em produção (HTTPS), cookies cross-origin precisam de SameSite=None; Secure
 const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
 

@@ -61,7 +61,7 @@ export default function AdminMuralPage() {
     try {
       const aviso = await createAdminAviso({ ...form, imagem_capa: capaFile });
       closeModal();
-      router.push(`/admin/mural/${aviso.id}`);
+      router.push(`/administrador/mural/${aviso.id}`);
     } catch {
       setAlert({ type: 'error', message: 'Erro ao criar o aviso. Verifique os campos e tente novamente.' });
     } finally {
@@ -108,7 +108,7 @@ export default function AdminMuralPage() {
         ) : (
           <div className="admin-mural-grid">
             {avisos.map(aviso => (
-              <div key={aviso.id} className="admin-mural-card" style={{ cursor: 'pointer' }} onClick={() => router.push(`/admin/mural/${aviso.id}`)}>
+              <div key={aviso.id} className="admin-mural-card" style={{ cursor: 'pointer' }} onClick={() => router.push(`/administrador/mural/${aviso.id}`)}>
                 <div className="admin-mural-card__image">
                   {aviso.imagem_capa_url && (
                     // eslint-disable-next-line @next/next/no-img-element

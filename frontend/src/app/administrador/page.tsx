@@ -8,7 +8,7 @@ export default function AdminIndexPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/admin/mural');
+    router.replace('/administrador/mural');
   }, [router]);
 
   return <Loading />;

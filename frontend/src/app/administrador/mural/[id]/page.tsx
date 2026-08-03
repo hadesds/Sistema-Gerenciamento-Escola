@@ -90,7 +90,7 @@ export default function AdminAvisoEditorPage() {
     setDeleting(true);
     try {
       await deleteAdminAviso(id);
-      router.push('/admin/mural');
+      router.push('/administrador/mural');
     } catch {
       setAlert({ type: 'error', message: 'Erro ao excluir o aviso.' });
       setDeleting(false);
@@ -103,7 +103,7 @@ export default function AdminAvisoEditorPage() {
       <main className="container fade-in">
         {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
 
-        <Link href="/admin/mural" className="admin-editor-back">
+        <Link href="/administrador/mural" className="admin-editor-back">
           <span className="material-icons-outlined" style={{ fontSize: '1.8rem' }}>arrow_back</span>
           Voltar para o mural
         </Link>

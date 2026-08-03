@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (userData.tipo === 'aluno') {
       router.push('/aluno/dashboard');
     } else if (userData.tipo === 'admin') {
-      router.push('/admin/mural');
+      router.push('/administrador/mural');
     } else {
       router.push('/login');
     }

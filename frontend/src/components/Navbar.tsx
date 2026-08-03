@@ -16,7 +16,7 @@ export default function Navbar() {
 
   const homeHref =
     user.tipo === 'professor' ? '/professor/dashboard' :
-    user.tipo === 'admin'     ? '/admin/mural'          : '/aluno/dashboard';
+    user.tipo === 'admin'     ? '/administrador/mural' : '/aluno/dashboard';
 
   const professorLinks = [
     { href: '/professor/dashboard',      icon: 'home',          label: 'Início' },
@@ -36,7 +36,7 @@ export default function Navbar() {
   ];
 
   const adminLinks = [
-    { href: '/admin/mural', icon: 'campaign', label: 'Mural de Novidades' },
+    { href: '/administrador/mural', icon: 'campaign', label: 'Mural de Novidades' },
   ];
 
   const links =

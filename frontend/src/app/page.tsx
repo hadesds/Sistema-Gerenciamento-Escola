@@ -31,7 +31,7 @@ export default function Home() {
     if (!loading && user) {
       if (user.tipo === 'professor') router.push('/professor/dashboard');
       else if (user.tipo === 'aluno') router.push('/aluno/dashboard');
-      else if (user.tipo === 'admin') router.push('/admin/mural');
+      else if (user.tipo === 'admin') router.push('/administrador/mural');
     }
   }, [user, loading, router]);
 

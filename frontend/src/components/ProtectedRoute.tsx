@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children, tipo }: ProtectedRouteProps) 
       } else if (tipo && user.tipo !== tipo) {
         if (user.tipo === 'professor') router.push('/professor/dashboard');
         else if (user.tipo === 'aluno') router.push('/aluno/dashboard');
-        else if (user.tipo === 'admin') router.push('/admin/mural');
+        else if (user.tipo === 'admin') router.push('/administrador/mural');
         else router.push('/login');
       }
     }

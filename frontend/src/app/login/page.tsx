@@ -334,7 +334,7 @@ export default function LoginPage() {
             <div className="login-field">
               <label htmlFor="password" className="login-label">Senha</label>
               <div className={`login-input-wrap${passFocus ? ' focused' : ''}`}>
-                <span className="material-icons-outlined icon">lock_outline</span>
+                <span className="material-icons-outlined icon">lock</span>
                 <input
                   id="password"
                   type={showPass ? 'text' : 'password'}

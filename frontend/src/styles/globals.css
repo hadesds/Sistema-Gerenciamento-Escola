@@ -553,4 +553,7 @@ p {
 .material-icons-outlined {
   height: 21px;
   width: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

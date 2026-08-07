@@ -248,7 +248,7 @@ export default function GerenciarNotasPage() {
         )}
       </main>
       <footer style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-secondary)', fontSize: '1.4rem' }}>
-        <p>&copy; 2025 Sistema CARA - Gestão Escolar Inteligente</p>
+        <p>&copy; 2025 Sistema SIGVC - Gestão Escolar Inteligente</p>
       </footer>
     </ProtectedRoute>
   );

@@ -311,9 +311,9 @@ export default function Navbar() {
       <header className="sb-topbar">
         <a href={homeHref} className="sb-topbar-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_escola.png" alt="CARA" />
+          <img src="/logo_escola.png" alt="SIGVC" />
           <div>
-            <div className="sb-topbar-brand-name">CARA</div>
+            <div className="sb-topbar-brand-name">SIGVC</div>
             <div className="sb-topbar-brand-sub">Gestão Escolar</div>
           </div>
         </a>
@@ -355,9 +355,9 @@ export default function Navbar() {
 
           <div className="sb-brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo_escola.png" alt="CARA" />
+            <img src="/logo_escola.png" alt="SIGVC" />
             <div>
-              <div className="sb-brand-name">CARA</div>
+              <div className="sb-brand-name">SIGVC</div>
               <div className="sb-brand-sub">Gestão Escolar</div>
             </div>
           </div>

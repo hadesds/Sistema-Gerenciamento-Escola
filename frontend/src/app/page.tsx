@@ -135,14 +135,21 @@ export default function Home() {
 
         .lp-nav { display: flex; align-items: center; gap: 2.4rem; }
         .lp-nav-link {
+          background-color: #ffffff1c; 
+          shadow-box: 0 2px 6px rgba(0,0,0,0.12);
+          border-radius: 2rem;
+          padding: 0.3rem 1.2rem;
           color: rgba(255,255,255,0.82); text-decoration: none;
           font-size: 1.4rem; font-weight: 500; white-space: nowrap;
           transition: color 0.2s;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+          transition: 0.2s;
         }
-        .lp-nav-link:hover { color: #fff; }
+        .lp-nav-link:hover { color: #fff; background-color: #ffffff3a; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
         .lp-nav-btn {
           background: #fff; color: ${C.primary}; font-weight: 700;
-          padding: 0.8rem 2.4rem; border-radius: 5rem;
+          padding: 0.8rem 2.4rem; 
+          border-radius: 5rem;
           text-decoration: none; font-size: 1.5rem;
           box-shadow: 0 2px 10px rgba(0,0,0,0.18);
           display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;
@@ -216,15 +223,16 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="lp-header">
         <a href="/" className="lp-logo">
-          <Image src="/logo_escola.png" alt="Logo CARA" width={48} height={48} className="lp-logo-img" />
+          <Image src="/logo_escola.png" alt="Logo SIGVC" width={48} height={48} className="lp-logo-img" />
           <div>
-            <div className="lp-logo-name">CARA</div>
+            <div className="lp-logo-name">SIGVC</div>
             <div className="lp-logo-sub">Gestão Escolar</div>
           </div>
         </a>
 
         {/* Nav desktop */}
         <nav className="lp-nav">
+          
           <a href="#funcionalidades" className="lp-nav-link">Funcionalidades</a>
           <a href="#como-funciona" className="lp-nav-link">Como Funciona</a>
           <Link href="/login" className="lp-nav-btn">
@@ -301,8 +309,8 @@ export default function Home() {
             lineHeight: 1.15, marginBottom: '2.2rem',
             textShadow: '0 2px 14px rgba(0,0,0,0.2)',
           }}>
-            Gestão Escolar<br />
-            <span style={{ color: '#a8d4f5' }}>Inteligente</span>
+            Sistema Integrado de Gestão<br />
+            <span style={{ color: '#a8d4f5' }}>Viriato Corrêa</span>
           </h1>
 
           <p style={{
@@ -310,7 +318,7 @@ export default function Home() {
             maxWidth: '60rem', margin: '0 auto 4.5rem',
             lineHeight: 1.65,
           }}>
-            O CARA conecta professores e alunos em uma plataforma completa — avaliações, simulados, notas e assiduidade em um só lugar.
+            O SIGVC conecta professores e alunos em uma plataforma completa — avaliações, simulados, notas e assiduidade em um só lugar.
           </p>
 
           <div style={{ display: 'flex', gap: '1.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -414,7 +422,7 @@ export default function Home() {
           <div style={{ textAlign: 'center', marginBottom: '5.5rem' }}>
             <h2 style={{ fontSize: '3.6rem', fontWeight: 800, color: '#fff' }}>Como funciona?</h2>
             <p style={{ fontSize: '1.7rem', color: 'rgba(255,255,255,0.72)', marginTop: '1rem' }}>
-              Três passos simples para começar a usar o CARA
+              Três passos simples para começar a usar o SIGVC
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(28rem, 1fr))', gap: '3rem' }}>
@@ -449,11 +457,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Para quem é o CARA ── */}
+      {/* ── Para quem é o SIGVC ── */}
       <section style={{ padding: '8rem 4rem', background: C.bg }}>
         <div style={{ maxWidth: '102rem', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-            <h2 style={{ fontSize: '3.6rem', fontWeight: 800, color: C.primary }}>Para quem é o CARA?</h2>
+            <h2 style={{ fontSize: '3.6rem', fontWeight: 800, color: C.primary }}>Para quem é o SIGVC?</h2>
             <p style={{ fontSize: '1.7rem', color: C.muted, marginTop: '1rem' }}>
               Dois perfis, uma plataforma integrada
             </p>
@@ -519,7 +527,7 @@ export default function Home() {
       }}>
         <div style={{ maxWidth: '102rem', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 800, color: C.primary }}>Por que escolher o CARA?</h2>
+            <h2 style={{ fontSize: '3rem', fontWeight: 800, color: C.primary }}>Por que escolher o SIGVC?</h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(22rem, 1fr))', gap: '3rem' }}>
             {diferenciais.map(d => (
@@ -572,11 +580,11 @@ export default function Home() {
         background: C.primary, padding: '4rem 4rem', textAlign: 'center',
       }}>
         <div style={{ marginBottom: '1.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.2rem' }}>
-          <Image src="/logo_escola.png" alt="Logo CARA" width={36} height={36} style={{ height: '3.6rem', width: 'auto', borderRadius: '0.5rem' }} />
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.8rem' }}>CARA</span>
+          <Image src="/logo_escola.png" alt="Logo SIGVC" width={36} height={36} style={{ height: '3.6rem', width: 'auto', borderRadius: '0.5rem' }} />
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.8rem' }}>SIGVC</span>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1.4rem' }}>
-          &copy; 2025 Sistema CARA — Gestão Escolar Inteligente
+          &copy; 2025 Sistema SIGVC — Gestão Escolar Inteligente
         </p>
       </footer>
 

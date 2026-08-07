@@ -295,8 +295,8 @@ export default function LoginPage() {
           {/* Logo sem fundo */}
           <div className="login-logo-area">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo_escola.png" alt="Logo CARA" className="login-logo-img" />
-            <h1 className="login-title">CARA</h1>
+            <img src="/logo_escola.png" alt="Logo SIGVC" className="login-logo-img" />
+            <h1 className="login-title">SIGVC</h1>
             <p className="login-subtitle">Gestão Escolar Inteligente</p>
           </div>
 
@@ -377,7 +377,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="login-footer">&copy; 2025 Sistema CARA — Gestão Escolar Inteligente</p>
+          <p className="login-footer">&copy; 2025 Sistema SIGVC — Gestão Escolar Inteligente</p>
         </div>
       </div>
     </>

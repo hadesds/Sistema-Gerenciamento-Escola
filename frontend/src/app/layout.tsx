@@ -4,8 +4,8 @@ import { AuthProvider } from '@/context/AuthContext';
 import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 
 export const metadata: Metadata = {
-  title: 'Sistema CARA - Gestão Escolar',
-  description: 'Sistema de Gerenciamento Escolar CARA',
+  title: 'Sistema SIGVC - Gestão Escolar',
+  description: 'Sistema de Gerenciamento Escolar SIGVC',
 };
 
 const fraunces = Fraunces({

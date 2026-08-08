@@ -473,7 +473,7 @@ export default function Home() {
               }}>
                 <span className="material-icons-outlined" style={{ fontSize: '3.6rem', color: '#fff' }}>person_outline</span>
               </div>
-              <h3 style={{ fontSize: '2.4rem', fontWeight: 800, marginBottom: '2rem' }}>Professores</h3>
+              <h3 style={{ fontSize: '2.4rem', fontWeight: 800, marginBottom: '2rem', color: '#fff' }}>Professores</h3>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                 {professorItems.map(item => (
                   <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', fontSize: '1.6rem' }}>
@@ -496,7 +496,7 @@ export default function Home() {
               }}>
                 <span className="material-icons-outlined" style={{ fontSize: '3.6rem', color: '#fff' }}>school</span>
               </div>
-              <h3 style={{ fontSize: '2.4rem', fontWeight: 800, marginBottom: '2rem' }}>Alunos</h3>
+              <h3 style={{ fontSize: '2.4rem', fontWeight: 800, marginBottom: '2rem', color: '#fff' }}>Alunos</h3>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                 {alunoItems.map(item => (
                   <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', fontSize: '1.6rem' }}>

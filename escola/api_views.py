@@ -9,22 +9,10 @@ from datetime import datetime, timedelta
 
 from .models import Professor, Aluno, Turma, Avaliacao, Questao, Simulado, NotaMateria, PerfilTurma, RegistroAssiduidade, PresencaAluno, AlternativaQuestao, Materia, SimuladoQuestao, Aviso
 from .serializers import (
-    TurmaSerializer, AlunoBasicSerializer, AvaliacaoSerializer,
+    TurmaSerializer, AvaliacaoSerializer,
     QuestaoSerializer, SimuladoSerializer, MeSerializer, NotaMateriaSerializer,
     MateriaSerializer, AvisoSerializer
 )
-
-SIGLA_TO_NOTA_MATERIA = {
-    'PRT': 'portugues',
-    'MTM': 'matematica',
-    'CNC': 'ciencias',
-    'GGF': 'geografia',
-    'ART': 'artes',
-    'ING': 'ingles',
-    'EDF': 'educacao_fisica',
-    'FIL': 'filosofia',
-}
-
 
 # ==========================================
 # AUTH

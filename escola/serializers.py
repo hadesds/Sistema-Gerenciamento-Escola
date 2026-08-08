@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Turma, Professor, Aluno, Avaliacao, Questao, Simulado, SimuladoQuestao, NotaMateria, PerfilTurma, AlternativaQuestao, Materia, ResultadoSimulado, RespostaAluno, Aviso
+from .models import Turma, Avaliacao, Questao, Simulado, NotaMateria, AlternativaQuestao, Materia, ResultadoSimulado, RespostaAluno, Aviso
 
 class TurmaSerializer(serializers.ModelSerializer):
     turno_display = serializers.CharField(source='get_turno_display', read_only=True)
@@ -8,31 +8,6 @@ class TurmaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Turma
         fields = ['id', 'nome', 'serie', 'turno', 'turno_display', 'sala']
-
-
-class UserBasicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email']
-
-
-class AlunoBasicSerializer(serializers.ModelSerializer):
-    user = UserBasicSerializer(read_only=True)
-    nome_completo = serializers.SerializerMethodField()
-    foto_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Aluno
-        fields = ['user', 'cpf', 'turma', 'foto_url', 'nome_completo']
-
-    def get_nome_completo(self, obj):
-        return obj.user.get_full_name() or obj.user.username
-
-    def get_foto_url(self, obj):
-        request = self.context.get('request')
-        if obj.foto and request:
-            return request.build_absolute_uri(obj.foto.url)
-        return None
 
 
 class AvaliacaoSerializer(serializers.ModelSerializer):
@@ -128,13 +103,6 @@ class QuestaoSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.imagem.url)
         return obj.imagem.url
-
-class SimuladoQuestaoSerializer(serializers.ModelSerializer):
-    questao = QuestaoSerializer(read_only=True)
-
-    class Meta:
-        model = SimuladoQuestao
-        fields = ['questao', 'valor']
 
 class SimuladoSerializer(serializers.ModelSerializer):
     turmas = serializers.PrimaryKeyRelatedField(many=True, read_only=True)

@@ -208,9 +208,22 @@ STORAGES = {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
+        # CompressedManifestStaticFilesStorage (o padrão do WhiteNoise) faz
+        # post-processing dos CSS do Django Admin e falha no build: o
+        # admin/css/forms.css importa admin/css/widgets.css via
+        # `@import url(...)`, referência que o post-processor do WhiteNoise
+        # não resolve nesta combinação de versões (Django 5.2 + WhiteNoise
+        # 6.8), derrubando o `collectstatic` com MissingFileError.
+        # build.sh contornava isso rodando o collectstatic com
+        # STATICFILES_STORAGE=StaticFilesStorage (sem manifest/hash), mas
+        # deixava o processo do gunicorn em produção usando o storage padrão
+        # (com manifest) — como nenhum manifesto era gerado, toda tag
+        # {% static %} (inclusive as do próprio Django Admin) quebrava em
+        # runtime com "Missing staticfiles manifest entry". Usar o storage
+        # simples também como padrão mantém build e runtime consistentes.
         'BACKEND': os.environ.get(
             'STATICFILES_STORAGE',
-            'whitenoise.storage.CompressedManifestStaticFilesStorage',
+            'django.contrib.staticfiles.storage.StaticFilesStorage',
         ),
     },
 }

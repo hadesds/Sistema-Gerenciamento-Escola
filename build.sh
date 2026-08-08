@@ -3,9 +3,9 @@ set -o errexit
 
 pip install -r requirements.txt
 
-# Força storage simples para evitar erro do WhiteNoise com arquivos do Admin
-DJANGO_SETTINGS_MODULE=gestao_escolar.settings \
-STATICFILES_STORAGE=django.contrib.staticfiles.storage.StaticFilesStorage \
+# O storage de staticfiles padrão (settings.STORAGES) já é o simples,
+# sem manifest/hash — ver comentário em gestao_escolar/settings.py sobre
+# por que o storage com manifest do WhiteNoise quebra o build do Admin.
 python manage.py collectstatic --noinput --clear
 
 python manage.py migrate

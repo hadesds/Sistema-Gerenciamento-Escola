@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -23,6 +23,11 @@ const C = {
   muted:     '#4a6080',
 };
 
+const institucionalItems = [
+  'Histórico', 'Missão', 'SIGCE', 'Ementas',
+  'Equipe', 'Proposta Pedagógica', 'Infraestrutura', 'Mural Financeiro',
+];
+
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -37,6 +42,54 @@ export default function Home() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
+
+  const [mobileAccordionOpen, setMobileAccordionOpen] = useState(false);
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+   useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [dropdownOpen]);
+
+  // Lock de scroll quando o menu mobile abre
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [menuOpen]);
+
+  // Fecha menu mobile ao clicar fora
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const menu = document.querySelector('.lp-mobile-menu');
+      const hamburger = document.querySelector('.lp-hamburger');
+      if (menu && !menu.contains(e.target as Node) && hamburger && !hamburger.contains(e.target as Node)) {
+        closeMenu();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
+  // Fecha accordion mobile quando o menu inteiro fecha (evita reabrir já expandido)
+  useEffect(() => {
+    if (!menuOpen) setMobileAccordionOpen(false);
+  }, [menuOpen]);
 
   const [muralItems, setMuralItems] = useState<CarouselItem[] | null>(null);
 
@@ -117,7 +170,7 @@ export default function Home() {
     </span>
   );
 
-  return (
+ return (
     <div style={{ fontFamily: "'Poppins', sans-serif", background: C.bg, minHeight: '100vh', color: C.text }}>
 
       <style>{`
@@ -135,14 +188,19 @@ export default function Home() {
 
         .lp-nav { display: flex; align-items: center; gap: 2.4rem; }
         .lp-nav-link {
+          background-color: #ffffff1c;
+          border-radius: 2rem;
+          padding: 0.3rem 1.2rem;
           color: rgba(255,255,255,0.82); text-decoration: none;
           font-size: 1.4rem; font-weight: 500; white-space: nowrap;
-          transition: color 0.2s;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+          transition: color 0.2s, background-color 0.2s, box-shadow 0.2s;
         }
-        .lp-nav-link:hover { color: #fff; }
+        .lp-nav-link:hover { color: #fff; background-color: #ffffff3a; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
         .lp-nav-btn {
           background: #fff; color: ${C.primary}; font-weight: 700;
-          padding: 0.8rem 2.4rem; border-radius: 5rem;
+          padding: 0.8rem 2.4rem;
+          border-radius: 5rem;
           text-decoration: none; font-size: 1.5rem;
           box-shadow: 0 2px 10px rgba(0,0,0,0.18);
           display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;
@@ -150,6 +208,72 @@ export default function Home() {
         }
         .lp-nav-btn:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
         .lp-nav-btn .material-icons-outlined { font-size: 1.8rem; }
+
+        /* Dropdown desktop — Institucional */
+        .lp-nav-dropdown { position: relative; }
+        .lp-nav-dropdown-trigger {
+          background-color: #ffffff1c;
+          border: none;
+          cursor: pointer;
+          border-radius: 2rem;
+          padding: 0.3rem 1.2rem;
+          color: rgba(255,255,255,0.82);
+          font-size: 1.4rem; font-weight: 500; white-space: nowrap;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+          display: flex; align-items: center; gap: 0.4rem;
+          font-family: inherit;
+          transition: color 0.2s, background-color 0.2s;
+        }
+        .lp-nav-dropdown-trigger:hover,
+        .lp-nav-dropdown-trigger[aria-expanded="true"] {
+          color: #fff; background-color: #ffffff3a;
+        }
+        .lp-nav-dropdown-trigger .material-icons-outlined {
+          font-size: 1.6rem;
+          transition: transform 0.2s;
+        }
+        .lp-nav-dropdown-trigger[aria-expanded="true"] .material-icons-outlined {
+          transform: rotate(180deg);
+        }
+
+        .lp-nav-dropdown-panel {
+          position: absolute;
+          top: calc(100% + 0.8rem);
+          left: 50%;
+          transform: translateX(-50%) translateY(-8px);
+          background: linear-gradient(180deg, ${C.secondary}, ${C.primary});
+          border-radius: 1.2rem;
+          padding: 1.2rem;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(16rem, 1fr));
+          gap: 0.2rem 1.6rem;
+          box-shadow: 0 12px 32px rgba(13,45,107,0.3);
+
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transition: opacity 200ms ease, transform 200ms ease, visibility 0s linear 200ms;
+        }
+        .lp-nav-dropdown-panel.open {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translateX(-50%) translateY(0);
+          transition: opacity 200ms ease, transform 200ms ease, visibility 0s linear 0s;
+        }
+        .lp-nav-dropdown-item {
+          color: rgba(255,255,255,0.82);
+          text-decoration: none;
+          font-size: 1.4rem;
+          padding: 0.8rem 1rem;
+          border-radius: 0.6rem;
+          white-space: nowrap;
+          transition: background-color 0.2s, color 0.2s;
+        }
+        .lp-nav-dropdown-item:hover {
+          background-color: rgba(255,255,255,0.12);
+          color: #fff;
+        }
 
         /* Hamburger — oculto no desktop */
         .lp-hamburger {
@@ -167,18 +291,45 @@ export default function Home() {
         .lp-hamburger:hover { background: rgba(255,255,255,0.25); }
         .lp-hamburger .material-icons-outlined { font-size: 2.6rem; }
 
-        /* Menu mobile — oculto por padrão */
+        /* Menu mobile — dropdown container */
         .lp-mobile-menu {
-          display: none;
-          position: absolute; top: 100%; left: 0; right: 0;
-          background: linear-gradient(180deg, ${C.secondary}, ${C.primary});
-          flex-direction: column;
-          padding: 1.6rem 2.4rem 2.4rem;
-          gap: 0.4rem;
-          box-shadow: 0 8px 24px rgba(13,45,107,0.35);
-          z-index: 99;
+            display: flex;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+
+            background: linear-gradient(180deg, ${C.secondary}, ${C.primary});
+            flex-direction: column;
+            padding: 1.6rem 2.4rem 2.4rem;
+            gap: 0.4rem;
+            z-index: 99;
+
+            visibility: hidden;
+            pointer-events: none;
+
+            clip-path: inset(0 0 100% 0);
+
+            box-shadow:
+                0 12px 32px rgba(13, 45, 107, 0.25),
+                0 4px 12px rgba(13, 45, 107, 0.12);
+
+            transition:
+                clip-path 380ms cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0s linear 380ms;
         }
-        .lp-mobile-menu.open { display: flex; }
+
+        .lp-mobile-menu.open {
+            visibility: visible;
+            pointer-events: auto;
+
+            clip-path: inset(0 0 0% 0);
+
+            transition:
+                clip-path 380ms cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0s linear 0s;
+        }
+
         .lp-mobile-link {
           color: rgba(255,255,255,0.88); text-decoration: none;
           font-size: 1.6rem; font-weight: 500;
@@ -200,6 +351,56 @@ export default function Home() {
         }
         .lp-mobile-btn .material-icons-outlined { font-size: 2rem; }
 
+        /* Accordion "Institucional" dentro do menu mobile */
+        .lp-mobile-accordion-trigger {
+          background: none;
+          border: none;
+          width: 100%;
+          color: rgba(255,255,255,0.88);
+          font-size: 1.6rem; font-weight: 500;
+          padding: 1.2rem 0;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
+          cursor: pointer;
+          font-family: inherit;
+        }
+        .lp-mobile-accordion-trigger .lp-accordion-label {
+          display: flex; align-items: center; gap: 0.8rem;
+        }
+        .lp-mobile-accordion-trigger .lp-accordion-label .material-icons-outlined {
+          font-size: 2rem;
+        }
+        .lp-mobile-accordion-trigger .lp-accordion-chevron {
+          font-size: 2rem;
+          transition: transform 0.2s;
+        }
+        .lp-mobile-accordion-trigger[aria-expanded="true"] .lp-accordion-chevron {
+          transform: rotate(180deg);
+        }
+
+        /* Técnica grid-template-rows: anima até a altura real do conteúdo, sem valor chutado */
+        .lp-mobile-accordion-panel {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 280ms ease;
+        }
+        .lp-mobile-accordion-panel.open {
+          grid-template-rows: 1fr;
+        }
+        .lp-mobile-accordion-panel > div {
+          overflow: hidden;
+        }
+        .lp-mobile-accordion-item {
+          display: block;
+          color: rgba(255,255,255,0.7);
+          text-decoration: none;
+          font-size: 1.5rem;
+          padding: 1rem 0 1rem 1.2rem;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          transition: color 0.2s;
+        }
+        .lp-mobile-accordion-item:hover { color: #fff; }
+
         @media (max-width: 768px) {
           .lp-header { padding: 1.2rem 2rem; position: relative; }
           .lp-nav { display: none; }
@@ -213,18 +414,41 @@ export default function Home() {
         }
       `}</style>
 
-      {/* ── Header ── */}
+       {/* ── Header ── */}
       <header className="lp-header">
         <a href="/" className="lp-logo">
-          <Image src="/logo_escola.png" alt="Logo CARA" width={48} height={48} className="lp-logo-img" />
+          <Image src="/logo_escola.png" alt="Logo SIGVC" width={48} height={48} className="lp-logo-img" />
           <div>
-            <div className="lp-logo-name">CARA</div>
+            <div className="lp-logo-name">SIGVC</div>
             <div className="lp-logo-sub">Gestão Escolar</div>
           </div>
         </a>
 
         {/* Nav desktop */}
         <nav className="lp-nav">
+          <div className="lp-nav-dropdown" ref={dropdownRef}>
+            <button
+              className="lp-nav-dropdown-trigger"
+              aria-expanded={dropdownOpen}
+              onClick={() => setDropdownOpen(o => !o)}
+            >
+              Institucional
+              <span className="material-icons-outlined">expand_more</span>
+            </button>
+            <div className={`lp-nav-dropdown-panel${dropdownOpen ? ' open' : ''}`}>
+              {institucionalItems.map(item => (
+                <a
+                  key={item}
+                  href="#funcionalidades"
+                  className="lp-nav-dropdown-item"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  {item}
+                </a>
+              ))}
+            </div>
+          </div>
+
           <a href="#funcionalidades" className="lp-nav-link">Funcionalidades</a>
           <a href="#como-funciona" className="lp-nav-link">Como Funciona</a>
           <Link href="/login" className="lp-nav-btn">
@@ -244,15 +468,41 @@ export default function Home() {
 
         {/* Menu mobile dropdown */}
         <div className={`lp-mobile-menu${menuOpen ? ' open' : ''}`}>
-          <a href="#funcionalidades" className="lp-mobile-link" onClick={closeMenu}>
+          <button
+            className="lp-mobile-accordion-trigger lp-mobile-item"
+            aria-expanded={mobileAccordionOpen}
+            onClick={() => setMobileAccordionOpen(o => !o)}
+          >
+            <span className="lp-accordion-label">
+              <span className="material-icons-outlined">account_balance</span>
+              Institucional
+            </span>
+            <span className="material-icons-outlined lp-accordion-chevron">expand_more</span>
+          </button>
+          <div className={`lp-mobile-accordion-panel${mobileAccordionOpen ? ' open' : ''}`}>
+            <div>
+              {institucionalItems.map(item => (
+                <a
+                  key={item}
+                  href="#funcionalidades"
+                  className="lp-mobile-accordion-item"
+                  onClick={closeMenu}
+                >
+                  {item}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <a href="#funcionalidades" className="lp-mobile-link lp-mobile-item" onClick={closeMenu}>
             <span className="material-icons-outlined">grid_view</span>
             Funcionalidades
           </a>
-          <a href="#como-funciona" className="lp-mobile-link" onClick={closeMenu}>
+          <a href="#como-funciona" className="lp-mobile-link lp-mobile-item" onClick={closeMenu}>
             <span className="material-icons-outlined">help_outline</span>
             Como Funciona
           </a>
-          <Link href="/login" className="lp-mobile-btn" onClick={closeMenu}>
+          <Link href="/login" className="lp-mobile-btn lp-mobile-item" onClick={closeMenu}>
             <span className="material-icons-outlined">login</span>
             Entrar no Sistema
           </Link>
@@ -301,8 +551,8 @@ export default function Home() {
             lineHeight: 1.15, marginBottom: '2.2rem',
             textShadow: '0 2px 14px rgba(0,0,0,0.2)',
           }}>
-            Gestão Escolar<br />
-            <span style={{ color: '#a8d4f5' }}>Inteligente</span>
+            Sistema Integrado de Gestão<br />
+            <span style={{ color: '#a8d4f5' }}>Viriato Corrêa</span>
           </h1>
 
           <p style={{
@@ -310,7 +560,7 @@ export default function Home() {
             maxWidth: '60rem', margin: '0 auto 4.5rem',
             lineHeight: 1.65,
           }}>
-            O CARA conecta professores e alunos em uma plataforma completa — avaliações, simulados, notas e assiduidade em um só lugar.
+            O SIGVC conecta professores e alunos em uma plataforma completa — avaliações, simulados, notas e assiduidade em um só lugar.
           </p>
 
           <div style={{ display: 'flex', gap: '1.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -414,7 +664,7 @@ export default function Home() {
           <div style={{ textAlign: 'center', marginBottom: '5.5rem' }}>
             <h2 style={{ fontSize: '3.6rem', fontWeight: 800, color: '#fff' }}>Como funciona?</h2>
             <p style={{ fontSize: '1.7rem', color: 'rgba(255,255,255,0.72)', marginTop: '1rem' }}>
-              Três passos simples para começar a usar o CARA
+              Três passos simples para começar a usar o SIGVC
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(28rem, 1fr))', gap: '3rem' }}>
@@ -449,11 +699,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Para quem é o CARA ── */}
+      {/* ── Para quem é o SIGVC ── */}
       <section style={{ padding: '8rem 4rem', background: C.bg }}>
         <div style={{ maxWidth: '102rem', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-            <h2 style={{ fontSize: '3.6rem', fontWeight: 800, color: C.primary }}>Para quem é o CARA?</h2>
+            <h2 style={{ fontSize: '3.6rem', fontWeight: 800, color: C.primary }}>Para quem é o SIGVC?</h2>
             <p style={{ fontSize: '1.7rem', color: C.muted, marginTop: '1rem' }}>
               Dois perfis, uma plataforma integrada
             </p>
@@ -519,7 +769,7 @@ export default function Home() {
       }}>
         <div style={{ maxWidth: '102rem', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <h2 style={{ fontSize: '3rem', fontWeight: 800, color: C.primary }}>Por que escolher o CARA?</h2>
+            <h2 style={{ fontSize: '3rem', fontWeight: 800, color: C.primary }}>Por que escolher o SIGVC?</h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(22rem, 1fr))', gap: '3rem' }}>
             {diferenciais.map(d => (
@@ -572,11 +822,11 @@ export default function Home() {
         background: C.primary, padding: '4rem 4rem', textAlign: 'center',
       }}>
         <div style={{ marginBottom: '1.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.2rem' }}>
-          <Image src="/logo_escola.png" alt="Logo CARA" width={36} height={36} style={{ height: '3.6rem', width: 'auto', borderRadius: '0.5rem' }} />
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.8rem' }}>CARA</span>
+          <Image src="/logo_escola.png" alt="Logo SIGVC" width={36} height={36} style={{ height: '3.6rem', width: 'auto', borderRadius: '0.5rem' }} />
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.8rem' }}>SIGVC</span>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1.4rem' }}>
-          &copy; 2025 Sistema CARA — Gestão Escolar Inteligente
+          &copy; 2025 Sistema SIGVC — Gestão Escolar Inteligente
         </p>
       </footer>
 

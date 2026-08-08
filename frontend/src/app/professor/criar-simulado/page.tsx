@@ -835,7 +835,7 @@ export default function CriarSimuladoPage() {
           fontSize: "1.4rem",
         }}
       >
-        <p>&copy; 2025 Sistema CARA - Gestão Escolar Inteligente</p>
+        <p>&copy; 2025 Sistema SIGVC - Gestão Escolar Inteligente</p>
       </footer>
     </ProtectedRoute>
   );
